@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls. static import static
 from django.conf import settings
-from posts import views
+# from posts import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('billview/', include('billview.urls')),
-    path('geovote/', include('geovote.urls')),
+    # path('billview/', include('billview.urls')),
+    # path('geovote/', include('geovote.urls')),
 ]
