@@ -1,5 +1,4 @@
 from django.db import models
-from django.db import models
 
 # 정당
 class Party(models.Model):
@@ -11,10 +10,10 @@ class Party(models.Model):
 # 지역구
 class District(models.Model):
     age = models.IntegerField()
-    SGG_Code = models.CharField(max_length=100, unique=True) # 선관위 선거구 코드
-    SIDO_SGG = models.CharField(max_length=100, unique=True) # 광역시도+선거구
-    SIDO = models.CharField(max_length=100, unique=True) # 광역시도 이름
-    SGG = models.CharField(max_length=100, unique=True) # 선거구
+    # SGG_Code = models.CharField(max_length=100, unique=True) # 선관위 선거구 코드
+    sido_sgg = models.CharField(max_length=100, unique=True) # 광역시도+선거구
+    sido = models.CharField(max_length=100, unique=True) # 광역시도 이름
+    sgg = models.CharField(max_length=100, unique=True) # 선거구
     boundary = models.CharField()  # 지역구의 경계(공간 데이터)
     def __str__(self):
         return self.name
