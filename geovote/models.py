@@ -2,21 +2,21 @@ from django.db import models
 
 # 정당
 class Party(models.Model):
-    age = models.IntegerField()
+    # age = models.IntegerField()
     party = models.CharField(max_length=100, unique=True)  # 정당 이름
     def __str__(self):
-        return self.name
+        return self.party
 
 # 지역구
 class District(models.Model):
     # age = models.IntegerField()
     SGG_Code = models.CharField(max_length=100, unique=True) # 선관위 선거구 코드
     SIDO_SGG = models.CharField(max_length=100, unique=True) # 광역시도+선거구
-    SIDO = models.CharField(max_length=100, unique=True) # 광역시도 이름
-    SGG = models.CharField(max_length=100, unique=True) # 선거구
+    SIDO = models.CharField(max_length=100) # 광역시도 이름
+    SGG = models.CharField(max_length=100) # 선거구
     boundary = models.TextField()  # 지역구의 경계(공간 데이터)
     def __str__(self):
-        return self.name
+        return self.SIDO_SGG
 
 # 위원회
 # class Committee(models.Model):
