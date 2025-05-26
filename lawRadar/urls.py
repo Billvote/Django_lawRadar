@@ -23,7 +23,7 @@ from geovote import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('billview/', include('billview.urls')),
-    # path('geovote/', include('geovote.urls')),
+    # path('geovote/', views._view, name='map'),
     path('map/', views.map_view, name='map')
 
 ]
