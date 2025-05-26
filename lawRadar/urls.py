@@ -18,12 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls. static import static
 from django.conf import settings
-from geovote import views
+from geovote import views as geovote_views
+from billview import views as bill_views
+from main import views as main_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('billview/', include('billview.urls')),
     # path('geovote/', include('geovote.urls')),
-    path('map/', views.map_view, name='map')
-
+    path('', main_views.home, name='home'),
+    path('map/', geovote_views.map_view, name='map'),
+    path('billview/', bill_views.bill_main, name='billview'),
+    path('geovote/', geovote_views.geovote_main, name='geovote'),
 ]
