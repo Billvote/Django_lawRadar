@@ -41,7 +41,7 @@ class Member(models.Model):
     name = models.CharField(max_length=100)  # 의원명
     party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
     district = models.ForeignKey(District, on_delete=models.CASCADE)  # 지역구
-    member_id = models.CharField(max_length=50, unique=True)
+    member_id = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)  # 성별
     # committees = models.ManyToManyField('Committee')  # 소속 위원회
     def __str__(self):
