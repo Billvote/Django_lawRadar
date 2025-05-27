@@ -11,15 +11,10 @@ django.setup()
 
 from django.conf import settings
 from geovote.models import District, Member, Party
-from billview.models import Bill
 from django.db import transaction
 
-
-# billview: bill (1개)
-# geovote: bill, district, party, member, vote (5개)
-
-# billview 의안---------------------
-def import_billview_bills(csv_path):
+# 의안
+def import_bills(csv_path):
     df = pd.read_csv(csv_path)
 
     # 중복된 bill_id와 bill_number 미리 DB에서 조회
@@ -46,7 +41,7 @@ def import_billview_bills(csv_path):
     Bill.objects.bulk_create(records)
     print(f"[DONE] {len(records)}개의 법안 저장 완료.")
 
-# 1) 지역구 --------------------------------------------------------------
+# 1) 지역구
 def import_districts(csv_path):
     df = pd.read_csv(csv_path)
     
@@ -76,7 +71,7 @@ def import_districts(csv_path):
     print(f"[DONE] {len(records)}개의 구역 저장 완료")
 
 
-# 2) 의원(테스트용.. 수정 필요) ------------------------------------------------------------------
+# 2) 의원(수정 필요: 20대 지역구가 22대 geojson과 맞지 않는 문제 있음)
 def import_members(csv_path):
     """
     CSV 파일에서 의원 데이터를 읽어 DB에 저장.
@@ -143,6 +138,10 @@ def import_parties(csv_path):
 
     Party.objects.bulk_create(records)
     print(f"[DONE] {len(records)}개의 정당 저장 완료")
+
+# 4) 표결------------------------------------------
+def import_votes(csv_path):
+    pass
 
 # ----------< 실행 >-------------------------
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'member.csv'

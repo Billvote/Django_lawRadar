@@ -14,7 +14,7 @@ class District(models.Model):
     SIDO_SGG = models.CharField(max_length=100, unique=True) # 광역시도+선거구
     SIDO = models.CharField(max_length=100) # 광역시도 이름
     SGG = models.CharField(max_length=100) # 선거구
-    boundary = models.TextField()  # 지역구의 경계(공간 데이터)
+    boundary = models.JSONField()  # 지역구의 경계(공간 데이터)
     def __str__(self):
         return self.SIDO_SGG
 
