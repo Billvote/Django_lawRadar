@@ -1,73 +1,79 @@
-<!-- Google Fonts 추가 (폰트 변경용) -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}LawRadar{% endblock %}</title>
+  <!-- Google Fonts, Bootstrap CSS, 스타일 포함 -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+    .navbar {
+      padding: 0.7rem 1rem;
+    }
+    .navbar-nav .nav-link {
+      transition: 0.3s ease-in-out;
+    }
+    .navbar-nav .nav-link:hover {
+      color: #0d6efd;
+      font-weight: 600;
+    }
+    .nav-link.active {
+      font-weight: 600;
+      color: #0d6efd !important;
+    }
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.3rem;
+    }
+    .navbar-nav .nav-item {
+        display: flex;
+        align-items: center;
+    }
+    .navbar-nav .nav-link {
+        text-align: center;
+    }
+  </style>
+</head>
+<body>
 
-<!-- Bootstrap 5 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-  body {
-    font-family: 'Roboto', sans-serif;
-  }
-  .navbar {
-    padding: 0.7rem 1rem;
-  }
-  .navbar-nav .nav-link {
-    transition: 0.3s ease-in-out;
-  }
-  .navbar-nav .nav-link:hover {
-    color: #0d6efd;
-    font-weight: 600;
-  }
-  .nav-link.active {
-    font-weight: 600;
-    color: #0d6efd !important;
-  }
-  .navbar-brand {
-    font-weight: bold;
-    font-size: 1.3rem;
-  }
-</style>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-  <div class="container">
-
-    <!-- 브랜드 로고 -->
-    <a class="navbar-brand" href="{% url 'home' %}">⚖️ LawRadar</a>
-
-    <!-- 모바일 토글 버튼 -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- 전체 메뉴 -->
-    <div class="collapse navbar-collapse justify-content-between" id="navbarContent">
-      
-      <!-- 중앙 메뉴 -->
-      <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/billview/' %}active{% endif %}" href="{% url 'billview' %}">📜 Bills</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/geovote/' %}active{% endif %}" href="{% url 'geovote' %}">🗳️ GeoVote</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/map/' %}active{% endif %}" href="{% url 'map' %}">🗺️ Map</a>
-        </li>
-      </ul>
-
-      <!-- 우측 검색창 + 사용자 -->
-      <form class="d-flex me-3" role="search">
-        <input class="form-control form-control-sm me-2" type="search" placeholder="검색" aria-label="Search">
-        <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
-      </form>
-
-      <!-- 사용자 프로필 아이콘 -->
-      <a href="#" class="d-flex align-items-center text-decoration-none">
-        <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" alt="user" width="32" height="32" class="rounded-circle">
-      </a>
+  <!-- 네비게이션 바 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}">⚖️ LawRadar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-between" id="navbarContent">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/billview/' %}active{% endif %}" href="{% url 'billview' %}">📜 Bills</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/geovote/' %}active{% endif %}" href="{% url 'geovote' %}">🗳️ GeoVote</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/map/' %}active{% endif %}" href="{% url 'map' %}">🗺️ Map</a>
+          </li>
+        </ul>
+        <form class="d-flex me-3" role="search">
+          <input class="form-control form-control-sm me-2" type="search" placeholder="검색" aria-label="Search">
+          <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
+        </form>
+        <a href="#" class="d-flex align-items-center text-decoration-none">
+          <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" alt="user" width="32" height="32" class="rounded-circle">
+        </a>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<!-- Bootstrap 5 JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- 여기에 페이지별 콘텐츠가 들어갑니다 -->
+  {% block body %}
+  {% endblock %}
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
