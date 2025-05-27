@@ -12,6 +12,8 @@ django.setup()
 from django.conf import settings
 from geovote.models import District, Member, Party
 from billview.models import Bill
+from django.db import transaction
+
 
 # billview: bill (1개)
 # geovote: bill, district, party, member, vote (5개)

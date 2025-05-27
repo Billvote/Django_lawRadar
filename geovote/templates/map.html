@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  {% load static %}
   <meta charset="utf-8">
   <style>
     @import url(http://fonts.googleapis.com/earlyaccess/nanumgothic.css);
@@ -82,6 +83,7 @@
 
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="{% static 'js/memberInfo.js' %}"></script>
 <script>
   var maps_path = {
     20: {
@@ -171,8 +173,20 @@
 
     g_precincts.on("mouseover", function() {
       d3.select(this).select("path").classed("highlighted", true);
-      var html_text = '<h3>' + d3.select(this).datum().properties.precinct_name + '</h3>';
-      html_text += '<div></div>';
+      var precinctData = d3.select(this).datum();
+      var precinctName = precinctData.properties.precinct_name;
+
+      var html_text = '<h3>' + precinctName + '</h3>';
+  
+      // 의원 정보 매핑
+      var member = memberInfo[precinctName];
+      if (member) {
+        html_text += '<div><strong>' + member.이름 + '</strong> (' + member.정당 + ')</div>';
+        html_text += '<div>' + member.지역구 + '</div>';
+      } else {
+        html_text += '<div>의원 정보 없음</div>';
+      }
+
       var point = d3.mouse(this);
       d3.select("#info")
         .style("left", point[0] + "px")
@@ -180,6 +194,7 @@
         .style("visibility", "visible")
         .html(html_text);
     });
+
     g_precincts.on("mouseout", function() {
       d3.select(this).select("path").classed("highlighted", false);
       d3.select("#info").style("visibility", "hidden");
