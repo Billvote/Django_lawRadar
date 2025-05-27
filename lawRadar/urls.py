@@ -24,10 +24,13 @@ from main import views as main_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('billview/', include('billview.urls')),
-    # path('geovote/', include('geovote.urls')),
     path('', main_views.home, name='home'),
-    path('map/', geovote_views.map_view, name='map'),
+
+    # billview
     path('billview/', bill_views.bill_main, name='billview'),
+
+    # geovote
+    path('map/', geovote_views.map_view, name='map'),
     path('geovote/', geovote_views.geovote_main, name='geovote'),
+    # path('api/districts/', geovote_views.districts_geojson),
 ]
