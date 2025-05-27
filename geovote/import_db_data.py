@@ -44,6 +44,11 @@ for _, row in df.iterrows():
     party = Party.objects.get(party=row['party'])
     district = District.objects.get(SIDO_SGG=row['SIDO_SGG'])
 
+    try:
+        district = District.objects.get(SIDO_SGG=row['SIDO_SGG'])
+    except District.DoesNotExist: # 지역구 매칭 안 되면 건너뜀
+        continue
+
     member = Member(
         age=row['age'],
         name=row['name'],
@@ -54,4 +59,4 @@ for _, row in df.iterrows():
     )
     records.append(member)
 
-Member.objects.bulk_create(records)
+Member.objects.bulk_create(records) # DB 저장
