@@ -49,6 +49,7 @@ class Member(models.Model):
         
 # 표결
 class Vote(models.Model):
+    age = models.IntegerField() # 대수
     member = models.ForeignKey(Member, on_delete=models.CASCADE)  # 의원
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안
     vote_result = models.CharField(max_length=10)  # 찬성/반대/기권 등

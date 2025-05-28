@@ -38,7 +38,7 @@ def import_bills(csv_path):
         ))
 
     Bill.objects.bulk_create(records)
-    print(f"[DONE] {len(records)}개의 법안 저장 완료.")
+    print(f"[DONE] {len(records)}개의 법안 저장 완료")
 
 # 실행
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill.csv'

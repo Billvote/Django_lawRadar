@@ -9,9 +9,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lawRadar.settings")
 import django
 django.setup()
 
+from django.db import transaction
 from django.conf import settings
 from geovote.models import District, Member, Party
-from django.db import transaction
+from billview.models import Bill
 
 # 의안
 def import_bills(csv_path):
@@ -141,7 +142,25 @@ def import_parties(csv_path):
 
 # 4) 표결------------------------------------------
 def import_votes(csv_path):
-    pass
+    df = pd.read_csv(csv_path)
+
+    for _, row in df.iterrows():
+
+        # member FK 조회
+        try:
+            member = Member.objects.get(name=row['name'])
+        
+        except Member.DoesNotExist:
+            print(f'[SKIP] 의원 없음: {row['name']}')
+            continue
+
+        # bill FK 조회
+        try:
+            bill = billview_Bill.objects.get(name=row['bill_number'])
+        except District.DoesNotExist:
+            print(f"[SKIP] 의안 없음: {row['name']} ({row['bill_number']})")
+            continue
+
 
 # ----------< 실행 >-------------------------
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'member.csv'
