@@ -42,4 +42,4 @@ def import_bills(csv_path):
 
 # 실행
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill.csv'
-import_members(csv_path)
+import_bills(csv_path)
