@@ -35,4 +35,5 @@ urlpatterns = [
     path('map/', geovote_views.map_view, name='map'),
     path('geovote/', geovote_views.geovote_main, name='geovote'),
     path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
+    path('map22/', geovote_views.map22, name='map22'), # 테스트용
 ]

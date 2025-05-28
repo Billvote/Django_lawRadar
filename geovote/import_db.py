@@ -11,7 +11,7 @@ django.setup()
 
 from django.db import transaction
 from django.conf import settings
-from geovote.models import District, Member, Party
+from geovote.models import District, Member, Party, Vote
 from billview.models import Bill
 
 # 의안
@@ -143,26 +143,50 @@ def import_parties(csv_path):
 # 4) 표결------------------------------------------
 def import_votes(csv_path):
     df = pd.read_csv(csv_path)
+    records = []
 
     for _, row in df.iterrows():
+        age = row['age']
+        member_id = row['member_id']
+        bill_number = row['bill_number']
+        vote_result = row['vote_result']
 
         # member FK 조회
         try:
-            member = Member.objects.get(name=row['name'])
-        
+            member = Member.objects.get(age=age, member_id=member_id)
         except Member.DoesNotExist:
-            print(f'[SKIP] 의원 없음: {row['name']}')
+            print(f'[SKIP] 의원 없음: age={age}, member_id={member_id}')
             continue
 
         # bill FK 조회
         try:
-            bill = billview_Bill.objects.get(name=row['bill_number'])
+            bill = Bill.objects.get(bill_number=row['bill_number'])
         except District.DoesNotExist:
-            print(f"[SKIP] 의안 없음: {row['name']} ({row['bill_number']})")
+            print(f"[SKIP] 의안 없음: bill_number={bill_number}")
             continue
 
+        # 중복 투표 확인
+        if Vote.objects.filter(age=age, member=member, bill_number=bill_number).exists():
+            print(f"[SKIP] 이미 존재하는 투표: {member.name} - {bill.title}")
+            continue
+
+        vote = Vote(
+            age=age,
+            member=member,
+            bill=bill,
+            vote_result=vote_result
+        )
+        records.append(member)
+
+    if records:
+        with transaction.atomic():
+            Vote.objects.bulk_create(records)
+        print(f"[DONE] {len(records)}명의 투표 내역 저장 완료")
+    else:
+        print("[INFO] 저장할 신규 데이터가 없습니다")
 
 # ----------< 실행 >-------------------------
-# 주의) party -> district -> member -> vote 순으로 실행해야 함
+# 참고) party -> district -> member -> vote 순으로 실행해야 함
+
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
 import_votes(csv_path)
