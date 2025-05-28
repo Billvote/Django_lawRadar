@@ -21,6 +21,8 @@ from django.conf import settings
 from geovote import views as geovote_views
 from billview import views as bill_views
 from main import views as main_views
+from geovote import views as geovote_views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,5 +34,5 @@ urlpatterns = [
     # geovote
     path('map/', geovote_views.map_view, name='map'),
     path('geovote/', geovote_views.geovote_main, name='geovote'),
-    # path('api/districts/', geovote_views.districts_geojson),
+    path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
 ]
