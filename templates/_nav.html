@@ -1,0 +1,28 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">⚖️ LawRadar</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+    <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between" id="navbarContent">
+    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+        <a class="nav-link {% if request.path == '/billview/' %}active{% endif %}" href="{% url 'billview' %}">📜 Bills</a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link {% if request.path == '/geovote/' %}active{% endif %}" href="{% url 'geovote' %}">🗳️ GeoVote</a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link {% if request.path == '/map/' %}active{% endif %}" href="{% url 'map' %}">🗺️ Map</a>
+        </li>
+    </ul>
+    <form class="d-flex me-3" role="search">
+        <input class="form-control form-control-sm me-2" type="search" placeholder="검색" aria-label="Search">
+        <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
+    </form>
+    <a href="#" class="d-flex align-items-center text-decoration-none">
+        <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" alt="user" width="32" height="32" class="rounded-circle">
+    </a>
+    </div>
+</div>
+</nav>

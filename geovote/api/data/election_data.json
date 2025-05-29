@@ -1,0 +1,87 @@
+{
+  "response": {
+    "header": {
+      "resultCode": "INFO-00",
+      "resultMsg": "NORMAL SERVICE"
+    },
+    "body": {
+      "items": {
+        "item": [
+          {
+            "num": "1",
+            "sgId": "19920324",
+            "sgName": "제14대 국회의원선거",
+            "sgTypecode": "0",
+            "sgVotedate": "19920324"
+          },
+          {
+            "num": "2",
+            "sgId": "19920324",
+            "sgName": "국회의원선거",
+            "sgTypecode": "2",
+            "sgVotedate": "19920324"
+          },
+          {
+            "num": "3",
+            "sgId": "19921218",
+            "sgName": "제14대 대통령선거",
+            "sgTypecode": "0",
+            "sgVotedate": "19921218"
+          },
+          {
+            "num": "4",
+            "sgId": "19921218",
+            "sgName": "대통령선거",
+            "sgTypecode": "1",
+            "sgVotedate": "19921218"
+          },
+          {
+            "num": "5",
+            "sgId": "19960411",
+            "sgName": "제15대 국회의원선거",
+            "sgTypecode": "0",
+            "sgVotedate": "19960411"
+          },
+          {
+            "num": "6",
+            "sgId": "19960411",
+            "sgName": "국회의원선거",
+            "sgTypecode": "2",
+            "sgVotedate": "19960411"
+          },
+          {
+            "num": "7",
+            "sgId": "19971218",
+            "sgName": "제15대 대통령선거",
+            "sgTypecode": "0",
+            "sgVotedate": "19971218"
+          },
+          {
+            "num": "8",
+            "sgId": "19971218",
+            "sgName": "대통령선거",
+            "sgTypecode": "1",
+            "sgVotedate": "19971218"
+          },
+          {
+            "num": "9",
+            "sgId": "20000413",
+            "sgName": "제16대 국회의원선거",
+            "sgTypecode": "0",
+            "sgVotedate": "20000413"
+          },
+          {
+            "num": "10",
+            "sgId": "20000413",
+            "sgName": "국회의원선거",
+            "sgTypecode": "2",
+            "sgVotedate": "20000413"
+          }
+        ]
+      },
+      "numOfRows": "10",
+      "pageNo": "1",
+      "totalCount": "181"
+    }
+  }
+}

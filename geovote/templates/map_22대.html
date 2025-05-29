@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<<<<<<< HEAD
+  <meta charset="UTF-8">
+  <title>대한민국 선거구 지도</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #999;
+      padding: 6px 10px;
+      font-size: 12px;
+      pointer-events: none;
+      border-radius: 4px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+      display: none;
+    }
+    #legend {
+      margin-top: 10px;
+    }
+    #legend div {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    #legend div span {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+=======
+  <meta charset="UTF-8" />
+  <title>22대 지역구 지도</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    #map {
+      width: 800px;
+      height: 600px;
+      border: 1px solid #ccc;
+      margin: 0 auto;
+    }
+    path {
+      cursor: pointer;
+>>>>>>> aa3b875dc212679e400c5dbae894a5e9ef435377
+    }
+  </style>
+</head>
+<body>
+<<<<<<< HEAD
+  <h2>대한민국 선거구 시각화</h2>
+  <svg width="800" height="1000"></svg>
+  <div id="tooltip" class="tooltip"></div>
+  <div id="legend"></div>
+
+  <script>
+    const svg = d3.select("svg");
+    const tooltip = d3.select("#tooltip");
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+
+    const projection = d3.geoMercator()
+      .center([127.8, 36.2])
+      .scale(6000)
+      .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    // 1. 정당 색상 매핑
+    const partyColors = {
+      "더불어민주당": "#1f77b4",
+      "국민의힘": "#d62728",
+      "정의당": "#ffbb00",
+      "기타": "#aaaaaa"
+    };
+
+    function getPartyColor(party) {
+      return partyColors[party] || partyColors["기타"];
+    }
+
+    // 2. 국회의원 정보 (예시)
+    let memberInfo = {};
+    d3.json("/static/js/memberInfo_22.json").then(data => {
+      memberInfo = data;
+      loadProvinces();
+    });
+
+    // 3. 지도 렌더링
+    function renderMap(geoData, level) {
+      svg.selectAll("*").remove();
+
+      svg.selectAll("path")
+        .data(geoData.features)
+        .join("path")
+        .attr("d", path)
+        .attr("fill", d => {
+          if (level === "district") {
+            const info = memberInfo[d.properties.district];
+            return getPartyColor(info?.party);
+          }
+          return "#c5e1a5";
+        })
+        .attr("stroke", "#2e7d32")
+        .on("mouseover", (event, d) => {
+          if (level !== "district") return;
+          const info = memberInfo[d.properties.district];
+          tooltip
+            .style("display", "block")
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 20) + "px")
+            .html(`
+              <strong>${d.properties.district}</strong><br/>
+              의원: ${info?.member || "정보 없음"}<br/>
+              정당: ${info?.party || "정보 없음"}
+            `);
+        })
+        .on("mouseout", () => tooltip.style("display", "none"))
+        .on("click", (event, d) => {
+          if (level === "province") loadCities(d.properties.code);
+          else if (level === "city") loadDistricts(d.properties.code);
+        });
+
+      svg.selectAll("text")
+        .data(geoData.features)
+        .join("text")
+        .attr("x", d => path.centroid(d)[0])
+        .attr("y", d => path.centroid(d)[1])
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .text(d => d.properties.name || d.properties.sggnm || d.properties.district);
+    }
+
+    // 4. 단계별 GeoJSON 불러오기
+    function loadProvinces() {
+      d3.json("/static/js/22_시도.json").then(data => {
+        renderMap(data, "province");
+      });
+    }
+
+    function loadCities(provinceCode) {
+      d3.json(`/static/js/22_시군구.json/${provinceCode}.geo.json`).then(data => {
+        renderMap(data, "city");
+      });
+    }
+
+    function loadDistricts(cityCode) {
+      d3.json(`/static/js/22_pre.json/${cityCode}.geo.json`).then(data => {
+        renderMap(data, "district");
+      });
+    }
+
+    // 5. 범례 렌더링
+    const legend = d3.select("#legend");
+    Object.entries(partyColors).forEach(([party, color]) => {
+      legend.append("div")
+        .html(`<span style="background:${color}"></span>${party}`);
+    });
+  </script>
+</body>
+</html>
+=======
+  <h2 style="text-align:center;">🗳️ 제22대 지역구 지도</h2>
+  <div id="map"></div>
+
+  <script>
+    const width = 800, height = 600;
+
+    const svg = d3.select("#map")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    function partyColor(party) {
+      const colors = {
+        "더불어민주당": "#1877f2",
+        "국민의힘": "#e61e2b",
+        "정의당": "#ffcb08",
+        "기타": "#999"
+      };
+      return colors[party] || "#ccc";
+    }
+
+    d3.json("/api/districts/").then(data => {
+    console.log("features 개수:", data.features.length);
+
+    svg.selectAll("path")
+        .data(data.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", d => partyColor(d.properties.party))
+        .attr("stroke", "#333")
+        .attr("stroke-width", 0.5)
+        .on("click", (event, d) => {
+        const props = d.properties;
+        alert(`${props.SIDO_SGG} - ${props.member_name}\n(${props.party})`);
+        });
+    }).catch(err => {
+    console.error("GeoJSON 로딩 실패:", err);
+    });
+
+  </script>
+</body>
+</html>
+>>>>>>> aa3b875dc212679e400c5dbae894a5e9ef435377
