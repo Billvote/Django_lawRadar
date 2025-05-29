@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<<<<<<< HEAD
   <meta charset="UTF-8">
   <title>대한민국 선거구 지도</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -34,7 +33,7 @@
       width: 12px;
       height: 12px;
       margin-right: 5px;
-=======
+      
   <meta charset="UTF-8" />
   <title>22대 지역구 지도</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -47,12 +46,12 @@
     }
     path {
       cursor: pointer;
->>>>>>> aa3b875dc212679e400c5dbae894a5e9ef435377
+
     }
   </style>
 </head>
 <body>
-<<<<<<< HEAD
+
   <h2>대한민국 선거구 시각화</h2>
   <svg width="800" height="1000"></svg>
   <div id="tooltip" class="tooltip"></div>
@@ -163,48 +162,3 @@
   </script>
 </body>
 </html>
-=======
-  <h2 style="text-align:center;">🗳️ 제22대 지역구 지도</h2>
-  <div id="map"></div>
-
-  <script>
-    const width = 800, height = 600;
-
-    const svg = d3.select("#map")
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
-    function partyColor(party) {
-      const colors = {
-        "더불어민주당": "#1877f2",
-        "국민의힘": "#e61e2b",
-        "정의당": "#ffcb08",
-        "기타": "#999"
-      };
-      return colors[party] || "#ccc";
-    }
-
-    d3.json("/api/districts/").then(data => {
-    console.log("features 개수:", data.features.length);
-
-    svg.selectAll("path")
-        .data(data.features)
-        .enter()
-        .append("path")
-        .attr("d", path)
-        .attr("fill", d => partyColor(d.properties.party))
-        .attr("stroke", "#333")
-        .attr("stroke-width", 0.5)
-        .on("click", (event, d) => {
-        const props = d.properties;
-        alert(`${props.SIDO_SGG} - ${props.member_name}\n(${props.party})`);
-        });
-    }).catch(err => {
-    console.error("GeoJSON 로딩 실패:", err);
-    });
-
-  </script>
-</body>
-</html>
->>>>>>> aa3b875dc212679e400c5dbae894a5e9ef435377

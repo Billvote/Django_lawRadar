@@ -33,5 +33,9 @@ def geovote_main(request):
     return render(request, 'geovote_main.html')
 
 def map_view(request):
+    return render(request, 'map.html')
+
+# 테스트용
+def map22(request):
     return render(request, 'map_22.html')
 
