@@ -29,7 +29,8 @@ urlpatterns = [
     path('', main_views.home, name='home'),
 
     # billview
-    path('billview/', bill_views.bill_main, name='billview'),
+    path('billview/', bill_views.index_bill, name='index'),
+    path('billview/<int:id>/', bill_views.detail_bill, name='detail'),
 
     # geovote
     path('map/', geovote_views.map_view, name='map'),

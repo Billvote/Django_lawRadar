@@ -1,28 +1,95 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-<div class="container">
-    <a class="navbar-brand" href="{% url 'home' %}">⚖️ LawRadar</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-    <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse justify-content-between" id="navbarContent">
-    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-        <a class="nav-link {% if request.path == '/billview/' %}active{% endif %}" href="{% url 'billview' %}">📜 Bills</a>
-        </li>
-        <li class="nav-item">
-        <a class="nav-link {% if request.path == '/geovote/' %}active{% endif %}" href="{% url 'geovote' %}">🗳️ GeoVote</a>
-        </li>
-        <li class="nav-item">
-        <a class="nav-link {% if request.path == '/map/' %}active{% endif %}" href="{% url 'map' %}">🗺️ Map</a>
-        </li>
-    </ul>
-    <form class="d-flex me-3" role="search">
-        <input class="form-control form-control-sm me-2" type="search" placeholder="검색" aria-label="Search">
-        <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
-    </form>
-    <a href="#" class="d-flex align-items-center text-decoration-none">
-        <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" alt="user" width="32" height="32" class="rounded-circle">
-    </a>
+<div class="min-h-full">
+  <nav class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between">
+        <div class="flex items-center">
+          <div class="shrink-0">
+            <a href="{% url 'home' %}" class="text-white">Home</a>
+          </div>
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4">
+                <!-- 네비게이션 바 탭 목록 -->
+              <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white" aria-current="page">LawRadar</a>
+              <a href="{% url 'billview' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
+              <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
+              <a href="{% url 'map' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/map/' %}active{% endif %}">Map</a>
+              <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white">Reports</a>
+              <!-- 검색 창 -->
+              <form action="#" method="get" class="flex items-center space-x-2">
+                <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
+            </form>
+            </div>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <div class="ml-4 flex items-center md:ml-6">
+             
+              <!--
+                Dropdown menu, show/hide based on menu state.
+
+                Entering: "transition ease-out duration-100"
+                  From: "transform opacity-0 scale-95"
+                  To: "transform opacity-100 scale-100"
+                Leaving: "transition ease-in duration-75"
+                  From: "transform opacity-100 scale-100"
+                  To: "transform opacity-0 scale-95"
+              -->
+
+              <!-- 2. 드롭다운 버튼 + 메뉴 -->
+                <div class="relative ml-3" x-data="{ open: false }">
+
+                <!-- 드롭다운 메뉴 -->
+                <div
+                    x-show="open"
+                    @click.outside="open = false"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="transform opacity-100 scale-100"
+                    x-transition:leave-end="transform opacity-0 scale-95"
+                    class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none"
+                    role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button">
+                    
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Your Profile</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Settings</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Sign out</a>
+                </div>
+                </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="-mr-2 flex md:hidden">
+          <!-- Mobile menu button -->
+          <button type="button" class="relative inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden" aria-controls="mobile-menu" aria-expanded="false">
+            <span class="absolute -inset-0.5"></span>
+            <span class="sr-only">Open main menu</span>
+            <!-- Menu open: "hidden", Menu closed: "block" -->
+            <svg class="block size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+            <!-- Menu open: "block", Menu closed: "hidden" -->
+            <svg class="hidden size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- Mobile menu, show/hide based on menu state. -->
+    <div class="md:hidden" id="mobile-menu">
+      <div class="space-y-1 px-2 pt-2 pb-3 sm:px-3">
+        <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+        <a href="{% url 'home' %}" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">⚖️ LawRadar</a>
+        <a href="{% url 'billview' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
+        <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
+        <a href="{% url 'map' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/map/' %}active{% endif %}">Map</a>
+        <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Reports</a>
+      </div>
+    </div>
+  </nav>
 </div>
-</nav>

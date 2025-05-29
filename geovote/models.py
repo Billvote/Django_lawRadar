@@ -1,4 +1,5 @@
 from django.db import models
+from billview.models import Bill
 
 # 정당
 class Party(models.Model):
@@ -26,14 +27,14 @@ class District(models.Model):
 #         return self.name
 
 # 의안
-class Bill(models.Model):
-    age = models.IntegerField()
-    title = models.CharField(max_length=200)  # 의안명
-    bill_id = models.CharField(max_length=100, unique=True) # 의안 id
-    bill_number = models.CharField(max_length=50)  # 의안 번호
-    content = models.TextField(blank=True, null=True)  # 주요 내용
-    def __str__(self):
-        return f'{self.name} ({self.bill_number})'
+# class Bill(models.Model):
+#     age = models.IntegerField()
+#     title = models.CharField(max_length=200)  # 의안명
+#     bill_id = models.CharField(max_length=100, unique=True) # 의안 id
+#     bill_number = models.CharField(max_length=50)  # 의안 번호
+#     content = models.TextField(blank=True, null=True)  # 주요 내용
+#     def __str__(self):
+#         return f'{self.title} ({self.bill_number})'
 
 # 의원
 class Member(models.Model):
@@ -51,7 +52,7 @@ class Member(models.Model):
 class Vote(models.Model):
     age = models.IntegerField() # 대수
     member = models.ForeignKey(Member, on_delete=models.CASCADE)  # 의원
-    bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안 id
     vote_result = models.CharField(max_length=10)  # 찬성/반대/기권 등
     def __str__(self):
         return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'

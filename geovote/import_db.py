@@ -155,18 +155,18 @@ def import_votes(csv_path):
         try:
             member = Member.objects.get(age=age, member_id=member_id)
         except Member.DoesNotExist:
-            print(f'[SKIP] 의원 없음: age={age}, member_id={member_id}')
+            # print(f'[SKIP] 의원 없음: age={age}, member_id={member_id}')
             continue
 
         # bill FK 조회
         try:
-            bill = Bill.objects.get(bill_number=row['bill_number'])
-        except District.DoesNotExist:
-            print(f"[SKIP] 의안 없음: bill_number={bill_number}")
+            bill = Bill.objects.get(bill_number=bill_number)  # 변경됨
+        except Bill.DoesNotExist:
+            # print(f"[SKIP] 의안 없음: bill_number={bill_number}")
             continue
 
         # 중복 투표 확인
-        if Vote.objects.filter(age=age, member=member, bill_number=bill_number).exists():
+        if Vote.objects.filter(age=age, member=member, bill__bill_number=bill_number).exists():
             print(f"[SKIP] 이미 존재하는 투표: {member.name} - {bill.title}")
             continue
 
@@ -176,7 +176,7 @@ def import_votes(csv_path):
             bill=bill,
             vote_result=vote_result
         )
-        records.append(member)
+        records.append(vote)
 
     if records:
         with transaction.atomic():
