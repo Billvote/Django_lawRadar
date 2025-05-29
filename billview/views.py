@@ -5,6 +5,8 @@ from geovote.models import Vote
 from django.shortcuts import render
 
 
+
+
 def detail_bill(request, id):
     bill = Bill.objects.get(id=id)
     vote = Vote.objects.filter(bill=bill).select_related('member')
