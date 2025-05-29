@@ -3,6 +3,7 @@ from django.db.models import Count, Q
 from .models import Bill
 from geovote.models import Vote
 from django.shortcuts import render
+from django.core.paginator import Paginator
 
 
 
