@@ -7,7 +7,7 @@ from django.shortcuts import render
 def index_bill(request):
     bills = Bill.objects.all()
     context = {
-        'bills' = bills
+        'bills' : bills
     }
     return render(request, 'index.html')
 
