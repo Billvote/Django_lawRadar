@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="bg-white">
-  <div class="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-24 sm:px-6 sm:py-32 lg:max-w-7xl lg:grid-cols-2 lg:px-8">
-    <div>
-      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{bill.title}}</h2>
-      <!-- <p class="mt-4 text-gray-500">{{bill.number}}</p> -->
+  <div class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-8">{{bill.title}}</h2>
+    <div class="grid grid-cols-1 items-center gap-x-8 gap-y-16 sm:grid-cols-2">
 
+    <div>
       <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900">대수</dt>
-          <dd class="mt-2 text-sm text-gray-500">{{bill.age}}대</dd>
-        </div>
         <div class="border-t border-gray-200 pt-4">
           <dt class="font-medium text-gray-900">키워드</dt>
           <dd class="mt-2 text-sm text-gray-500">6.25&quot; x 3.55&quot; x 1.15&quot;</dd>
@@ -21,7 +17,7 @@
         </div>
         <div class="border-t border-gray-200 pt-4">
           <dt class="font-medium text-gray-900">히스토리</dt>
-          <dd class="mt-2 text-sm text-gray-500">Hand sanded and finished with natural oil</dd>
+          <dd class="mt-2 text-sm text-gray-500"></dd>
         </div>
         <div class="border-t border-gray-200 pt-4">
           <dt class="font-medium text-gray-900">표결 결과</dt>
@@ -40,6 +36,33 @@
                 </ul>
              </div>
 
+                 <!-- 정당별 통계 -->
+    <div class="mt-6">
+      <h3 class="font-semibold text-gray-800 mb-2">정당별 통계</h3>
+      <table class="min-w-full text-sm border border-gray-300 rounded">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium text-gray-700">정당</th>
+            <th class="px-4 py-2 text-left font-medium text-green-700">찬성</th>
+            <th class="px-4 py-2 text-left font-medium text-red-700">반대</th>
+            <th class="px-4 py-2 text-left font-medium text-yellow-700">기권</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in party_stats %}
+            <tr class="border-t">
+              <td class="px-4 py-2">{{ stat.member__party }}</td>
+              <td class="px-4 py-2 text-green-600">{{ stat.agree }}</td>
+              <td class="px-4 py-2 text-red-600">{{ stat.oppose }}</td>
+              <td class="px-4 py-2 text-yellow-600">{{ stat.abstain }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </dd>
+</div>
           </dd>
         </div>
         <div class="border-t border-gray-200 pt-4">

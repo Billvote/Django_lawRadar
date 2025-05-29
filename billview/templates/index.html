@@ -14,12 +14,10 @@
     <tr>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bill.age }}</td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        <a href=""></a>
+        <a href="{% url 'detail' bill.id %}" class="text-gray-900 hover:text-indigo-900">{{ bill.title }}</a>
     </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bill.bill_number }}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <a href="{% url 'detail' bill.id %}" class="text-indigo-600 hover:text-indigo-900">View</a>
-      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"></td>
     </tr>
     {% empty %}
     <tr>

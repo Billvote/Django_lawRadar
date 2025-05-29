@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 
 def detail_bill(request, id):
     bill = Bill.objects.get(id=id)
-    vote = Vote.objects.filter(bill=bill).select_related('member')
+    votes = Vote.objects.filter(bill=bill).select_related('member')
     party_stats = Vote.objects.filter(bill=bill).values('member__party').annotate(
         agree=Count('id', filter=Q(vote_result='찬성')),
         oppose=Count('id', filter=Q(vote_result='반대')),
@@ -18,7 +18,7 @@ def detail_bill(request, id):
     )
     context = {
         'bill': bill,
-        'vote': vote,
+        'votes': votes,
         'party_stats': party_stats
     }
     return render(request, 'detail.html', context)
