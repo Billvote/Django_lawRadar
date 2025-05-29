@@ -2,27 +2,30 @@
   <nav class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between">
-        <div class="flex items-center">
+        <!-- 왼쪽: Home + 메뉴 -->
+        <div class="flex items-center space-x-10">
           <div class="shrink-0">
-            <a href="{% url 'home' %}" class="text-white">Home</a>
+            <a href="{% url 'home' %}" class="text-white font-semibold">Home</a>
           </div>
           <div class="hidden md:block">
-            <div class="ml-10 flex items-baseline space-x-4">
-                <!-- 네비게이션 바 탭 목록 -->
-              <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white" aria-current="page">LawRadar</a>
+            <div class="flex items-baseline space-x-4">
+              <a href="{% url 'board' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white">LawRadar</a>
               <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
               <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
               <a href="{% url 'map' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/map/' %}active{% endif %}">Map</a>
-              <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white">Reports</a>
-              <!-- 검색 창 -->
-              <form action="#" method="get" class="flex items-center space-x-2">
-                <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
-            </form>
             </div>
           </div>
         </div>
+
+        <!-- 오른쪽: 검색창 -->
+        <form action="#" method="get" class="hidden md:flex items-center space-x-2">
+          <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+</div>
         <div class="hidden md:block">
           <div class="ml-4 flex items-center md:ml-6">
              

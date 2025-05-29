@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen flex bg-gray-100">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-md">
+    <div class="p-4 text-xl font-bold border-b">대시보드</div>
+    <nav class="p-4 space-y-2">
+      <a href="#" class="block text-gray-700 hover:text-indigo-600">20대</a>
+      <a href="#" class="block text-gray-700 hover:text-indigo-600">21대</a>
+      <a href="#" class="block text-gray-700 hover:text-indigo-600">22대</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 p-6">
+    <!-- Topbar -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">입법 현황</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">Total Users</h2>
+        <p class="text-2xl font-bold">1,234</p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">New Signups</h2>
+        <p class="text-2xl font-bold">56</p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">Active Sessions</h2>
+        <p class="text-2xl font-bold">89</p>
+      </div>
+    </div>
+
+    <!-- Table Example -->
+    <div class="bg-white rounded shadow overflow-auto">
+      <table class="min-w-full table-auto">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium text-gray-700">정당</th>
+            <th class="px-4 py-2 text-left font-medium text-green-700">찬성</th>
+            <th class="px-4 py-2 text-left font-medium text-red-700">반대</th>
+            <th class="px-4 py-2 text-left font-medium text-yellow-700">기권</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in party_stats %}
+            <tr class="border-t">
+              <td class="px-4 py-2">{{ stat.party_party }}</td>
+              <td class="px-4 py-2 text-green-600">{{ stat.agree }}</td>
+              <td class="px-4 py-2 text-red-600">{{ stat.oppose }}</td>
+              <td class="px-4 py-2 text-yellow-600">{{ stat.abstain }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -31,6 +31,7 @@ urlpatterns = [
     # billview
     path('billview/', bill_views.index_bill, name='index'),
     path('billview/<int:id>/', bill_views.detail_bill, name='detail'),
+    path('billview/board/', bill_views.board, name='board'),
 
     # geovote
     path('map/', geovote_views.map_view, name='map'),
