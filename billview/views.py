@@ -6,6 +6,8 @@ from django.shortcuts import render
 from django.core.paginator import Paginator
 
 
+
+
 def detail_bill(request, id):
     bill = Bill.objects.get(id=id)
     vote = Vote.objects.filter(bill=bill).select_related('member')
