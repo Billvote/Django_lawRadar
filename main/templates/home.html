@@ -13,13 +13,13 @@
     <img src="{% static 'images/Vote2.svg.png' %}" usemap="#symbolmap" style="width: 600px; height: auto;" class="img-fluid" alt="심볼">
     <map name="symbolmap">
       <!-- 이미지 하단 빨간 원 중심 클릭 시 이동 -->
-      <area shape="circle" coords="280,780,40" href="{% url 'billview' %}" alt="BillView">
+      <area shape="circle" coords="280,780,40" href="{% url 'index' %}" alt="BillView">
     </map>
   </div>
 
   <!-- 기존 버튼 링크들 -->
   <div class="d-flex justify-content-center gap-3">
-    <a href="{% url 'billview' %}" class="btn btn-primary btn-lg px-4 shadow-sm rounded-pill">BillView 이동</a>
+    <a href="{% url 'index' %}" class="btn btn-primary btn-lg px-4 shadow-sm rounded-pill">BillView 이동</a>
     <a href="{% url 'geovote' %}" class="btn btn-success btn-lg px-4 shadow-sm rounded-pill">GeoVote 이동</a>
   </div>
 </div>
