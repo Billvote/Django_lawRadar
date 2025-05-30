@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'billview',
     'geovote',
     'main',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
