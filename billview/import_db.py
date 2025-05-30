@@ -11,6 +11,7 @@ django.setup()
 
 from django.conf import settings
 from billview.models import Bill
+from geovote.models import Age
 from django.db import transaction
 
 def import_bills(csv_path):

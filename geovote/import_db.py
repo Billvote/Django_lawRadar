@@ -11,7 +11,7 @@ django.setup()
 
 from django.db import transaction
 from django.conf import settings
-from geovote.models import District, Member, Party, Vote
+from geovote.models import District, Member, Party, Vote, Age
 from billview.models import Bill
 
 # 의안
@@ -140,8 +140,10 @@ def import_parties(csv_path):
     records = []
     for _, row in df.iterrows():
         name = row['party'].strip()
+        color = row.get('color', '#000000').strip()
+
         if name and name not in existing_parties:
-            records.append(Party(party=name))
+            records.append(Party(party=name, color=color))
         else:
             print(f"[SKIP] 이미 존재하는 정당명: {name}")
 
@@ -194,9 +196,30 @@ def import_votes(csv_path):
         print(f"[DONE] {len(records)}명의 투표 내역 저장 완료")
     else:
         print("[INFO] 저장할 신규 데이터가 없습니다")
+# -----------
+# AGE 테이블
+def import_ages(csv_path):
+    df = pd.read_csv(csv_path)
+    
+    # 중복 방지용 기존 age 번호 불러오기
+    existing_numbers = set(Age.objects.values_list('number', flat=True))
+
+    new_ages = []
+    for _, row in df.iterrows():
+        num = row['number']
+        if num not in existing_numbers:
+            new_ages.append(Age(number=num))
+        else:
+            print(f"[SKIP] 이미 존재하는 대수: {num}")
+
+    if new_ages:
+        Age.objects.bulk_create(new_ages)
+        print(f"[DONE] {len(new_ages)}개 대수 저장 완료")
+    else:
+        print("[INFO] 새로 추가된 대수가 없습니다.")
 
 # ----------< 실행 >-------------------------
-# 참고) party -> district -> member -> vote 순으로 실행해야 함
+# 참고) age -> party -> district -> member -> vote 순으로 실행해야 함
 
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
-import_votes(csv_path)
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'age.csv'
+import_ages(csv_path)

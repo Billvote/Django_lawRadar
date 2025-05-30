@@ -1,5 +1,4 @@
 from django.db import models
-from billview.models import Bill
 
 # 대수
 class Age(models.Model):
@@ -15,7 +14,7 @@ class Party(models.Model):
     def __str__(self):
         return self.party
 
-# # 지역구
+# 지역구
 class Region(models.Model):
     # age = models.IntegerField()
     sido = models.CharField(max_length=20)  # 소문자로 변경
@@ -42,23 +41,6 @@ class District(models.Model):
     def __str__(self):
         return self.SIDO_SGG
 
-# 위원회
-# class Committee(models.Model):
-#     age = models.IntegerField()
-#     committees = models.CharField(max_length=100)  # 위원회 이름
-#     def __str__(self):
-#         return self.name
-
-# # 의안
-# # class Bill(models.Model):
-# #     age = models.IntegerField()
-# #     title = models.CharField(max_length=200)  # 의안명
-# #     bill_id = models.CharField(max_length=100, unique=True) # 의안 id
-# #     bill_number = models.CharField(max_length=50)  # 의안 번호
-# #     content = models.TextField(blank=True, null=True)  # 주요 내용
-# #     def __str__(self):
-# #         return f'{self.title} ({self.bill_number})'
-
 # 의원 
 class Member(models.Model):
     age = models.CharField(max_length=50)
@@ -77,7 +59,6 @@ class Member(models.Model):
         db_table = 'geovote_member'
 
 # 의원
-
 class Member(models.Model):
     age = models.ForeignKey(Age, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)  # 의원명
@@ -85,22 +66,16 @@ class Member(models.Model):
     district = models.ForeignKey(District, on_delete=models.CASCADE, null=True, blank=True)  # null 허용
     member_id = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)  # 성별
-    # committees = models.ManyToManyField('Committee')  # 소속 위원회
     def __str__(self):
         district_name = self.district.name if self.district else "비례대표"
         return f'{self.name} ({self.party.name}, {self.district.name})'
-
         
 # 표결
 class Vote(models.Model):
     age = models.ForeignKey(Age, on_delete=models.CASCADE) # 대수
     member = models.ForeignKey(Member, on_delete=models.CASCADE)  # 의원
-    bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안 id
+    bill = models.ForeignKey('billview.Bill', on_delete=models.CASCADE)  # 의안 id
     result = models.CharField(max_length=10)  # 찬성/반대/기권 등
     date = models.DateField() # 의결 날짜
     def __str__(self):
         return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'
-
-
-
-

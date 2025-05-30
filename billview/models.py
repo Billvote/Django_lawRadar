@@ -1,12 +1,9 @@
 from django.db import models
-
-# Create your models here.
+from geovote.models import Age
 
 # bill
-from django.db import models
-
 class Bill(models.Model):
-    age = models.IntegerField()
+    age = models.ForeignKey(Age, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)                 
     bill_id = models.CharField(max_length=100, unique=True)  
     bill_number = models.CharField(max_length=100, unique=True)
