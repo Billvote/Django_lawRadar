@@ -8,7 +8,17 @@ class Party(models.Model):
     def __str__(self):
         return self.party
 
-# 지역구
+# # 지역구
+class Region(models.Model):
+    # age = models.IntegerField()
+    sido = models.CharField(max_length=20)  # 소문자로 변경
+    sgg = models.CharField(max_length=50)   # 소문자로 변경
+    id = models.CharField(max_length=10, primary_key=True)
+
+    class Meta:
+        managed = False
+        db_table = 'geovote_district'
+
 class District(models.Model):
     # age = models.IntegerField()
     SGG_Code = models.CharField(max_length=100, unique=True) # 선관위 선거구 코드
@@ -16,6 +26,12 @@ class District(models.Model):
     SIDO = models.CharField(max_length=100) # 광역시도 이름
     SGG = models.CharField(max_length=100) # 선거구
     boundary = models.JSONField()  # 지역구의 경계(공간 데이터)
+    id = models.CharField(max_length=10, primary_key=True)
+
+    class Meta:
+        managed = False
+        db_table = 'geovote_district'
+
     def __str__(self):
         return self.SIDO_SGG
 
@@ -26,27 +42,44 @@ class District(models.Model):
 #     def __str__(self):
 #         return self.name
 
-# 의안
-# class Bill(models.Model):
-#     age = models.IntegerField()
-#     title = models.CharField(max_length=200)  # 의안명
-#     bill_id = models.CharField(max_length=100, unique=True) # 의안 id
-#     bill_number = models.CharField(max_length=50)  # 의안 번호
-#     content = models.TextField(blank=True, null=True)  # 주요 내용
-#     def __str__(self):
-#         return f'{self.title} ({self.bill_number})'
+# # 의안
+# # class Bill(models.Model):
+# #     age = models.IntegerField()
+# #     title = models.CharField(max_length=200)  # 의안명
+# #     bill_id = models.CharField(max_length=100, unique=True) # 의안 id
+# #     bill_number = models.CharField(max_length=50)  # 의안 번호
+# #     content = models.TextField(blank=True, null=True)  # 주요 내용
+# #     def __str__(self):
+# #         return f'{self.title} ({self.bill_number})'
+
+# 의원 
+class Member(models.Model):
+    age = models.CharField(max_length=50)
+    region = models.ForeignKey(
+        Region,
+        to_field='id',
+        db_column='district_id',
+        on_delete=models.DO_NOTHING
+    )
+    name = models.CharField(max_length=50)
+    party_id = models.CharField(max_length=50)
+    gender = models.CharField(max_length=10)  # 성별
+
+    class Meta:
+        managed = False
+        db_table = 'geovote_member'
 
 # 의원
-class Member(models.Model):
-    age = models.IntegerField()
-    name = models.CharField(max_length=100)  # 의원명
-    party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
-    district = models.ForeignKey(District, on_delete=models.CASCADE)  # 지역구
-    member_id = models.CharField(max_length=50)
-    gender = models.CharField(max_length=10)  # 성별
-    # committees = models.ManyToManyField('Committee')  # 소속 위원회
-    def __str__(self):
-        return f'{self.name} ({self.party.name}, {self.district.name})'
+# class Member(models.Model):
+#     age = models.IntegerField()
+#     name = models.CharField(max_length=100)  # 의원명
+#     party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
+#     district = models.ForeignKey(District, on_delete=models.CASCADE)  # 지역구
+#     member_id = models.CharField(max_length=50)
+#     gender = models.CharField(max_length=10)  # 성별
+#     # committees = models.ManyToManyField('Committee')  # 소속 위원회
+#     def __str__(self):
+#         return f'{self.name} ({self.party.name}, {self.district.name})'
         
 # 표결
 class Vote(models.Model):
@@ -56,3 +89,7 @@ class Vote(models.Model):
     vote_result = models.CharField(max_length=10)  # 찬성/반대/기권 등
     def __str__(self):
         return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'
+
+
+
+
