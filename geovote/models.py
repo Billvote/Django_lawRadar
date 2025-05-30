@@ -1,10 +1,17 @@
 from django.db import models
 from billview.models import Bill
 
+# 대수
+class Age(models.Model):
+    number = models.IntegerField(unique=True)
+    def __str__(self):
+        return f"{self.number}대"
+
 # 정당
 class Party(models.Model):
     # age = models.IntegerField()
     party = models.CharField(max_length=100, unique=True)  # 정당 이름
+    color = models.CharField(max_length=7, default="#000000") # 상징 컬러 코드
     def __str__(self):
         return self.party
 
@@ -38,7 +45,7 @@ class District(models.Model):
 
 # 의원
 class Member(models.Model):
-    age = models.IntegerField()
+    age = models.ForeignKey(Age, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)  # 의원명
     party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
     district = models.ForeignKey(District, on_delete=models.CASCADE, null=True, blank=True)  # null 허용
@@ -46,11 +53,12 @@ class Member(models.Model):
     gender = models.CharField(max_length=10)  # 성별
     # committees = models.ManyToManyField('Committee')  # 소속 위원회
     def __str__(self):
+        district_name = self.district.name if self.district else "비례대표"
         return f'{self.name} ({self.party.name}, {self.district.name})'
         
 # 표결
 class Vote(models.Model):
-    age = models.IntegerField() # 대수
+    age = models.ForeignKey(Age, on_delete=models.CASCADE) # 대수
     member = models.ForeignKey(Member, on_delete=models.CASCADE)  # 의원
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안 id
     result = models.CharField(max_length=10)  # 찬성/반대/기권 등
