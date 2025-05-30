@@ -22,6 +22,7 @@ from geovote import views as geovote_views
 from billview import views as bill_views
 from main import views as main_views
 from geovote import views as geovote_views
+from dashboard import views as dashboard_v
 
 
 urlpatterns = [
@@ -31,11 +32,13 @@ urlpatterns = [
     # billview
     path('billview/', bill_views.index_bill, name='index'),
     path('billview/<int:id>/', bill_views.detail_bill, name='detail'),
-    path('billview/board/', bill_views.board, name='board'),
 
     # geovote
     path('map/', geovote_views.map_view, name='map'),
     path('geovote/', geovote_views.geovote_main, name='geovote'),
     path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
     path('map22/', geovote_views.map22, name='map22'), # 테스트용
+
+    # dashboard
+    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
 ]

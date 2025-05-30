@@ -41,7 +41,7 @@ class Member(models.Model):
     age = models.IntegerField()
     name = models.CharField(max_length=100)  # 의원명
     party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
-    district = models.ForeignKey(District, on_delete=models.CASCADE)  # 지역구
+    district = models.ForeignKey(District, on_delete=models.CASCADE, null=True, blank=True)  # null 허용
     member_id = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)  # 성별
     # committees = models.ManyToManyField('Committee')  # 소속 위원회
@@ -53,6 +53,7 @@ class Vote(models.Model):
     age = models.IntegerField() # 대수
     member = models.ForeignKey(Member, on_delete=models.CASCADE)  # 의원
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)  # 의안 id
-    vote_result = models.CharField(max_length=10)  # 찬성/반대/기권 등
+    result = models.CharField(max_length=10)  # 찬성/반대/기권 등
+    date = models.DateField() # 의결 날짜
     def __str__(self):
         return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'

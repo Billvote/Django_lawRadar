@@ -88,7 +88,7 @@ def import_members(csv_path):
 
         # 중복 검사
         if Member.objects.filter(age=age, member_id=member_id).exists():
-            print(f"[SKIP] 이미 존재하는 의원: age={age}, member_id={member_id}")
+            # print(f"[SKIP] 이미 존재하는 의원: age={age}, member_id={member_id}")
             continue
 
         # party FK 조회
@@ -98,12 +98,20 @@ def import_members(csv_path):
             print(f"[SKIP] 정당 없음: {row['party']} ({row['name']})")
             continue
 
-        # district FK 조회
-        try:
-            district = District.objects.get(SIDO_SGG=row['SIDO_SGG'])
-        except District.DoesNotExist:
-            print(f"[SKIP] 지역구 없음: {row['SIDO_SGG']} ({row['name']})")
-            continue
+        # district FK 조회 (없으면 None)
+        district = None
+        sido_sgg = row.get('SIDO_SGG')
+
+        if sido_sgg and str(sido_sgg).strip() != '' and sido_sgg != '<비례대표>':
+            try:
+                district = District.objects.get(SIDO_SGG=sido_sgg)
+            except District.DoesNotExist:
+                print(f"[WARN] 지역구 없음: {sido_sgg} ({row['name']}) - 비례대표로 처리")
+                # district = None으로 둔다
+        else:
+            # sido_sgg가 빈 값이거나 <비례대표>면 district=None으로 처리
+            district = None
+        # 비례대표 등 지역구 없는 의원은 district = None으로 처리
 
         member = Member(
             age=age,
@@ -149,7 +157,8 @@ def import_votes(csv_path):
         age = row['age']
         member_id = row['member_id']
         bill_number = row['bill_number']
-        vote_result = row['vote_result']
+        result = row['result']
+        date = row['date']
 
         # member FK 조회
         try:
@@ -174,7 +183,8 @@ def import_votes(csv_path):
             age=age,
             member=member,
             bill=bill,
-            vote_result=vote_result
+            result=result,
+            date=date
         )
         records.append(vote)
 

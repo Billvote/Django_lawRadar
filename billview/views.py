@@ -1,12 +1,8 @@
-from django.shortcuts import render
-from django.db.models import Count, Q, F
-from .models import Bill
-from geovote.models import Vote
-from django.shortcuts import render
 from django.core.paginator import Paginator
-
-
-
+from django.db.models import Count, Q, F
+from django.shortcuts import render
+from geovote.models import Vote
+from .models import Bill
 
 def detail_bill(request, id):
     bill = Bill.objects.get(id=id)
@@ -57,6 +53,3 @@ def index_bill(request):
         'page_range': page_range
     }
     return render(request, 'index.html', context)
-
-def board(request):
-    return render(request, 'board.html')

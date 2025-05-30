@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen flex bg-gray-100">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-md">
+    <div class="p-4 text-xl font-bold border-b">대시보드</div>
+    <nav class="p-4 space-y-2">
+      <a href="{% url 'dashboard' 22 %}" class="block text-gray-700 hover:text-indigo-600">22대</a>
+      <a href="{% url 'dashboard' 21 %}" class="block text-gray-700 hover:text-indigo-600">21대</a>
+      <a href="{% url 'dashboard' 20 %}" class="block text-gray-700 hover:text-indigo-600">20대</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 p-6">
+    <!-- Topbar -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">입법 현황</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">총 의결안</h2>
+        <p class="text-2xl font-bold">1,234</p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">정당 개수</h2>
+        <p class="text-2xl font-bold"></p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-gray-600">여성 의원 비율</h2>
+        <p class="text-2xl font-bold">89</p>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+  <!-- 정당별 법안 발의 수 -->
+  <div class="bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">정당별 찬성/반대 비율</h2>
+    <div id="partyChart" class="h-64 w-full"></div>
+  </div>
+
+  <!-- 찬성/반대 비율 -->
+  <div class="bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">지역별/성별 표결</h2>
+    <div id="voteChart" class="h-64 w-full"></div>
+  </div>
+</div>
+
+
+    <!-- Table Example -->
+    <div class="bg-white rounded shadow overflow-auto">
+      <table class="min-w-full table-auto">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium text-gray-700">정당</th>
+            <th class="px-4 py-2 text-left font-medium text-green-700">찬성</th>
+            <th class="px-4 py-2 text-left font-medium text-red-700">반대</th>
+            <th class="px-4 py-2 text-left font-medium text-yellow-700">기권</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in party_stats %}
+            <tr class="border-t">
+              <td class="px-4 py-2">{{ stat.party_party }}</td>
+              <td class="px-4 py-2 text-green-600">{{ stat.agree }}</td>
+              <td class="px-4 py-2 text-red-600">{{ stat.oppose }}</td>
+              <td class="px-4 py-2 text-yellow-600">{{ stat.abstain }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+  // 정당별 법안 수 (막대그래프)
+  var partyChartOptions = {
+    chart: { type: 'bar', height: 250 },
+    series: [{
+      name: '발의 법안 수',
+      data: [30, 45, 20, 15]
+    }],
+    xaxis: {
+      categories: ['민주당', '국민의힘', '정의당', '기타']
+    },
+    colors: ['#3B82F6']
+  };
+  new ApexCharts(document.querySelector("#partyChart"), partyChartOptions).render();
+
+  // 찬성/반대/기권 비율 (파이차트)
+  var voteChartOptions = {
+    chart: { type: 'pie', height: 250 },
+    series: [60, 25, 15],
+    labels: ['찬성', '반대', '기권'],
+    colors: ['#10B981', '#EF4444', '#F59E0B']
+  };
+  new ApexCharts(document.querySelector("#voteChart"), voteChartOptions).render();
+</script>
+
+{% endblock %}
