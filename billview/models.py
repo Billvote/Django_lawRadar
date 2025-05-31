@@ -8,7 +8,7 @@ class Bill(models.Model):
     bill_id = models.CharField(max_length=100, unique=True)  
     bill_number = models.CharField(max_length=100, unique=True)
     summary = models.TextField(blank=True, null=True)
-    cluster = models.IntegerField(max_length=10, unique=True)
+    cluster = models.IntegerField(unique=True)
     cluster_keword = models.JSONField(blank=True, null=True)
     
     def __str__(self):
