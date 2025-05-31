@@ -14,6 +14,30 @@ from django.conf import settings
 from geovote.models import District, Member, Party, Age, Vote
 from billview.models import Bill
 
+
+def import_ages(csv_path):
+    """
+    csv_path에 있는 age 데이터(age number)들을 DB에 import.
+    중복된 number는 건너뜀.
+    """
+    df = pd.read_csv(csv_path)
+    existing_numbers = set(Age.objects.values_list('number', flat=True))
+
+    new_ages = []
+    for _, row in df.iterrows():
+        number = row['number']
+        if number not in existing_numbers:
+            new_ages.append(Age(number=number))
+        else:
+            print(f"[SKIP] 이미 존재하는 대수: {number}")
+
+    if new_ages:
+        with transaction.atomic():
+            Age.objects.bulk_create(new_ages)
+        print(f"[DONE] {len(new_ages)}개의 대수 저장 완료.")
+    else:
+        print("[INFO] 저장할 신규 대수가 없습니다.")
+
 # 의안
 def import_bills(csv_path):
     df = pd.read_csv(csv_path)
