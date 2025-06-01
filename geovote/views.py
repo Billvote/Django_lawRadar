@@ -57,8 +57,8 @@ def region_tree_data(request):
     sido_list = District.objects.values_list('SIDO', flat=True).distinct()
 
     # 모든 Region에 대한 Member 미리 가져오기
-    members_by_region = Member.objects.select_related('district', 'party')
-    member_dict = {m.region_id: m for m in members_by_region}
+    members = Member.objects.select_related('district', 'party')
+    # member_dict = {m.district_id: m for m in members_by_region}
 
     # district_id 기준으로 그룹핑
     member_dict = {}
