@@ -42,7 +42,7 @@ def map_view(request):
 #-------------------------------tree map -------------------------------
 
 from django.http import JsonResponse
-from .models import Region, Member
+from .models import District, Member
 
 from django.http import JsonResponse
 import logging
@@ -54,25 +54,32 @@ from django.db.models import Prefetch
 
 def region_tree_data(request):
     result = {"name": "대한민국", "children": []}
-    sido_list = Region.objects.values_list('sido', flat=True).distinct()
+    sido_list = District.objects.values_list('SIDO', flat=True).distinct()
 
     # 모든 Region에 대한 Member 미리 가져오기
-    members_by_region = Member.objects.select_related('region')
+    members_by_region = Member.objects.select_related('district', 'party')
     member_dict = {m.region_id: m for m in members_by_region}
 
+    # district_id 기준으로 그룹핑
+    member_dict = {}
+    for m in members:
+        if m.district:
+            member_dict[m.district.id] = m
+
     for sido_name in sido_list:
-        sgg_regions = Region.objects.filter(sido=sido_name)
+        # 해당 SIDO에 속한 시군구 District만 필터링
+        sgg_districts = District.objects.filter(SIDO=sido_name)
         sido_children = []
 
-        for region in sgg_regions:
-            member = member_dict.get(region.id)
+        for district in sgg_districts:
+            member = member_dict.get(district.id)
             if member:
-                member_info = f"{member.name} ({member.party_id})"
+                member_info = f"{member.name} ({member.party.party})"
             else:
                 member_info = "의원 없음"
 
             sgg_node = {
-                "name": region.sgg,
+                "name": district.SGG,
                 "children": [
                     {
                         "name": member_info,
@@ -88,7 +95,6 @@ def region_tree_data(request):
         })
 
     return JsonResponse(result)
-
 
 def treemap_view(request):
     return render(request, 'treemap.html')
