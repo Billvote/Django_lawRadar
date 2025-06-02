@@ -13,15 +13,15 @@
               <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
               <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
               <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
-              <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white">Reports</a>
-              <!-- 검색 창 -->
-              <form action="#" method="get" class="flex items-center space-x-2">
-                <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
-            </form>
             </div>
           </div>
         </div>
+        <!-- 검색 창 -->
+        <form action="#" method="get" class="flex items-center space-x-2 ml-auto">
+          <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
+        </form>
+        
         <div class="hidden md:block">
           <div class="ml-4 flex items-center md:ml-6">
              

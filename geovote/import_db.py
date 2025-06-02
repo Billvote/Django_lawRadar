@@ -158,9 +158,9 @@ def import_members(csv_path):
     if records:
         with transaction.atomic():
             Member.objects.bulk_create(records, batch_size=1000)
-        print(f"[DONE] {len(records)}명의 의원 저장 완료.")
+        print(f"[DONE] {len(records)}명의 의원 저장 완료")
     else:
-        print("[INFO] 저장할 신규 의원 데이터가 없습니다.")
+        print("[INFO] 저장할 신규 의원 데이터가 없습니다")
 
 
 # 3) party 테이블 --------------------------------------------------------------------
@@ -189,11 +189,11 @@ def import_votes(csv_path):
 
     # FK 테이블 미리 캐싱
     member_dict = {
-        (m.age.number, m.member_id): m
+        (m.age.number, m.member_id.strip()): m
         for m in Member.objects.select_related('age')
     }
     bill_dict = {
-        b.bill_number: b
+        b.bill_number.strip(): b
         for b in Bill.objects.all()
     }
 
@@ -203,6 +203,7 @@ def import_votes(csv_path):
     )
 
     records = []
+    missing_bills = set()  # 한 의안 번호당 한 번만 출력하기 위한 집합
 
     for _, row in df.iterrows():
         try:
@@ -220,8 +221,14 @@ def import_votes(csv_path):
             member = member_dict.get((age_num, member_id))
             bill = bill_dict.get(bill_number)
 
-            if not member or not bill:
-                print(f"[SKIP] FK 없음 - member: {member}, bill: {bill_number}")
+            if not member:
+                print(f"[SKIP] member FK 없음: {age_num}, {member_id}")
+                continue
+
+            if not bill:
+                if bill_number not in missing_bills:
+                    print(f"[SKIP] bill FK 없음: {bill_number}")
+                    missing_bills.add(bill_number)
                 continue
 
             records.append(Vote(
@@ -246,7 +253,7 @@ def import_votes(csv_path):
 
 
 # ----------< 실행 >-------------------------
-# 참고) age -> party -> district -> member -> vote 순으로 실행해야 함
+# 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
 import_votes(csv_path)

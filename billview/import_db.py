@@ -62,8 +62,6 @@ def import_bills(csv_path):
             print(f"[ERROR] 행 처리 실패: {e} (row={row.to_dict()})")
             continue
     
-    print(f"cluster_keyword before save: {cluster_keyword!r}")
-
     if records:
         Bill.objects.bulk_create(records, batch_size=1000)
         print(f"[DONE] {len(records)}개의 법안 저장 완료")
