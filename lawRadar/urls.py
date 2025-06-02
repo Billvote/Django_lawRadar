@@ -44,5 +44,8 @@ urlpatterns = [
     path('api/region_tree_data/', geovote_views.region_tree_data, name='region_tree_data'),
     
     # dashboard
-    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard')
+    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
+
+    # history
+    path('history/<int:id>/', history.detail_bill, name='detail'),
 ]

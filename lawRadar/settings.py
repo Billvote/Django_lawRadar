@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'geovote',
     'main',
     'dashboard',
+    'history',
 ]
 
 MIDDLEWARE = [
