@@ -23,6 +23,7 @@ from billview import views as bill_views
 from main import views as main_views
 from geovote import views as geovote_views
 from dashboard import views as dashboard_v
+from history import views as history_v
 
 
 urlpatterns = [
@@ -47,5 +48,5 @@ urlpatterns = [
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
 
     # history
-    path('history/<int:id>/', history.detail_bill, name='detail'),
+    path('history/<int:id>/', history_v.detail_history, name='history'),
 ]

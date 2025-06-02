@@ -18,9 +18,9 @@ def detail_bill(request, id):
     ).values(
         'party_party'
     ).annotate(
-        agree=Count('id', filter=Q(vote_result='찬성')),
-        oppose=Count('id', filter=Q(vote_result='반대')),
-        abstain=Count('id', filter=Q(vote_result='기권')),
+        agree=Count('id', filter=Q(result='찬성')),
+        oppose=Count('id', filter=Q(result='반대')),
+        abstain=Count('id', filter=Q(result='기권')),
     )
 
     context = {
