@@ -1,15 +1,12 @@
+# billview/models.py
 from django.db import models
-from geovote.models import Age
 
-# bill
 class Bill(models.Model):
-    age = models.ForeignKey(Age, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)                 
-    bill_id = models.CharField(max_length=100, unique=True)  
-    bill_number = models.CharField(max_length=100, unique=True)
-    summary = models.TextField(blank=True, null=True)
-    cluster = models.IntegerField()
-    cluster_keyword = models.TextField(blank=True, null=True, default='')
+    title = models.CharField(max_length=200)  # 의안명
+    label = models.CharField(max_length=100)  # 관련 법안 그룹 라벨
+    content = models.TextField()  # 의안 내용
+    created_date = models.DateTimeField(auto_now_add=True)
+    # 기타 필요한 필드들
     
     def __str__(self):
         return self.title
