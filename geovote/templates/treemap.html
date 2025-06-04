@@ -10,7 +10,7 @@
       <li>
         <button
           class="age-btn w-full text-left px-3 py-2 rounded hover:bg-indigo-500 hover:text-white transition"
-          data-age="{{ age.id }}">  {# id로 변경 #}
+          data-age="{{ age.id }}">
           {{ age.number }} 대
         </button>
       </li>
@@ -39,30 +39,48 @@
   function getFontSize(width, height, text) {
     const padding = 10;
     const estimated = Math.min(
-      (width - padding) / (text.length * 0.5),
+      (width - padding) / (text.length * 0.6),
       (height - padding) / 1.2
     );
-    return isNaN(estimated) || estimated <= 0 ? 12 : Math.max(14, Math.min(estimated, 24));
+    return isNaN(estimated) || estimated <= 0 ? 12 : Math.max(10, Math.min(estimated, 20));
   }
 
   function render(node, width, height) {
-    backButton.classed("hidden", !node.parent);
-    svg.selectAll("g").remove();
-    const group = svg.append("g");
+    d3.select("#treemap svg").remove();
+    svg = d3.select("#treemap").append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
+    backButton.classed("hidden", !node.parent);
+
+    const group = svg.append("g");
     const xScale = d3.scaleLinear().domain([node.x0, node.x1]).range([0, width]);
     const yScale = d3.scaleLinear().domain([node.y0, node.y1]).range([0, height]);
 
+    // 계층별로 보여줄 children 분기
+    let childrenToShow = node.children || [];
+    if (node.depth === 0) {
+      // root: SIDO만 보여줌
+      childrenToShow = (node.children || []).filter(d => d.children && d.children.length > 0);
+    } else if (node.depth === 1) {
+      // SIDO: SIGUNGU만 보여줌 (의원정보X)
+      childrenToShow = (node.children || []).filter(d => d.children && d.children.length > 0);
+    } else if (node.depth === 2) {
+      // SIGUNGU: 의원정보(leaf)만 보여줌
+      childrenToShow = (node.children || []).filter(d => !d.children || d.children.length === 0);
+    }
+
     const nodes = group.selectAll("g")
-      .data(node.children || [])
+      .data(childrenToShow)
       .join("g")
       .attr("class", "node")
       .attr("transform", d => `translate(${xScale(d.x0)},${yScale(d.y0)})`)
-      .style("cursor", d => d.children ? "pointer" : "default")
+      .style("cursor", d => d.children && d.children.length > 0 ? "pointer" : "default")
       .on("click", (event, d) => {
-        if (!d.children) return;
-        currentNode = d;
-        render(d, width, height);
+        if (d.children && d.children.length > 0) {
+          currentNode = d;
+          render(d, width, height);
+        }
       });
 
     nodes.append("rect")
@@ -92,35 +110,51 @@
   function resize() {
     const width = container.clientWidth;
     const height = container.clientHeight;
-    d3.select("svg").remove();
 
+    d3.select("#treemap svg").remove();
     svg = d3.select("#treemap").append("svg")
       .attr("width", width)
       .attr("height", height);
 
-    treemapLayout = d3.treemap()
-      .size([width, height])
-      .paddingInner(2);
+    treemapLayout.size([width, height]);
 
     if (!hierarchyRoot) return;
 
-    treemapLayout(hierarchyRoot);
-    currentNode = hierarchyRoot;
     render(currentNode, width, height);
   }
 
   async function loadData(age) {
     const response = await fetch(`/api/region-tree/?age=${age}`);
-    const data = await response.json();
-    return data;
+    if (!response.ok) {
+      console.error("데이터 로드 실패");
+      return null;
+    }
+    return await response.json();
   }
 
   async function init(age) {
     const data = await loadData(age);
+    if (!data) return;
+
+    // value를 모두 1로 고정해 모든 계층에서 격자 크기 동일하게
     hierarchyRoot = d3.hierarchy(data)
-      .sum(d => d.value || 0)
+      .sum(d => 1)
       .sort((a, b) => b.value - a.value);
-    resize();
+
+    treemapLayout = d3.treemap()
+      .size([container.clientWidth, container.clientHeight])
+      .paddingInner(2);
+
+    treemapLayout(hierarchyRoot);
+
+    currentNode = hierarchyRoot;
+
+    d3.select("#treemap svg").remove();
+    svg = d3.select("#treemap").append("svg")
+      .attr("width", container.clientWidth)
+      .attr("height", container.clientHeight);
+
+    render(currentNode, container.clientWidth, container.clientHeight);
   }
 
   document.querySelectorAll(".age-btn").forEach(button => {

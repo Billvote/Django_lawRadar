@@ -77,12 +77,6 @@ def import_districts(csv_path):
         if row['SGG_Code'] in existing_sggs:
             print(f"[SKIP] 이미 존재하는 구역: {row['SGG_Code']}")
             continue
-
-        try:
-            boundary = json.loads(row['boundary'])
-        except json.JSONDecodeError:
-            print(f"[SKIP] 잘못된 JSON: {row['SGG_Code']}")
-            continue
         
         records.append(District(
             # id=row['id'],
@@ -90,7 +84,7 @@ def import_districts(csv_path):
             SIDO_SGG=row['SIDO_SGG'],
             SIDO=row['SIDO'],
             SGG=row['SGG'],
-            boundary=boundary
+            SIGUNGU = row['SIGUNGU'],
         ))
 
     District.objects.bulk_create(records)
@@ -255,5 +249,5 @@ def import_votes(csv_path):
 # ----------< 실행 >-------------------------
 # 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
-import_votes(csv_path)
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'member.csv'
+import_members(csv_path)
