@@ -18,21 +18,8 @@
       <h1 class="text-2xl font-bold">입법 현황</h1>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="text-gray-600">총 가결안</h2>
-        <p class="text-2xl font-bold">{{ total_bills }}</p>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="text-gray-600">정당 개수</h2>
-        <p class="text-2xl font-bold">{{ total_parties }}</p>
-      </div>
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="text-gray-600">여성 의원 비율</h2>
-        <p class="text-2xl font-bold">{{ gender_ratio.female_percent }}%</p>
-      </div>
-    </div>
+<!-- Stats Cards -->
+{% include 'Stats_cards.html' %}
 
 <!-- Chart Section -->
 <div class="grid grid-cols-1 gap-6 mb-6">
@@ -45,35 +32,64 @@
 <!-- 클러스터 선택 드롭다운 -->
 <div class="mb-4">
   <div class="bg-white p-4 rounded shadow">
-    <label for="clusterSelect" class="block font-semibold mb-2">의안 카테고리 선택</label>
-    <select id="clusterSelect" class="border rounded px-3 py-2">
-      {% for cluster_num, keyword in cluster_keywords.items %}
-        <option value="{{ cluster_num }}">{{ keyword }}</option>
-      {% endfor %}
-    </select>
+    {% include 'cluster_result.html' %}
+    <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
 </div>
 
-<!-- 클러스터별 투표 결과 차트 -->
+<!-- 성별 차트 -->
+<div class="mb-4">
   <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">클러스터별 정당 투표 결과</h2>
-    <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
-    </div>
+    <h2 class="text-xl font-semibold mb-6">성별에 따른 표결</h2>
+    {{ ranking_data|json_script:"gender-chart-data" }}
+    <!-- 차트를 그릴 div -->
+    <div id="genderVoteChart" style="height: 400px; width: 100%;"></div>
+
+    {% for gender, ranking in ranking_data.items %}
+      <div>
+        <h3 class="text-lg font-semibold mb-2">{{ gender }}</h3>
+        <ul class="space-y-3">
+          {% for item in ranking|slice:":5" %}
+            <li>
+              <div class="flex justify-between text-sm mb-1">
+                <span>클러스터 {{ item.cluster }}</span>
+                <span>{{ item.찬성비율 }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-blue-500 h-3 rounded-full" style="width: {{ item.찬성비율 }}%"></div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
   </div>
 </div>
+
 {% endblock %}
 
 {% block script %}
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+{% load static %}
+
+{{ {
+    "series": series,
+    "categories": categories,
+    "partyColors": party_colors,
+    "partyNames": party_names,
+    "clusterVoteData": cluster_vote_data,
+    "clusterNums": cluster_nums
+} | json_script:"chart-config" }}
+
 <script>
   const series = {{ series|safe }};
   const colors = {{ party_colors|safe }};
   const categories = {{ categories|safe }};
-  const clusterKeywords = {{ cluster_keywords|safe }};
   const partyNames = {{ party_names|safe }};
   const partyColors = {{ party_colors|safe }};
   const resultTypes = ['찬성', '반대', '기권', '불참'];
-  clusterVoteData = JSON.parse('{{ cluster_vote_data|escapejs }}');
+  const clusterKeywords = {{ cluster_keywords|safe }};
+  const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
+
 
   var options = {
     chart: {
@@ -101,7 +117,7 @@
     },
     series: series,
     xaxis: {
-      categories: ['찬성', '반대', '기권', '불참'],  // x축: 표결 결과
+      categories: resultTypes,  // x축: 표결 결과
       title: {
         text: '비율 (%)'
       },
@@ -128,25 +144,36 @@
   new ApexCharts(document.querySelector("#voteChart"), options).render();
 
   // 클러스터별 표결 결과 차트
-  // -----------------------------------------
-
-  // 서버에서 넘겨준 클러스터별 표결 데이터 (딕셔너리)
 document.addEventListener('DOMContentLoaded', () => {
-    // console.log("cluster_vote_data:", clusterVoteData);
-    // console.log("partyNames:", partyNames);
-    // console.log("partyColors:", partyColors);
-    // console.log("resultTypes:", resultTypes);
 
+    const clusterVoteData = JSON.parse('{{ cluster_vote_data|escapejs }}');
+    console.log("클러스터별 정당 투표 데이터:", clusterVoteData);
+    
     const clusterSelect = document.getElementById('clusterSelect');
     if (!clusterSelect) {
       console.error("clusterSelect element not found!");
+      return;
     }
+
+    // 라벨-클러스터 번호 매핑
+    const labelToClusters = {};
+    clusterNums.forEach(({ cluster_num, label }) => {
+      if (!labelToClusters[label]) {
+        labelToClusters[label] = [];
+      }
+      labelToClusters[label].push(cluster_num);
+    });
+    console.log("자동 생성된 labelToClusters:", labelToClusters);
+
 
     let clusterChart = null;
 
   function drawClusterChart(clusterNum) {
     console.log("Drawing chart for cluster:", clusterNum);
-    const data = clusterVoteData[clusterNum];
+    const data = clusterVoteData.cluster_data[clusterNum];
+    console.log("Cluster data for clusterNum:", data);
+    console.log(Object.keys(clusterVoteData.cluster_data));
+
     if (!data) {
         console.warn("No data for cluster:", clusterNum);
         const chartContainer = document.querySelector("#clusterVoteChart");
@@ -158,15 +185,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-    const series = resultTypes.map(type => ({
-        name: type,
-        data: partyNames.map(party => {
+    // resultTypes, partName 매칭
+    const series = partyNames.map(party => ({
+        name: party,
+        data: resultTypes.map(type => {
           const value = data[party]?.[type] || 0;
           console.log(`Party: ${party}, Type: ${type}, Value: ${value}`);
           return value;
         })
       }));
 
+    // 차트 옵션
     const options = {
       chart: {
         type: 'bar',
@@ -182,26 +211,34 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       dataLabels: {
         enabled: true,
-        formatter: val => val > 0 ? val.toFixed(1) + '%' : '',
+        formatter: function(val, opts) {
+          // 각 막대의 비율을 표시하는데, 해당 값이 0보다 클 경우에만 표시
+          const partyIndex = opts.seriesIndex;  // 각 시리즈의 인덱스(찬성, 반대 등)
+          const partyName = partyNames[partyIndex];  // 해당 시리즈에 해당하는 정당 이름
+          return val.toFixed(1) + '%';}
       },
       stroke: {
         show: true,
         width: 1,
-        colors: ['transparent']
+        colors: ['transparent'] // 막대 경계선
       },
       series: series,
       xaxis: {
-        title: { text: '비율 (%)' },
+        categories: ['찬성', '반대', '기권', '불참'], // X축에 4개의 항목
+        title: { text: '비율 (%)' }, // X축 제목
         labels: {
-          formatter: val => val.toFixed(0) + '%'
-        }
-      },
+          formatter: function (val) {
+            return val.toFixed(0) + '%'; // 100% 단위로 표시
+            }
+          }
+        },
       yaxis: {
         categories: partyNames,
-        title: { text: '정당' }
+        title: { text: '정당' },
+        // categories: categories
       },
       colors: partyColors,
-      legend: { position: 'top' },
+      legend: { position: 'top' }, // 범례 위치
       fill: { opacity: 1 }
     };
 
@@ -220,15 +257,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 초기 렌더링
   if (clusterSelect && clusterSelect.value) {
-      drawClusterChart(parseInt(clusterSelect.value));
+      drawClusterChart(clusterSelect.value);
     } else {
       console.error("Cluster select element not found or no value!");
     }
 
     // 선택 시 다시 그리기
     clusterSelect.addEventListener('change', e => {
-      drawClusterChart(parseInt(e.target.value));
+      drawClusterChart(e.target.value);
     });
+  });
+
+// 성별 클러스터별 찬반 비율 차트 -------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    const genderData = JSON.parse(document.getElementById('gender-chart-data').textContent);
+    const chartContainer = document.getElementById('genderVoteChart');
+    console.log('genderData:', genderData);
+    console.log('남:', genderData['남']);
+    console.log('여:', genderData['여']);
+
+    if (!genderData || !chartContainer) {
+      console.warn("gender data or chart container missing");
+      return;
+    }
+
+    // '남성'과 '여성' 데이터를 따로 시리즈로 구성
+    const clusters = Array.from(
+      new Set(
+        [...genderData['남'], ...genderData['여']].map(item => item.cluster)
+      )
+    ).sort((a, b) => a - b); // 클러스터 번호 정렬
+
+    const maleData = clusters.map(cluster => {
+      const match = genderData['남'].find(item => item.cluster === cluster);
+      return match ? match.찬성비율 : 0;
+    });
+
+    const femaleData = clusters.map(cluster => {
+      const match = genderData['여'].find(item => item.cluster === cluster);
+      return match ? match.찬성비율 : 0;
+    });
+
+    const options = {
+      chart: {
+        type: 'bar',
+        height: 400
+      },
+      series: [
+        { name: '남성 찬성비율', data: maleData },
+        { name: '여성 찬성비율', data: femaleData }
+      ],
+      xaxis: {
+        categories: clusters.map(num => `클러스터 ${num}`),
+        title: { text: '클러스터' }
+      },
+      yaxis: {
+        min: 0,
+        max: 100,
+        title: { text: '찬성 비율 (%)' },
+        labels: { formatter: val => `${val.toFixed(0)}%` }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: val => `${val.toFixed(1)}%`
+      },
+      colors: ['#3B82F6', '#F472B6'],  // Tailwind: blue-500, pink-400
+      legend: {
+        position: 'top'
+      }
+    };
+
+    new ApexCharts(chartContainer, options).render();
   });
 </script>
 {% endblock %}
