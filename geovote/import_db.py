@@ -255,5 +255,5 @@ def import_votes(csv_path):
 # ----------< 실행 >-------------------------
 # 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill.csv'
-import_bills(csv_path)
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
+import_votes(csv_path)

@@ -41,68 +41,83 @@ def map_view(request):
 
 #-------------------------------tree map -------------------------------
 
+from django.shortcuts import render
 from django.http import JsonResponse
-from .models import District, Member
-import logging
+from .models import Age, Member, District
 
-logger = logging.getLogger(__name__)
+def treemap_view(request):
+    ages = Age.objects.all().order_by('number')  # 대수 목록 (number 순)
+    return render(request, 'treemap.html', {'ages': ages})
 
 def region_tree_data(request):
+    age_id = request.GET.get('age')
+    if not age_id:
+        return JsonResponse({"error": "age parameter is required"}, status=400)
+
+    try:
+        age_id = int(age_id)
+    except ValueError:
+        return JsonResponse({"error": "age parameter must be an integer"}, status=400)
+
+    try:
+        age_obj = Age.objects.get(id=age_id)
+    except Age.DoesNotExist:
+        return JsonResponse({"error": "Invalid age parameter"}, status=400)
+
+    members = Member.objects.filter(age=age_obj).select_related('party', 'district')
+    # print 전체 멤버 수 및 district 없는 멤버 확인
+    print(f"Members count for age {age_obj.number}: {members.count()}")
+    no_district_members = [m for m in members if m.district is None]
+    print(f"Members without district: {len(no_district_members)}")
+
+    member_dict = {m.district_id: m for m in members if m.district_id is not None}
+    member_district_ids = list(member_dict.keys())
+    print(f"District IDs linked to members: {member_district_ids}")
+
+    if not member_district_ids:
+        return JsonResponse({"error": "No districts linked to members for this age"}, status=404)
+
+    districts_for_age = District.objects.filter(id__in=member_district_ids)
+    sido_list = districts_for_age.values_list('SIDO', flat=True).distinct()
+    print(f"SIDO list: {list(sido_list)}")
+
     result = {"name": "대한민국", "children": []}
 
-    # 모든 Member 미리 로딩
-    members = Member.objects.select_related('district', 'party')
-    member_dict = {}
-    for m in members:
-        if m.district:
-            member_dict[m.district.id] = m
-
-    # SIDO 단위로 그룹핑
-    sido_names = District.objects.values_list('SIDO', flat=True).distinct()
-
-    for sido in sido_names:
+    for sido in sido_list:
+        if not sido:
+            continue
         sido_node = {"name": sido, "children": []}
 
-        # SIDO 하위의 SIDO_SGG 값들 (중복 제거)
-        sido_sgg_names = (
-            District.objects.filter(SIDO=sido)
-            .values_list('SIDO_SGG', flat=True)
-            .distinct()
-        )
+        sido_sgg_qs = districts_for_age.filter(SIDO=sido).values_list('SIDO_SGG', flat=True)
+        sido_sgg_set = set(s.strip() for s in sido_sgg_qs if s and s.strip())
+        print(f"SIDO_SGG set for {sido}: {sido_sgg_set}")
 
-        for sido_sgg in sido_sgg_names:
-            sido_sgg_node = {"name": sido_sgg, "children": []}
-
-            # 해당 SIDO, SIDO_SGG에 속한 District 가져오기
-            districts = District.objects.filter(SIDO=sido, SIDO_SGG=sido_sgg)
+        for sido_sgg in sido_sgg_set:
+            if not sido_sgg:
+                continue
+            district_for_name = districts_for_age.filter(SIDO_SGG=sido_sgg).first()
+            sgg_name = district_for_name.SGG if district_for_name else sido_sgg
+            sido_sgg_node = {"name": sgg_name, "children": []}
+            districts = districts_for_age.filter(SIDO=sido, SIDO_SGG=sido_sgg)
 
             for district in districts:
                 member = member_dict.get(district.id)
                 if member:
-                    member_info = f"{member.name} ({member.party.party})"
+                    label = f"{district.SGG} ({member.name} - {member.party.party})"
+                    color = member.party.color
                 else:
-                    member_info = "의원 없음"
-
-                sgg_node = {
-                    "name": district.SGG,
-                    "children": [
-                        {
-                            "name": member_info,
-                            "value": 1
-                        }
-                    ]
-                }
-                sido_sgg_node["children"].append(sgg_node)
-
+                    label = f"{district.SGG} (의원 없음)"
+                    color = "#cccccc"
+                sido_sgg_node["children"].append({
+                    "name": label,
+                    "value": 1,
+                    "color": color
+                })
             sido_node["children"].append(sido_sgg_node)
-
         result["children"].append(sido_node)
 
     return JsonResponse(result)
 
-
-def treemap_view(request):
-    return render(request, 'treemap.html')
 
 
 

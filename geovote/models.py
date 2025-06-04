@@ -17,16 +17,17 @@ class Party(models.Model):
 
 # 지역구 (정식 모델)
 class District(models.Model):
-    # id = models.CharField(max_length=10, primary_key=True)
+    id = models.CharField(max_length=10, primary_key=True)
     SGG_Code = models.CharField(max_length=100, unique=True)
     SIDO_SGG = models.CharField(max_length=100)
     SIDO = models.CharField(max_length=100)
     SGG = models.CharField(max_length=100)
+    SIGUNGU = models.CharField(max_length=30, blank=True, null=True)
     boundary = models.JSONField()
 
-    # class Meta:
-    #     db_table = 'geovote_district'
-    #     managed = True
+    class Meta:
+        db_table = 'geovote_district'
+        managed = True
 
     def __str__(self):
         return self.SIDO_SGG
