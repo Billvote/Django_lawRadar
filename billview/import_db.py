@@ -15,6 +15,7 @@ from geovote.models import Age
 from django.db import transaction
 
 def import_bills(csv_path):
+    # CSV 파일 읽기 (인코딩 이슈가 있다면 encoding='utf-8-sig' 사용)
     df = pd.read_csv(csv_path)
 
     # FK 및 중복 캐싱
@@ -41,12 +42,22 @@ def import_bills(csv_path):
             summary = str(row.get('summary', '')).strip()
             summary = summary if summary and not pd.isna(summary) else None
 
-            # cluster_keyword = str(row.get('cluster_keyword', '')).strip()
+            # cluster_keyword 처리
             raw_keyword = row.get('cluster_keyword')
             if pd.isna(raw_keyword):
                 cluster_keyword = ''
             else:
-                cluster_keyword = raw_keyword.strip()
+                cluster_keyword = str(raw_keyword).strip()
+
+            # label 처리
+            label_value = row.get('label')
+            if pd.isna(label_value):
+                label_value = None
+            else:
+                try:
+                    label_value = int(float(label_value))
+                except ValueError:
+                    label_value = None
 
             records.append(Bill(
                 age=age,
@@ -54,24 +65,25 @@ def import_bills(csv_path):
                 bill_id=bill_id,
                 bill_number=bill_number,
                 summary=summary,
-                cluster=int(row['cluster']),
-                cluster_keyword=cluster_keyword
+                cluster=cluster_value,
+                cluster_keyword=cluster_keyword,
+                label=label_value   # label 필드 추가
             ))
 
         except Exception as e:
             print(f"[ERROR] 행 처리 실패: {e} (row={row.to_dict()})")
             continue
-    
+
     if records:
         Bill.objects.bulk_create(records, batch_size=1000)
         print(f"[DONE] {len(records)}개의 법안 저장 완료")
     else:
         print("[INFO] 저장할 법안이 없습니다.")
 
-
 # 실행
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill(1).csv'
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill_labeled.csv'
 import_bills(csv_path)
+
 
 # df = pd.read_csv(csv_path)
 # # print(df.info())
