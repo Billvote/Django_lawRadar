@@ -70,11 +70,11 @@ def import_bills(csv_path):
 def import_districts(csv_path):
     df = pd.read_csv(csv_path)
     
-    existing_codes = set(District.objects.values_list('SGG_Code', flat=True))
+    existing_sggs = set(District.objects.values_list('SGG', flat=True))
     
     records = []
     for _, row in df.iterrows():
-        if row['SGG_Code'] in existing_codes:
+        if row['SGG_Code'] in existing_sggs:
             print(f"[SKIP] 이미 존재하는 구역: {row['SGG_Code']}")
             continue
 
@@ -255,5 +255,5 @@ def import_votes(csv_path):
 # ----------< 실행 >-------------------------
 # 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
-import_votes(csv_path)
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill.csv'
+import_bills(csv_path)

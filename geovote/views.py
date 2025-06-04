@@ -43,61 +43,67 @@ def map_view(request):
 
 from django.http import JsonResponse
 from .models import District, Member
-
-from django.http import JsonResponse
 import logging
 
 logger = logging.getLogger(__name__)
 
-
-from django.db.models import Prefetch
-
 def region_tree_data(request):
     result = {"name": "대한민국", "children": []}
-    sido_list = District.objects.values_list('SIDO', flat=True).distinct()
 
-    # 모든 Region에 대한 Member 미리 가져오기
+    # 모든 Member 미리 로딩
     members = Member.objects.select_related('district', 'party')
-    # member_dict = {m.district_id: m for m in members_by_region}
-
-    # district_id 기준으로 그룹핑
     member_dict = {}
     for m in members:
         if m.district:
             member_dict[m.district.id] = m
 
-    for sido_name in sido_list:
-        # 해당 SIDO에 속한 시군구 District만 필터링
-        sgg_districts = District.objects.filter(SIDO=sido_name)
-        sido_children = []
+    # SIDO 단위로 그룹핑
+    sido_names = District.objects.values_list('SIDO', flat=True).distinct()
 
-        for district in sgg_districts:
-            member = member_dict.get(district.id)
-            if member:
-                member_info = f"{member.name} ({member.party.party})"
-            else:
-                member_info = "의원 없음"
+    for sido in sido_names:
+        sido_node = {"name": sido, "children": []}
 
-            sgg_node = {
-                "name": district.SGG,
-                "children": [
-                    {
-                        "name": member_info,
-                        "value": 1
-                    }
-                ]
-            }
-            sido_children.append(sgg_node)
+        # SIDO 하위의 SIDO_SGG 값들 (중복 제거)
+        sido_sgg_names = (
+            District.objects.filter(SIDO=sido)
+            .values_list('SIDO_SGG', flat=True)
+            .distinct()
+        )
 
-        result["children"].append({
-            "name": sido_name,
-            "children": sido_children
-        })
+        for sido_sgg in sido_sgg_names:
+            sido_sgg_node = {"name": sido_sgg, "children": []}
+
+            # 해당 SIDO, SIDO_SGG에 속한 District 가져오기
+            districts = District.objects.filter(SIDO=sido, SIDO_SGG=sido_sgg)
+
+            for district in districts:
+                member = member_dict.get(district.id)
+                if member:
+                    member_info = f"{member.name} ({member.party.party})"
+                else:
+                    member_info = "의원 없음"
+
+                sgg_node = {
+                    "name": district.SGG,
+                    "children": [
+                        {
+                            "name": member_info,
+                            "value": 1
+                        }
+                    ]
+                }
+                sido_sgg_node["children"].append(sgg_node)
+
+            sido_node["children"].append(sido_sgg_node)
+
+        result["children"].append(sido_node)
 
     return JsonResponse(result)
 
+
 def treemap_view(request):
     return render(request, 'treemap.html')
+
 
 
 

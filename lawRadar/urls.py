@@ -41,8 +41,12 @@ urlpatterns = [
     # path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
     # path('map22/', geovote_views.map22, name='map22'), # 테스트용
 
+    # tree map
     path('treemap/', geovote_views.treemap_view, name='treemap'),
     path('api/region_tree_data/', geovote_views.region_tree_data, name='region_tree_data'),
+
+    # sunburst
+    path("sunburst/", geovote_views.sunburst_tree_data, name="sunburst_tree_data"),
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
