@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="bg-white min-h-screen">
+  <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mb-8 border-b pb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">{{ bill.title }}</h1>
+        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+          <span>의안번호: {{ bill.bill_number }}</span>
+          <span>•</span>
+          <span>생성일: {{ bill.created_at|date:"Y-m-d" }}</span>
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'history:history_list' %}?page={{ list_page }}" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">목록으로</a>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="absolute left-8 top-0 h-full w-0.5 bg-gray-200" aria-hidden="true"></div>
+      <h2 class="text-xl font-semibold text-gray-800 mb-8">🕒 관련 의안 타임라인</h2>
+      <div class="space-y-8" id="timeline-list">
+        {% for related in related_bills %}
+        <div id="timeline-{{ related.pk }}" class="relative pl-16 group">
+          <div class="absolute left-8 top-4 -ml-[5px] h-3 w-3 rounded-full bg-indigo-500 shadow-lg"></div>
+          <div class="p-6 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow 
+                     {% if related.id == bill.id %}ring-2 ring-indigo-500{% endif %}">
+            <div class="flex justify-between items-start">
+              <div>
+                <a href="{% url 'history:bill_detail' related.pk %}?page={{ list_page }}" 
+                   class="text-base font-medium block {% if related.id == bill.id %}text-indigo-600{% else %}text-gray-900{% endif %}"
+                   onclick="scrollToTimeline({{ related.pk }}); return true;">
+                  {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
+                </a>
+                <div class="mt-2 text-sm text-gray-500">
+                  <span>의안번호: {{ related.bill_number }}</span>
+                </div>
+              </div>
+              {% if related.id == bill.id %}
+              <span class="px-2.5 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">현재 의안</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function scrollToTimeline(pk) {
+  setTimeout(function() {
+    const el = document.getElementById('timeline-' + pk);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+window.onload = function() {
+  const current = document.querySelector('.ring-2');
+  if(current) {
+    current.scrollIntoView({ behavior: 'auto', block: 'center' });
+  }
+};
+</script>
+<style>
+  .group:hover .absolute.h-3.w-3 {
+    @apply bg-indigo-600;
+    transform: scale(1.2);
+    transition: all 0.2s ease;
+  }
+</style>
+{% endblock %}

@@ -14,7 +14,7 @@ def get_data_for_congress(congress_num):
             'error': f'{congress_num}대에 해당하는 Age 객체가 없습니다'
             }
 
-    votes = Vote.objects.filter(age__number=congress_num).select_related('member__party')
+    votes = Vote.objects.filter(age__number=congress_num).select_related('member__party', 'bill')
 
     # 해당 대수에 투표한 정당만 가져오기
     party_ids = votes.values_list('member__party', flat=True).distinct()
@@ -159,9 +159,13 @@ def get_cluster_vote_summary_by_party(congress_num, top_n_clusters=20):
         for party in party_names:
             if party not in filtered_result[cluster]:
                 filtered_result[cluster][party] = {'찬성': 0, '반대': 0, '기권': 0, '불참': 0}
+    
+    cluster_data = {}
+    for cluster_num, data in filtered_result.items():
+        cluster_data[cluster_num] = data
 
     return {
-        'cluster_data': filtered_result,
+        'cluster_data': cluster_data,
         'party_names': party_names,
         'party_colors': party_colors,
         'result_types': result_types}
@@ -186,27 +190,18 @@ def dashboard(request, congress_num):
         .order_by('cluster')
     )
 
-    cluster_keywords = {}
-
     # cluster -> 대표 cluster_keyword mapping 만들기
+    min_ids = [entry['min_id'] for entry in cluster_keywords_qs]
+    min_bills = Bill.objects.filter(id__in=min_ids).values('cluster', 'cluster_keyword')
     cluster_keywords = {}
-    for entry in cluster_keywords_qs:
-        cluster_num = entry['cluster']
-        min_bill = bills.filter(cluster=cluster_num, id=entry['min_id']).first()
-        
-        if min_bill:
-            keyword_str = min_bill.cluster_keyword
-            if isinstance(keyword_str, str):
-                try:
-                    keyword_list = json.loads(keyword_str)
-                    keyword_display = ', '.join(keyword_list)
-                except Exception:
-                    keyword_display = str(keyword_str)
-            else:
-                keyword_display = str(keyword_str)
-            cluster_keywords[cluster_num] = keyword_display
-        else:
-            cluster_keywords[cluster_num] = str(cluster_num)
+    for b in min_bills:
+        keyword_str = b['cluster_keyword']
+        try:
+            keyword_list = json.loads(keyword_str)
+            keyword_display = ', '.join(keyword_list)
+        except Exception:
+            keyword_display = str(keyword_str)
+        cluster_keywords[b['cluster']] = keyword_display
 
     context = {
         'congress_num': congress_num,
@@ -222,6 +217,62 @@ def dashboard(request, congress_num):
 
         'cluster_vote_data': json.dumps(cluster_vote_data),
         'cluster_keywords': cluster_keywords,
+        'cluster_nums': list(cluster_keywords.keys()),
     }
 
+    return render(request, 'dashboard.html', context)
+
+def gender_vote_cluster_view(request):
+    # 성별/클러스터별 찬반 투표 수 계산
+    gender_results = (
+        Vote.objects
+        .values('member__gender', 'bill__cluster_num', 'result')
+        .annotate(count=Count('id'))
+    )
+
+    # 남녀 구분해 정리
+    gender_stats = {'남': {}, '여': {}}
+    for row in gender_results:
+        gender = row['member__gender']
+        cluster = row['bill__cluster_num']
+        result = row['result']
+        count = row['count']
+
+        # 예외 처리
+        if cluster is None or gender not in gender_stats:
+            continue
+        
+        cluster_data = gender_stats[gender].setdefault(cluster, {'찬성': 0, '반대': 0})
+        if result in cluster_data:
+            cluster_data[result] += count
+
+    # 성별별 찬반 비율 계산
+    ranking_data = {}
+    for gender, clusters in gender_stats.items():
+        ranking = []
+        for cluster_num, results in clusters.items():
+            total = results['찬성'] + results['반대']
+            if total == 0:
+                continue
+            찬성비율 = results['찬성'] / total * 100
+            반대비율 = results['반대'] / total * 100
+            ranking.append({
+                'cluster': cluster_num,
+                '찬성비율': round(찬성비율, 1),
+                '반대비율': round(반대비율, 1),
+            })
+        
+        # 찬성비율 기준 정렬
+        ranking_data[gender] = sorted(ranking, key=lambda x: -x['찬성비율'])
+
+    context = {
+        # 기존 대시보드 데이터
+        'series': series,
+        'categories': categories,
+        'party_colors': party_colors,
+        'cluster_vote_data': cluster_vote_data,
+        'cluster_nums': cluster_nums,
+        'ranking_data': ranking_data, # 추가 데이터
+        }
+            
     return render(request, 'dashboard.html', context)
