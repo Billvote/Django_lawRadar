@@ -1,9 +1,9 @@
-# history/urls.py
 from django.urls import path
-from .views import BillDetailView
+from .views import BillHistoryListView, BillHistoryDetailView
 
 app_name = 'history'
 
 urlpatterns = [
-    path('bill/<int:pk>/', BillDetailView.as_view(), name='bill_detail'),
+    path('', BillHistoryListView.as_view(), name='history_list'),
+    path('bill/<int:pk>/', BillHistoryDetailView.as_view(), name='bill_detail'),
 ]

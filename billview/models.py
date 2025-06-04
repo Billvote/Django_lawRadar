@@ -11,6 +11,7 @@ class Bill(models.Model):
     cluster = models.IntegerField()
     cluster_keyword = models.TextField(blank=True, null=True, default='')
     label = models.IntegerField(null=True, blank=True)
-    
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
         return self.title

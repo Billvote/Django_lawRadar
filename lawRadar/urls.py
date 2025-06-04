@@ -48,5 +48,5 @@ urlpatterns = [
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
 
     # history
-    path('history/', include('history.urls')),,
+    path('history/', include('history.urls')),
 ]
