@@ -15,3 +15,6 @@ class Bill(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_related_count(self):
+        return Bill.objects.filter(label=self.label).count()
