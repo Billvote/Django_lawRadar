@@ -66,27 +66,23 @@ def region_tree_data(request):
 
     districts = District.objects.filter(id__in=member_dict.keys())
 
-    # SIDO > SIGUNGU > District 계층 구조 생성
     tree = defaultdict(lambda: defaultdict(list))
     for district in districts:
         sido = district.SIDO or "기타"
         sigungu = district.SIGUNGU or "기타"
-        # district.id가 중복되지 않도록 set 사용
-        if district not in tree[sido][sigungu]:
-            tree[sido][sigungu].append(district)
-
+        tree[sido][sigungu].append(district)
 
     result = {
         "name": "대한민국",
+        "type": "ROOT",
         "children": []
     }
 
     for sido_name, sigungu_map in tree.items():
-        sido_node = {"name": sido_name, "children": []}
+        sido_node = {"name": sido_name, "type": "SIDO", "children": []}
         for sigungu_name, district_list in sigungu_map.items():
-            # SIGUNGU 아래에 district가 1개뿐이거나 SIGUNGU와 SGG가 같으면 SIGUNGU 계층 생략
-            if len(district_list) == 1 and (sigungu_name == district_list[0].SGG or len(sigungu_map) == 1):
-                district = district_list[0]
+            sigungu_node = {"name": sigungu_name, "type": "SIGUNGU", "children": []}
+            for district in district_list:
                 member = member_dict.get(district.id)
                 if member:
                     label = f"{district.SGG} ({member.name} - {member.party.party})"
@@ -94,30 +90,72 @@ def region_tree_data(request):
                 else:
                     label = f"{district.SGG} (의원 없음)"
                     color = "#cccccc"
-                sido_node["children"].append({
+                sigungu_node["children"].append({
+                    "id": district.id,
+                    "member_name": member.name if member else None,
                     "name": label,
+                    "type": "District",
                     "value": 1,
                     "color": color
                 })
-            else:
-                sigungu_node = {"name": sigungu_name, "children": []}
-                for district in district_list:
-                    member = member_dict.get(district.id)
-                    if member:
-                        label = f"{district.SGG} ({member.name} - {member.party.party})"
-                        color = member.party.color
-                    else:
-                        label = f"{district.SGG} (의원 없음)"
-                        color = "#cccccc"
-                    sigungu_node["children"].append({
-                        "name": label,
-                        "value": 1,
-                        "color": color
-                    })
-                sido_node["children"].append(sigungu_node)
+            sido_node["children"].append(sigungu_node)
         result["children"].append(sido_node)
 
     return JsonResponse(result)
+
+#----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
+from django.http import JsonResponse
+from django.db.models import Count
+from .models import Vote
+
+def member_vote_summary_api(request):
+    member_name = request.GET.get('member_name')
+    if not member_name:
+        return JsonResponse({'error': 'member_name parameter is required'}, status=400)
+
+    try:
+        votes = Vote.objects.filter(member__name=member_name)\
+            .values('bill__cluster', 'bill__name', 'result')\
+            .annotate(count=Count('id'))\
+            .order_by('bill__cluster')
+    except Exception as e:
+        print(f"🔥 Error fetching votes for member: {member_name}")
+        print(f"🔥 Exception: {e}")
+        return JsonResponse({'error': 'Failed to fetch votes', 'details': str(e)}, status=500)
+
+    cluster_summary = {}
+    for vote in votes:
+        cluster = vote['bill__cluster']
+        if cluster not in cluster_summary:
+            cluster_summary[cluster] = {'cluster': cluster, 'bills': {}}
+        bill_name = vote['bill__name']
+        if bill_name not in cluster_summary[cluster]['bills']:
+            cluster_summary[cluster]['bills'][bill_name] = {'찬성': 0, '반대': 0, '기타': 0}
+        result = vote['result']
+        if result == '찬성':
+            cluster_summary[cluster]['bills'][bill_name]['찬성'] += vote['count']
+        elif result == '반대':
+            cluster_summary[cluster]['bills'][bill_name]['반대'] += vote['count']
+        else:
+            cluster_summary[cluster]['bills'][bill_name]['기타'] += vote['count']
+
+    data = []
+    for cluster, info in cluster_summary.items():
+        bills_list = []
+        for bill_name, counts in info['bills'].items():
+            bills_list.append({
+                'bill_name': bill_name,
+                '찬성': counts['찬성'],
+                '반대': counts['반대'],
+                '기타': counts['기타']
+            })
+        data.append({'cluster': cluster, 'bills': bills_list})
+
+    return JsonResponse(data, safe=False)
+
+
+
+
 
 
 

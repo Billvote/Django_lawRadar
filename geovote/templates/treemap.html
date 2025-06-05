@@ -1,30 +1,34 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="flex h-[700px]">
+<div class="flex flex-col md:flex-row h-screen">
   <!-- 사이드바 -->
-  <aside class="w-48 bg-gray-100 p-4 overflow-y-auto border-r border-gray-300">
-    <h2 class="font-bold text-lg mb-4">대수 선택</h2>
-    <ul id="ageList" class="space-y-2">
+  <aside class="w-full md:w-64 bg-white shadow-md border-r">
+    <div class="p-4 text-xl font-bold border-b">대수 선택</div>
+    <nav class="p-4 space-y-2">
       {% for age in ages %}
-      <li>
         <button
-          class="age-btn w-full text-left px-3 py-2 rounded hover:bg-indigo-500 hover:text-white transition"
+          class="age-btn block w-full text-left px-3 py-2 rounded hover:bg-indigo-500 hover:text-white transition text-gray-700"
           data-age="{{ age.id }}">
-          {{ age.number }} 대
+          {{ age.number }}대
         </button>
-      </li>
       {% endfor %}
-    </ul>
+    </nav>
   </aside>
 
-  <!-- 메인 트리맵 컨테이너 -->
-  <main class="flex-1 p-4 relative flex flex-col">
-    <h2 class="text-3xl font-bold text-center text-slate-800 mb-6">지역구 의원 트리맵</h2>
-    <div class="text-center mb-4">
-      <button id="backButton" class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">뒤로가기</button>
+  <!-- 메인 -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <div class="p-4 border-b flex flex-col items-center md:flex-row md:justify-between gap-2">
+      <h1 class="text-2xl font-bold text-center">
+        🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
+      </h1>
+      <div id="breadcrumb" class="text-sm text-gray-500"></div>
+      <button id="backButton"
+        class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+        뒤로가기
+      </button>
     </div>
-    <div id="treemap" class="flex-1 bg-white rounded-xl shadow"></div>
+    <div id="treemap" class="flex-1 overflow-auto bg-gray-50"></div>
   </main>
 </div>
 {% endblock %}
@@ -34,126 +38,165 @@
 <script>
   const container = document.getElementById("treemap");
   const backButton = d3.select("#backButton");
-  let svg, treemapLayout, currentNode, hierarchyRoot;
+  const breadcrumb = document.getElementById("breadcrumb");
+  let svg, currentNode, hierarchyRoot;
 
-  function getFontSize(width, height, text) {
-    const padding = 10;
-    const estimated = Math.min(
-      (width - padding) / (text.length * 0.6),
-      (height - padding) / 1.2
-    );
-    return isNaN(estimated) || estimated <= 0 ? 12 : Math.max(10, Math.min(estimated, 20));
+  const pastelColors = d3.scaleOrdinal(d3.schemePastel1);
+
+  function getFontSize(width, height, text, isDistrict) {
+    const base = isDistrict ? 16 : 10;
+    const scale = Math.min(width / (text.length * 0.6), height / 1.2);
+    return Math.max(10, Math.min(scale, isDistrict ? 24 : 14)) + "px";
+  }
+
+  function updateBreadcrumb(node) {
+    let path = [];
+    let current = node;
+    while (current) {
+      if (current.depth > 0) path.unshift(current.data.name.split(" ")[0]); // SIGUNGU 또는 지역명만
+      current = current.parent;
+    }
+    breadcrumb.textContent = path.length ? path.join(" > ") : "";
   }
 
   function render(node, width, height) {
     d3.select("#treemap svg").remove();
+
     svg = d3.select("#treemap").append("svg")
       .attr("width", width)
       .attr("height", height);
 
+    updateBreadcrumb(node);
     backButton.classed("hidden", !node.parent);
 
     const group = svg.append("g");
-    const xScale = d3.scaleLinear().domain([node.x0, node.x1]).range([0, width]);
-    const yScale = d3.scaleLinear().domain([node.y0, node.y1]).range([0, height]);
 
-    // 계층별로 보여줄 children 분기
-    let childrenToShow = node.children || [];
-    if (node.depth === 0) {
-      // root: SIDO만 보여줌
-      childrenToShow = (node.children || []).filter(d => d.children && d.children.length > 0);
-    } else if (node.depth === 1) {
-      // SIDO: SIGUNGU만 보여줌 (의원정보X)
-      childrenToShow = (node.children || []).filter(d => d.children && d.children.length > 0);
-    } else if (node.depth === 2) {
-      // SIGUNGU: 의원정보(leaf)만 보여줌
-      childrenToShow = (node.children || []).filter(d => !d.children || d.children.length === 0);
-    }
+    const x = d3.scaleLinear().domain([node.x0, node.x1]).range([0, width]);
+    const y = d3.scaleLinear().domain([node.y0, node.y1]).range([0, height]);
+
+    const childrenToShow = (node.depth <= 1) 
+      ? (node.children || []).filter(d => d.data.type !== "District")
+      : (node.children || []);
+
 
     const nodes = group.selectAll("g")
       .data(childrenToShow)
       .join("g")
-      .attr("class", "node")
-      .attr("transform", d => `translate(${xScale(d.x0)},${yScale(d.y0)})`)
-      .style("cursor", d => d.children && d.children.length > 0 ? "pointer" : "default")
-      .on("click", (event, d) => {
-        if (d.children && d.children.length > 0) {
+      .attr("transform", d => `translate(${x(d.x0)},${y(d.y0)})`)
+      .style("cursor", d => d.children ? "pointer" : "default")
+      .on("click", async (event, d) => {
+        if (d.children) {          // SIDO·SIGUNGU 클릭
           currentNode = d;
           render(d, width, height);
+
+        } else if (d.data.type === "District") {  // 👉 지역구 의원 노드 클릭
+          const memberName = d.data.member_name;  // 또는 member_id
+
+          if (!memberName) {
+            alert("이 지역구에는 등록된 의원 정보가 없습니다.");
+            return;
+          }
+
+          try {
+            const res = await fetch(
+              `/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`
+            );
+            if (!res.ok) throw new Error("API 호출 실패");
+
+            const summary = await res.json();
+            console.log("표결 요약:", summary);
+
+            // --- 원하는 UI에 표시 ---
+            // 예시 1) 간단 alert
+            alert(JSON.stringify(summary, null, 2));
+
+            // 예시 2) 오른쪽 패널 / 모달에 출력
+            // showVoteSummaryModal(memberName, summary);
+
+          } catch (err) {
+            console.error(err);
+            alert("표결 정보를 가져오지 못했습니다.");
+          }
         }
       });
 
+
+    const sidoColors = d3.scaleOrdinal(d3.schemeCategory10);
+    const sigunguColors = d3.scaleOrdinal(d3.schemeTableau10);
+
     nodes.append("rect")
-      .attr("width", d => xScale(d.x1) - xScale(d.x0))
-      .attr("height", d => yScale(d.y1) - yScale(d.y0))
+      .transition().duration(400)
+      .attr("width", d => x(d.x1) - x(d.x0))
+      .attr("height", d => y(d.y1) - y(d.y0))
       .attr("fill", d => {
-        if (!d.children && d.data.color) return d.data.color;
-        return "#e0e0e0";
+        if (d.data.type === "District") return d.data.color || "#888";
+
+        if (d.data.type === "SIDO") {
+          return sidoColors(d.data.name);
+        }
+
+        if (d.data.type === "SIGUNGU") {
+          return sigunguColors(d.data.name);
+        }
+
+        // 기본 색상
+        return "#ccc";
       });
 
+
     nodes.append("text")
-      .attr("x", d => (xScale(d.x1) - xScale(d.x0)) / 2)
-      .attr("y", d => (yScale(d.y1) - yScale(d.y0)) / 2)
+      .attr("x", d => (x(d.x1) - x(d.x0)) / 2)
+      .attr("y", d => (y(d.y1) - y(d.y0)) / 2)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
-      .style("font-size", d => {
-        const w = xScale(d.x1) - xScale(d.x0);
-        const h = yScale(d.y1) - yScale(d.y0);
-        return getFontSize(w, h, d.data.name) + "px";
-      })
-      .style("fill", "#ffffff")
-      .style("font-weight", "600")
       .style("pointer-events", "none")
-      .text(d => d.data.name);
+      .style("fill", d => {
+        if (d.data.type === "SIDO") return "#4A6FA5";
+        if (d.data.type === "SIGUNGU") return "#6A8CA3";
+        return d.data.color || "#888888";  // District 등 기본 색상
+      })
+      .style("fill", d => "#FFFFFF")  // 글자 색은 항상 흰색
+
+      .style("font-weight", "600")
+      .style("font-size", d => {
+        if (d.data.type === "SIDO") return "18px";
+        if (d.data.type === "SIGUNGU") return "14px";
+        if (d.data.type === "District") return "12px";
+        return "10px";
+      })
+      .text(d => {
+        if (d.data.type === "District" && currentNode.depth <= 1) return "";
+        return d.data.name;
+      });
   }
 
   function resize() {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    d3.select("#treemap svg").remove();
-    svg = d3.select("#treemap").append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
-    treemapLayout.size([width, height]);
-
-    if (!hierarchyRoot) return;
-
-    render(currentNode, width, height);
+    if (!hierarchyRoot || !currentNode) return;
+    render(currentNode, container.clientWidth, container.clientHeight);
   }
 
   async function loadData(age) {
-    const response = await fetch(`/api/region-tree/?age=${age}`);
-    if (!response.ok) {
+    const res = await fetch(`/api/region-tree/?age=${age}`);
+    if (!res.ok) {
       console.error("데이터 로드 실패");
       return null;
     }
-    return await response.json();
+    return await res.json();
   }
 
   async function init(age) {
     const data = await loadData(age);
     if (!data) return;
 
-    // value를 모두 1로 고정해 모든 계층에서 격자 크기 동일하게
     hierarchyRoot = d3.hierarchy(data)
-      .sum(d => 1)
+      .sum(d => d.value || 1)
       .sort((a, b) => b.value - a.value);
 
-    treemapLayout = d3.treemap()
+    d3.treemap()
       .size([container.clientWidth, container.clientHeight])
-      .paddingInner(2);
-
-    treemapLayout(hierarchyRoot);
+      .paddingInner(2)(hierarchyRoot);
 
     currentNode = hierarchyRoot;
-
-    d3.select("#treemap svg").remove();
-    svg = d3.select("#treemap").append("svg")
-      .attr("width", container.clientWidth)
-      .attr("height", container.clientHeight);
-
     render(currentNode, container.clientWidth, container.clientHeight);
   }
 
@@ -169,19 +212,14 @@
   backButton.on("click", () => {
     if (currentNode.parent) {
       currentNode = currentNode.parent;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      render(currentNode, width, height);
-    }
-  });
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const firstBtn = document.querySelector(".age-btn");
-    if (firstBtn) {
-      firstBtn.click();
+      render(currentNode, container.clientWidth, container.clientHeight);
     }
   });
 
   window.addEventListener("resize", resize);
+  window.addEventListener("DOMContentLoaded", () => {
+    const first = document.querySelector(".age-btn");
+    if (first) first.click();
+  });
 </script>
 {% endblock %}

@@ -48,4 +48,4 @@ class Vote(models.Model):
     result = models.CharField(max_length=10)  # 찬성/반대/기권 등
     date = models.DateField() # 의결 날짜
     def __str__(self):
-        return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'
+        return f'{self.member.name} voted {self.result} on {self.bill.title}'
