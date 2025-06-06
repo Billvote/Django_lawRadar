@@ -2,42 +2,46 @@
 {% block body %}
 <div class="bg-white min-h-screen">
   <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-    <div class="mb-8 border-b pb-6 flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">{{ bill.title }}</h1>
-        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-          <span>의안번호: {{ bill.bill_number }}</span>
-          <span>•</span>
-          <span>생성일: {{ bill.created_at|date:"Y-m-d" }}</span>
-        </div>
+    <!-- 헤더 -->
+    <div class="mb-8 border-b pb-6">
+      <div class="flex items-center space-x-4 mb-2">
+        <span class="text-sm font-medium text-gray-900">{{ bill.age.number }}대</span>
+        <span class="text-sm text-gray-900">의안번호: {{ bill.bill_number }}</span>
       </div>
-      <div>
-        <a href="{% url 'history:history_list' %}?page={{ list_page }}" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">목록으로</a>
-      </div>
+      <!-- 제목: 무조건 한줄, 말줄임표 없이 다 보임 -->
+      <h1 class="text-3xl font-bold text-gray-900"
+          style="white-space:nowrap;overflow:visible;text-overflow:unset;width:auto;max-width:none;">
+        {{ bill.title }}
+      </h1>
     </div>
+
+    <!-- 타임라인 -->
     <div class="relative">
-      <div class="absolute left-8 top-0 h-full w-0.5 bg-gray-200" aria-hidden="true"></div>
-      <h2 class="text-xl font-semibold text-gray-800 mb-8">🕒 관련 의안 타임라인</h2>
-      <div class="space-y-8" id="timeline-list">
+      <!-- 세로선 -->
+      <div class="absolute left-8 top-0 h-full w-0.5 bg-indigo-200 z-0"></div>
+      <div class="space-y-12" id="timeline-list">
         {% for related in related_bills %}
         <div id="timeline-{{ related.pk }}" class="relative pl-16 group">
-          <div class="absolute left-8 top-4 -ml-[5px] h-3 w-3 rounded-full bg-indigo-500 shadow-lg"></div>
-          <div class="p-6 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow 
-                     {% if related.id == bill.id %}ring-2 ring-indigo-500{% endif %}">
-            <div class="flex justify-between items-start">
-              <div>
-                <a href="{% url 'history:bill_detail' related.pk %}?page={{ list_page }}" 
-                   class="text-base font-medium block {% if related.id == bill.id %}text-indigo-600{% else %}text-gray-900{% endif %}"
-                   onclick="scrollToTimeline({{ related.pk }}); return true;">
-                  {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
-                </a>
-                <div class="mt-2 text-sm text-gray-500">
-                  <span>의안번호: {{ related.bill_number }}</span>
-                </div>
-              </div>
+          <!-- 점 -->
+          <div class="absolute left-8 top-8 -ml-1.5 h-4 w-4 rounded-full border-4 border-white shadow-lg
+                      {% if related.id == bill.id %}bg-indigo-600 border-indigo-300{% else %}bg-indigo-300 border-indigo-100{% endif %}">
+          </div>
+          <!-- 카드 -->
+          <div class="p-6 bg-white border rounded-lg shadow-md transition-shadow
+                      {% if related.id == bill.id %}ring-2 ring-indigo-500 bg-indigo-50{% endif %}
+                      hover:shadow-xl max-w-full">
+            <div class="flex justify-between items-center">
+              <a href="{% url 'history:bill_detail' related.pk %}?page={{ list_page }}"
+                 class="text-base font-semibold block {% if related.id == bill.id %}text-indigo-600{% else %}text-gray-900{% endif %} break-words"
+                 style="word-break:break-all;">
+                {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
+              </a>
               {% if related.id == bill.id %}
-              <span class="px-2.5 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">현재 의안</span>
+                <span class="ml-4 px-2.5 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">현재 의안</span>
               {% endif %}
+            </div>
+            <div class="mt-2 text-sm text-gray-700 break-all">
+              의안번호: {{ related.bill_number }}
             </div>
           </div>
         </div>
@@ -61,10 +65,24 @@ window.onload = function() {
 };
 </script>
 <style>
-  .group:hover .absolute.h-3.w-3 {
-    @apply bg-indigo-600;
-    transform: scale(1.2);
-    transition: all 0.2s ease;
-  }
+/* 카드 안 글자가 넘치지 않도록 */
+.text-base, .text-sm {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.group:hover .absolute.h-4.w-4 {
+  background-color: #6366f1;
+  transform: scale(1.2);
+  transition: all 0.2s ease;
+}
+/* 제목이 무조건 한줄로 다 보이게 */
+h1.text-3xl {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  width: auto !important;
+  max-width: none !important;
+  display: block;
+}
 </style>
 {% endblock %}
