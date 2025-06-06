@@ -81,7 +81,7 @@ def import_bills(csv_path):
         print("[INFO] 저장할 법안이 없습니다.")
 
 # 실행
-csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill_labeled.csv'
+csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'bill_labeled(1).csv'
 import_bills(csv_path)
 
 

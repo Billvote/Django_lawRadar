@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% block body %}
-<div class="min-h-screen flex bg-gray-100">
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white shadow-md">
-    <div class="p-4 text-xl font-bold border-b">대시보드</div>
-    <nav class="p-4 space-y-2">
-      <a href="{% url 'dashboard' 22 %}" class="block text-gray-700 hover:text-indigo-600">22대</a>
-      <a href="{% url 'dashboard' 21 %}" class="block text-gray-700 hover:text-indigo-600">21대</a>
-      <a href="{% url 'dashboard' 20 %}" class="block text-gray-700 hover:text-indigo-600">20대</a>
-    </nav>
-  </aside>
+<!-- ✅ 공통 레이아웃 컨테이너 -->
+<div class="max-w-screen-lg mx-auto">
+
+<!-- ✅ 상단 네비게이션 바 -->
+<nav class="flex-1 p-6 bg-white shadow-sm border-b flex items-center justify-between">
+  <!-- 왼쪽: 타이틀 -->
+  <div class="text-2xl font-bold text-gray-800">대시보드</div>
+
+  <!-- 오른쪽: 대수 선택 -->
+  <div class="space-x-4">
+    <a href="{% url 'dashboard' 20 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">20대</a>
+    <a href="{% url 'dashboard' 21 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">21대</a>
+    <a href="{% url 'dashboard' 22 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">22대</a>
+  </div>
+</nav>
 
   <!-- Main Content -->
   <div class="flex-1 p-6">
@@ -59,7 +64,7 @@
   </div>
 </div>
 
-
+</div>
 {% endblock %}
 
 {% block script %}
@@ -75,6 +80,7 @@
 } | json_script:"chart-config" }}
 
 <script>
+  // 기본 통계 차트------------------
   const series = {{ series|safe }};
   const colors = {{ party_colors|safe }};
   const categories = {{ categories|safe }};

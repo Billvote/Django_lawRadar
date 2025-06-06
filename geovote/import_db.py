@@ -34,7 +34,7 @@ def import_ages(csv_path):
     if new_ages:
         with transaction.atomic():
             Age.objects.bulk_create(new_ages)
-        print(f"[DONE] {len(new_ages)}개의 대수 저장 완료.")
+        print(f"[DONE] {len(new_ages)}개의 대수 저장 완료")
     else:
         print("[INFO] 저장할 신규 대수가 없습니다.")
 
@@ -241,9 +241,9 @@ def import_votes(csv_path):
     if records:
         with transaction.atomic():
             Vote.objects.bulk_create(records, batch_size=1000)
-        print(f"[DONE] {len(records)}개의 투표 내역 저장 완료.")
+        print(f"[DONE] {len(records)}개의 투표 내역 저장 완료")
     else:
-        print("[INFO] 저장할 신규 투표 데이터가 없습니다.")
+        print("[INFO] 저장할 신규 투표 데이터가 없습니다")
 
 
 # ----------< 실행 >-------------------------

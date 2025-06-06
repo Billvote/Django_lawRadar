@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="p-6 max-w-6xl mx-auto">
+    <h2 class="font-bold text-4xl mb-2">"{{ query }}"</h2>
+    <p class="text-gray-600 mb-6">👏​{{ results|length }}개의 의안을 찾았습니다</p>
+</div>
+{% if results %}
+<div class="overflow-x-auto rounded-lg shadow">
+    <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-100 text-gray-700 font-semibold">
+            <tr>
+                <th scope="col" class="px-6 py-3 w-20">대수</th>
+                <th scope="col" class="px-6 py-3 w-60">의안명</th>
+                <th scope="col" class="px-6 py-3">요약</th>
+                <th scope="col" class="px-6 py-3 text-center w-32">개정 횟수</th>
+            </tr>
+            <!-- <th>최근 표결 날짜</th> -->
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for bill in results %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
+                <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.title }}</td>
+                <td class="px-6 py-4 text-gray-700 line-clamp-2">{{ bill.summary|default:"요약 없음" }}</td>
+                <td class="px-6 py-4 text-center">{{ bill.label }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <p class="text-gray-500 text-center mt-8">검색 결과가 없습니다.</p>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
