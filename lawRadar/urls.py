@@ -57,6 +57,8 @@ urlpatterns = [
 
     # history
     path('history/', include('history.urls')),
+    
+    path('', include('main.urls')),
 
 
 ]

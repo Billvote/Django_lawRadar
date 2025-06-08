@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="bg-white min-h-screen py-10">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-8">클러스터 {{ cluster_number }}의 키워드</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {% for keyword in keywords %}
+        <a href="{% url 'history:history_list' %}?keyword={{ keyword|urlencode }}"
+           class="text-cyan-500 hover:underline text-lg">
+          {{ keyword }}
+        </a>
+      {% empty %}
+        <p class="text-gray-500">이 클러스터에 키워드가 없습니다.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

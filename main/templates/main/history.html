@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ keyword }} 관련 법안 - LawRadar</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .back-button {
+            display: inline-block;
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .back-button:hover {
+            background: #7f8c8d;
+        }
+        
+        .page-title {
+            font-size: 2em;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .page-info {
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        
+        .keyword-highlight {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .bill-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .bill-item {
+            border-bottom: 1px solid #ecf0f1;
+            padding: 20px 0;
+        }
+        
+        .bill-item:last-child {
+            border-bottom: none;
+        }
+        
+        .bill-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .bill-meta {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .bill-summary {
+            color: #34495e;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .bill-cluster-info {
+            background: #ecf0f1;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 4px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            color: #3498db;
+            border-radius: 4px;
+        }
+        
+        .pagination a:hover {
+            background: #3498db;
+            color: white;
+        }
+        
+        .pagination .current {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .no-bills {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'index' cluster_num %}" class="back-button">← 키워드 목록으로</a>
+        
+        <div class="header">
+            <h1 class="page-title">
+                <span class="keyword-highlight">{{ keyword }}</span> 관련 법안
+            </h1>
+            <div class="page-info">
+                클러스터 {{ cluster_num }} | 총 {{ total_count }}개의 법안
+            </div>
+        </div>
+        
+        <div class="bill-list">
+            {% for bill in bills %}
+                <div class="bill-item">
+                    <div class="bill-title">{{ bill.title }}</div>
+                    <div class="bill-meta">
+                        법안번호: {{ bill.bill_number }} | 
+                        법안ID: {{ bill.bill_id }} | 
+                        등록일: {{ bill.created_at|date:"Y-m-d" }}
+                    </div>
+                    {% if bill.summary %}
+                        <div class="bill-summary">{{ bill.summary|truncatewords:50 }}</div>
+                    {% endif %}
+                    <div class="bill-cluster-info">
+                        클러스터: {{ bill.cluster }} | 키워드: {{ bill.cluster_keyword }}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-bills">
+                    <p>"{{ keyword }}" 키워드와 관련된 법안이 없습니다.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if bills.has_other_pages %}
+            <div class="pagination">
+                {% if bills.has_previous %}
+                    <a href="?page=1">&laquo; 첫 페이지</a>
+                    <a href="?page={{ bills.previous_page_number }}">이전</a>
+                {% endif %}
+                
+                {% for num in bills.paginator.page_range %}
+                    {% if bills.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% elif num > bills.number|add:'-3' and num < bills.number|add:'3' %}
+                        <a href="?page={{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if bills.has_next %}
+                    <a href="?page={{ bills.next_page_number }}">다음</a>
+                    <a href="?page={{ bills.paginator.num_pages }}">마지막 페이지 &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
