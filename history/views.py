@@ -1,15 +1,15 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from billview.models import Bill
+from django.db.models import Max
 import logging
 
 logger = logging.getLogger(__name__)
 
 def index(request):
-    # 클러스터와 대표 키워드 조회, 유효한 숫자 클러스터만
     clusters = Bill.objects.filter(
         cluster__isnull=False,
-        cluster__gt=0  # 0보다 큰 숫자만
+        cluster__gt=0
     ).values('cluster', 'cluster_keyword').distinct().order_by('cluster')
     clusters = [
         {'cluster': c['cluster'], 'keyword': c['cluster_keyword'] or '키워드 없음'}
@@ -28,10 +28,28 @@ class BillHistoryListView(ListView):
 
     def get_queryset(self):
         keyword = self.request.GET.get('keyword')
+        queryset = Bill.objects.all()
         if keyword:
             logger.info(f"Filtering bills by keyword: {keyword}")
-            return Bill.objects.filter(cluster_keyword__contains=keyword)
-        return Bill.objects.all()
+            queryset = queryset.filter(cluster_keyword__contains=keyword)
+        # label별 최신 bill_number
+        latest_bills = queryset.values('label').annotate(
+            max_bill_number=Max('bill_number')
+        ).values('label', 'max_bill_number')
+        # 최신 법안 ID 수집
+        bill_ids = []
+        for item in latest_bills:
+            if item['label'] is not None and item['max_bill_number']:
+                bill = queryset.filter(
+                    label=item['label'],
+                    bill_number=item['max_bill_number']
+                ).values('id').first()
+                if bill:
+                    bill_ids.append(bill['id'])
+        # 최신 법안만 조회
+        queryset = queryset.filter(id__in=bill_ids).order_by('-bill_number')
+        logger.info(f"Queryset count: {queryset.count()}")
+        return queryset
 
 class BillHistoryDetailView(DetailView):
     model = Bill
@@ -45,8 +63,8 @@ class BillHistoryDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        label = str(self.object.label) if self.object.label is not None else ''
-        if label.strip():
+        label = self.object.label
+        if label is not None:
             related_bills = Bill.objects.filter(label=label).order_by('-bill_number')[:10]
         else:
             related_bills = []
@@ -57,14 +75,30 @@ class BillHistoryDetailView(DetailView):
         return context
 
 def cluster_index(request, cluster_number):
-    bills = Bill.objects.filter(cluster=cluster_number)
-    keywords = set()
-    for bill in bills:
-        if bill.cluster_keyword:
-            for keyword in bill.cluster_keyword.split(','):
-                keywords.add(keyword.strip())
-    logger.info(f"Cluster {cluster_number} keywords: {keywords}")
-    return render(request, 'history/index.html', {
-        'cluster_number': cluster_number,
-        'keywords': sorted(keywords)
-    })
+    try:
+        cluster_number = int(cluster_number)
+        bills = Bill.objects.filter(cluster=cluster_number)
+        cluster_bill_count = bills.count()
+        logger.info(f"Cluster {cluster_number} bills count: {cluster_bill_count}")
+        keywords = set()
+        for bill in bills:
+            if bill.cluster_keyword:
+                logger.debug(f"Bill {bill.pk} cluster_keyword: {bill.cluster_keyword}")
+                for keyword in bill.cluster_keyword.split(','):
+                    kw = keyword.strip()
+                    if kw:
+                        keywords.add(kw)
+        logger.info(f"Cluster {cluster_number} keywords: {keywords}")
+        return render(request, 'history/index.html', {
+            'cluster_number': cluster_number,
+            'keywords': sorted(keywords),
+            'cluster_bill_count': cluster_bill_count
+        })
+    except ValueError:
+        logger.error(f"Invalid cluster_number: {cluster_number}")
+        return render(request, 'history/index.html', {
+            'cluster_number': cluster_number,
+            'keywords': [],
+            'cluster_bill_count': 0,
+            'error': '유효하지 않은 클러스터 번호입니다.'
+        })

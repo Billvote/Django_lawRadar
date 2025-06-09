@@ -1,11 +1,10 @@
 from django.db import models
 from geovote.models import Age
 
-# bill
 class Bill(models.Model):
     age = models.ForeignKey(Age, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)                 
-    bill_id = models.CharField(max_length=100, unique=True)  
+    title = models.CharField(max_length=255)
+    bill_id = models.CharField(max_length=100, unique=True)
     bill_number = models.CharField(max_length=100, unique=True)
     summary = models.TextField(blank=True, null=True)
     cluster = models.IntegerField()
@@ -18,3 +17,9 @@ class Bill(models.Model):
 
     def get_related_count(self):
         return Bill.objects.filter(label=self.label).count()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['label', 'bill_number']),
+            models.Index(fields=['cluster_keyword']),
+        ]
