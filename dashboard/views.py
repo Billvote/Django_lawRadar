@@ -156,7 +156,7 @@ def get_party_cluster_vote_data(congress_num, top_n_clusters=20):
         .order_by('-vote_count')
     )
     
-    top_clusters = [c['cluster'] for c in cluster_vote_counts[:top_n_clusters]]
+    top_clusters = [c['cluster'] for c in cluster_vote_counts]
 
     # cluster_num + keyword 매핑
     cluster_keywords = {}

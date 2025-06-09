@@ -10,9 +10,9 @@
 
   <!-- 오른쪽: 대수 선택 -->
   <div class="space-x-4">
-    <a href="{% url 'dashboard' 20 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">20대</a>
-    <a href="{% url 'dashboard' 21 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">21대</a>
-    <a href="{% url 'dashboard' 22 %}" class="text-lg font-semibold text-gray-700 hover:text-cyan-500">22대</a>
+    <a href="{% url 'dashboard' 20 %}" class="text-lg font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
+    <a href="{% url 'dashboard' 21 %}" class="text-lg font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
+    <a href="{% url 'dashboard' 22 %}" class="text-lg font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
   </div>
 </nav>
 
