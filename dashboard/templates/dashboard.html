@@ -34,13 +34,24 @@
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
+<div class="grid grid-cols-5 gap-4 mb-4">
+  <div class="col-span-3 bg-white p-4 rounded shadow">
+    {% include 'clusterSelect.html' %}
+    <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
+  </div>
+  <div class="col-span-2 bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
+  </div>
+</div>
 <!-- 클러스터 선택 드롭다운 -->
-<div class="mb-4">
+<!-- <div class="mb-4">
   <div class="bg-white p-4 rounded shadow">
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
-</div>
+</div> -->
+
+
 
 <!-- 성별 차트 -->
 <div class="mb-4">

@@ -324,6 +324,71 @@ def get_party_cluster_highlight():
 
     return top_diffs
 
+def get_party_diff_data(congress_num):
+    age = Age.objects.get(number=congress_num)
+    votes = Vote.objects.filter(age=age).select_related('member__party', 'bill')
+
+    vote_stats = (
+        votes.values(
+            cluster=F('bill__cluster'),
+            party=F('member__party__party'),
+            result=F('result')
+        )
+        .annotate(count=Count('id'))
+    )
+
+    total_votes = (
+        votes.values(cluster=F('bill__cluster'), party=F('member__party__party'))
+        .annotate(total=Count('id'))
+    )
+    total_lookup = {(x['cluster'], x['party']): x['total'] for x in total_votes}
+
+    # 클러스터-정당별 찬반 수 저장
+    result = defaultdict(lambda: defaultdict(lambda: {'찬성': 0, '반대': 0}))
+    for row in vote_stats:
+        cluster = row['cluster']
+        party = row['party']
+        vote_type = row['result']
+        count = row['count']
+        if vote_type in ['찬성', '반대']:
+            result[cluster][party][vote_type] += count
+    
+    all_parties = set()
+    for cluster_data in result.values():
+        all_parties.update(cluster_data.keys())
+
+    # 정당별 편차 큰 클러스터 찾기
+    party_relative_dff = {}
+    for party in all_parties:
+        max_support_diff = -1
+        max_oppose_diff = -1
+        max_support_cluster = None
+        max_oppose_cluster = None
+
+        for cluster, party_data in result.items():
+            if party not in party_data: # 예외 처리
+                continue
+
+            total = total_lookup.get((cluster, party), 1)
+            this_support = party_data[party]['찬성'] / total
+            this_oppose = party_data[party]['반대'] / total
+
+            # 해당 클러스터에서, 타 정당들의 평균
+            other_supports = []
+            other_opposes = []
+            for other_party, counts in party_data.items():
+                if other_party == party: # 현 정당일 경우 패스
+                    continue
+                other_total = total_lookup.get((cluster, party), 1)
+                other_supports.append(counts['찬성'] / other_total)
+                other_opposes.append(counts['반대'] / other_total)
+            if not other_supports or not other_opposes:
+                continue
+
+            # 평균 찬성/반대율 구하기
+            avg_support = sum(other_supports) / len(other_supports)
+            
+
 def dashboard(request, congress_num):
     # 대수 필터링
     if congress_num not in [20, 21, 22]: # 유효하지 않은 링크 처리
