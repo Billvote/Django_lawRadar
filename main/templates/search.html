@@ -2,9 +2,9 @@
 {% block body %}
 <div class="p-6 max-w-6xl mx-auto">
     <h2 class="font-bold text-4xl mb-2">"{{ query }}"</h2>
-    <p class="text-gray-600 mb-6">👏​{{ results|length }}개의 의안을 찾았습니다</p>
+    <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
 </div>
-{% if results %}
+{% if page_obj %}
 <div class="overflow-x-auto rounded-lg shadow">
     <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200 text-sm text-left">
         <thead class="bg-gray-100 text-gray-700 font-semibold">
@@ -17,12 +17,12 @@
             <!-- <th>최근 표결 날짜</th> -->
         </thead>
         <tbody class="divide-y divide-gray-100">
-            {% for bill in results %}
+            {% for bill in page_obj %}
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
                 <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.title }}</td>
                 <td class="px-6 py-4 text-gray-700 line-clamp-2">{{ bill.summary|default:"요약 없음" }}</td>
-                <td class="px-6 py-4 text-center">{{ bill.label }}</td>
+                <td class="px-6 py-4 text-center">{{ bill.label_count }}</td>
             </tr>
             {% endfor %}
             {% else %}
@@ -32,5 +32,30 @@
             {% endif %}
         </tbody>
     </table>
+
+<!-- 페이지네이션 전체 컨테이너 -->
+<div class="pagination mt-4 flex justify-center space-x-2">
+  <!-- 이전 버튼 -->
+  {% if page_obj.has_previous %}
+    <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
+  {% else %}
+    <span class="px-3 py-1 text-gray-400">이전</span>
+  {% endif %}
+
+  <!-- 페이지 번호 버튼 -->
+  {% for num in page_range %}
+    {% if num == page_obj.number %}
+      <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
+    {% else %}
+      <a href="?q={{ query }}&page={{ num }}" class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  <!-- 다음 버튼 -->
+  {% if page_obj.has_next %}
+    <a href="?q={{ query }}&page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
+  {% else %}
+    <span class="px-3 py-1 text-gray-400">다음</span>
+  {% endif %}
 </div>
 {% endblock %}
