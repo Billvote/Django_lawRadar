@@ -1,25 +1,29 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="flex flex-col md:flex-row h-screen">
-  <!-- 왼쪽 사이드바 -->
-  <aside class="w-full md:w-64 bg-white shadow-md border-r">
-    <div class="p-4 text-xl font-bold border-b">대수 선택</div>
-    <nav class="p-4 space-y-2">
-      {% for age in ages %}
-        <button
-          class="age-btn block w-full text-left px-3 py-2 rounded hover:bg-indigo-500 hover:text-white transition text-gray-700"
-          data-age="{{ age.id }}">
-          {{ age.number }}대
-        </button>
-      {% endfor %}
-    </nav>
-  </aside>
+<!-- 상단 네비게이션 바 -->
+<nav class="bg-white shadow-sm border-b flex items-center justify-between p-6">
+  <!-- 왼쪽: 타이틀 -->
+  <div class="text-2xl font-bold text-gray-800">대수 선택</div>
 
+  <!-- 오른쪽: 대수 선택 -->
+  <div class="space-x-4">
+    {% for age in ages %}
+      <button
+        class="age-btn text-lg font-semibold {% if selected_age == age.id %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500"
+        data-age="{{ age.id }}">
+        {{ age.number }}대
+      </button>
+    {% endfor %}
+  </div>
+</nav>
+
+<!-- 전체 화면 영역 -->
+<div class="flex flex-col md:flex-row h-[calc(100vh-80px)]">
   <!-- 메인 영역 + 우측 패널을 flex로 묶음 -->
   <div class="flex flex-1 overflow-hidden">
     <!-- 메인: 트리맵 -->
-    <main id="mainContent" class="flex-1 flex flex-col overflow-hidden p-4 bg-gray-50">
+    <main id="mainContent" class="flex-[1_1_0%] flex flex-col overflow-hidden p-4 bg-gray-50">
       <div class="border-b flex flex-col items-center md:flex-row md:justify-between gap-2 mb-2">
         <h1 class="text-2xl font-bold text-center">
           🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
@@ -30,18 +34,20 @@
           뒤로가기
         </button>
       </div>
-      <div id="treemap" class="flex-1 overflow-auto"></div>
+      <div id="treemap"  class="flex-1 overflow-auto max-h-[calc(100vh-160px)]"></div>
     </main>
 
     <!-- 우측 패널 -->
-    <aside id="infoPanel" class="w-80 bg-white border-l shadow-lg p-4 overflow-auto hidden">
+    <aside id="infoPanel" class="flex-[2_1_0%] bg-white border-l shadow-lg p-4 overflow-auto hidden">
       <button id="closePanelBtn" class="float-right text-xl font-bold">&times;</button>
       <h2 id="panelTitle" class="font-bold text-lg mb-2"></h2>
       <div id="panelContent" class="text-sm"></div>
     </aside>
   </div>
 </div>
+
 {% endblock %}
+
 
 {% block script %}
 <script src="https://d3js.org/d3.v6.min.js"></script>
@@ -49,7 +55,6 @@
   const container = document.getElementById("treemap");
   const backButton = d3.select("#backButton");
   const breadcrumb = document.getElementById("breadcrumb");
-
   const infoPanel = document.getElementById("infoPanel");
   const closePanelBtn = document.getElementById("closePanelBtn");
   const panelTitle = document.getElementById("panelTitle");
@@ -101,7 +106,7 @@ function renderSummary(data) {
   function getClusterText(max_type, keywords) {
     if (max_type === "찬성") {
       return `
-        <div class="mb-2 flex items-start text-orange-600 font-semibold text-sm flex-col">
+        <div class="mb-2 flex items-start text-blue-600 font-semibold text-sm flex-col">
           <div>
             <span class="mr-1">⭕️</span>
             <span>이런 법안을 지지해요!</span>
@@ -116,7 +121,7 @@ function renderSummary(data) {
         <div class="mb-2 flex items-start text-red-600 font-semibold text-sm flex-col">
           <div>
             <span class="mr-1">❌</span>
-            <span>이 법안은 지지하지 않아요</span>
+            <span>이런 법안은 지지하지 않아요</span>
           </div>
           <div class="ml-6 mt-1 font-bold text-gray-800">
             ${keywords.join(', ')}
@@ -124,9 +129,10 @@ function renderSummary(data) {
         </div>
       `;
     } else if (max_type === "기타") {
+      // 문장 부분만 whitespace-nowrap, 전체는 flex-col 유지
       return `
         <div class="mb-2 flex items-start text-gray-600 font-semibold text-sm flex-col">
-          <div>
+          <div class="whitespace-nowrap">
             <span class="mr-1">😭</span>
             <span>이런 법안에는 기권,불참이 높아요</span>
           </div>
@@ -139,8 +145,6 @@ function renderSummary(data) {
       return '';
     }
   }
-
-
 
   Object.entries(maxByType).forEach(([type, item]) => {
     if (!item || uniqueClusters.has(item.cluster_keyword)) return;
@@ -160,8 +164,9 @@ function renderSummary(data) {
         <div class="flex flex-wrap gap-2 mb-4">
           ${keywords.map(k => `<span class="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">${k}</span>`).join('')}
         </div>
-
-        <div class="flex gap-4 mb-4">
+        ${getClusterText(item.max_type, keywords)}
+        <hr class="my-2 border-gray-200">
+        <div class="flex gap-4">
           <div class="flex-1 text-center">
             <div class="text-gray-500 text-sm">찬성</div>
             <div class="text-2xl font-bold text-indigo-600">${item.찬성}</div>
@@ -175,27 +180,14 @@ function renderSummary(data) {
             <div class="text-2xl font-bold text-gray-600">${item.기타}</div>
           </div>
         </div>
-
-        <div class="cluster border-t pt-2 text-sm text-gray-700">
-          ${getClusterText(item.max_type, keywords)}
-          <ul class="list-disc list-inside mt-1">
-            <li>찬성: ${item.찬성}</li>
-            <li>반대: ${item.반대}</li>
-            <li>기타: ${item.기타}</li>
-          </ul>
-        </div>
       </div>
     `;
+
   });
 
   html += '</div>';
   return html;
 }
-
-
-
-
-
 
   // 우측 패널 열기
   function openPanel(title, contentHtml) {
@@ -257,9 +249,14 @@ function renderSummary(data) {
           }
         }
       });
+    
+    const freshColors = [
+      "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
+      "#6ee7b7", "#7dd3fc", "#c4b5fd", "#fda4af", "#5eead4"
+    ];
 
-    const sidoColors = d3.scaleOrdinal(d3.schemeCategory10);
-    const sigunguColors = d3.scaleOrdinal(d3.schemeTableau10);
+    const sidoColors = d3.scaleOrdinal(freshColors);
+    const sigunguColors = d3.scaleOrdinal(freshColors);
 
     nodes.append("rect")
       .transition().duration(300)
@@ -281,17 +278,26 @@ function renderSummary(data) {
 
     nodes.append("text")
       .attr("x", d => (x(d.x1) - x(d.x0)) / 2)
-      .attr("y", d => (y(d.y1) - y(d.y0)) / 2 - 5)
+      .attr("y", d => (y(d.y1) - y(d.y0)) / 2)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
       .style("pointer-events", "none")
+      .style("font-family", "'Pretendard','Noto Sans KR','Nanum Gothic',sans-serif")
+      .style("font-weight", "700")
+      .style("letter-spacing", "0.02em")
+      .style("fill", "#222")
       .style("fill", "#FFFFFF", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";
         if (d.data.type === "SIGUNGU") return "#6A8CA3";
       })
       .style("font-weight", "600")
-      .style("font-size", "12px")
-      .style("text-shadow", "2px 2px 4px rgba(0,0,0,0.5)")
+      // 아래처럼 font-size를 격자 크기에 따라 동적으로 계산
+      .style("font-size", d => {
+        const width = x(d.x1) - x(d.x0);
+        const height = y(d.y1) - y(d.y0);
+        // 예시: 격자 대각선의 1/8, 최소 14px
+        return Math.max(Math.min(Math.sqrt(width * width + height * height) / 8, 32), 12) + "px";
+})
       .text(d => d.data.name);
       }
 
@@ -331,10 +337,15 @@ function renderSummary(data) {
     button.addEventListener("click", async () => {
       const age = button.getAttribute("data-age");
       await init(age);
-      document.querySelectorAll(".age-btn").forEach(btn => btn.classList.remove("bg-indigo-600", "text-white"));
-      button.classList.add("bg-indigo-600", "text-white");
+      document.querySelectorAll(".age-btn").forEach(btn => {
+        btn.classList.remove("text-white", "bg-indigo-600", "text-cyan-500");
+        btn.classList.add("text-gray-700");
+      });
+      button.classList.remove("text-gray-700");
+      button.classList.add("text-cyan-500");
     });
   });
+
 
   // 뒤로가기 버튼
   backButton.on("click", () => {
