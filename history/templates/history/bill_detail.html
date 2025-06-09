@@ -18,27 +18,20 @@
     <!-- 타임라인 -->
     <div class="relative">
       <!-- 세로선 -->
-      <div class="absolute left-8 top-0 h-full w-0.5 bg-indigo-200 z-0"></div>
+      <div class="absolute left-8 top-0 h-full w-0.5 bg-gray-200 z-0"></div>
       <div class="space-y-12" id="timeline-list">
         {% for related in related_bills %}
         <div id="timeline-{{ related.pk }}" class="relative pl-16 group">
           <!-- 점 -->
-          <div class="absolute left-8 top-8 -ml-1.5 h-4 w-4 rounded-full border-4 border-white shadow-lg
-                      {% if related.id == bill.id %}bg-indigo-600 border-indigo-300{% else %}bg-indigo-300 border-indigo-100{% endif %}">
+          <div class="absolute left-8 top-8 -ml-1.5 h-4 w-4 rounded-full border-4 border-white shadow-lg bg-gray-300 border-gray-100">
           </div>
           <!-- 카드 -->
-          <div class="p-6 bg-white border rounded-lg shadow-md transition-shadow
-                      {% if related.id == bill.id %}ring-2 ring-indigo-500 bg-indigo-50{% endif %}
-                      hover:shadow-xl max-w-full">
+          <div class="p-6 bg-white border rounded-lg shadow-md transition-shadow hover:shadow-xl max-w-full">
             <div class="flex justify-between items-center">
-              <a href="{% url 'history:bill_detail' related.pk %}?page={{ list_page }}"
-                 class="text-base font-semibold block {% if related.id == bill.id %}text-indigo-600{% else %}text-gray-900{% endif %} break-words"
-                 style="word-break:break-all;">
+              <div class="text-base font-semibold text-gray-900 break-words cursor-default"
+                   style="word-break:break-all;">
                 {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
-              </a>
-              {% if related.id == bill.id %}
-                <span class="ml-4 px-2.5 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">현재 의안</span>
-              {% endif %}
+              </div>
             </div>
             <div class="mt-2 text-sm text-gray-700 break-all">
               의안번호: {{ related.bill_number }}
@@ -50,20 +43,6 @@
     </div>
   </div>
 </div>
-<script>
-function scrollToTimeline(pk) {
-  setTimeout(function() {
-    const el = document.getElementById('timeline-' + pk);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
-}
-window.onload = function() {
-  const current = document.querySelector('.ring-2');
-  if(current) {
-    current.scrollIntoView({ behavior: 'auto', block: 'center' });
-  }
-};
-</script>
 <style>
 /* 카드 안 글자가 넘치지 않도록 */
 .text-base, .text-sm {
@@ -71,7 +50,7 @@ window.onload = function() {
   overflow-wrap: break-word;
 }
 .group:hover .absolute.h-4.w-4 {
-  background-color: #6366f1;
+  background-color: #81aaf0;
   transform: scale(1.2);
   transition: all 0.2s ease;
 }
