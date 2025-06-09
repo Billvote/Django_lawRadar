@@ -36,11 +36,13 @@
 
 <div class="grid grid-cols-5 gap-4 mb-4">
   <div class="col-span-3 bg-white p-4 rounded shadow">
+    <h2 class="text-xl font-semibold mb-6">👀정당/클러스터별 표결 현황</h2>
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
   <div class="col-span-2 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
+    {% include 'relativeDiff.html' %}
   </div>
 </div>
 <!-- 클러스터 선택 드롭다운 -->
@@ -428,7 +430,5 @@ document.addEventListener('DOMContentLoaded', () => {
   selector.addEventListener('change', () => {
     updateChart(selector.value);
   });
-
-
 </script>
 {% endblock %}

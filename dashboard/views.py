@@ -324,7 +324,7 @@ def get_party_cluster_highlight():
 
     return top_diffs
 
-def get_party_diff_data(congress_num):
+def get_party_relative_diff_data(congress_num):
     age = Age.objects.get(number=congress_num)
     votes = Vote.objects.filter(age=age).select_related('member__party', 'bill')
 
@@ -332,7 +332,7 @@ def get_party_diff_data(congress_num):
         votes.values(
             cluster=F('bill__cluster'),
             party=F('member__party__party'),
-            result=F('result')
+            vote_result=F('result')
         )
         .annotate(count=Count('id'))
     )
@@ -348,7 +348,7 @@ def get_party_diff_data(congress_num):
     for row in vote_stats:
         cluster = row['cluster']
         party = row['party']
-        vote_type = row['result']
+        vote_type = row['vote_result']
         count = row['count']
         if vote_type in ['찬성', '반대']:
             result[cluster][party][vote_type] += count
@@ -357,8 +357,33 @@ def get_party_diff_data(congress_num):
     for cluster_data in result.values():
         all_parties.update(cluster_data.keys())
 
+    # 시각화용 데이터 저장
+    visual_data = {}
+    for cluster, party_data in result.items():
+        cluster_parties = {}
+        support_rates = []
+        oppose_rates = []
+
+        for party, counts in party_data.items():
+            total = total_lookup.get((cluster, party), 1)
+            support = counts['찬성'] / total
+            oppose = counts['반대'] / total
+
+            cluster_parties[party] = {
+                'support': round(support * 100, 1),
+                'oppose': round(oppose * 100, 1)
+            }
+            support_rates.append(support)
+            oppose_rates.append(oppose)
+        
+        visual_data[cluster] = {
+            'avg_support': round(sum(support_rates) / len(support_rates) * 100, 1),
+            'avg_oppose': round(sum(oppose_rates) / len(oppose_rates) * 100, 1),
+            'parties': cluster_parties
+        }
+
     # 정당별 편차 큰 클러스터 찾기
-    party_relative_dff = {}
+    party_relative_diff = {}
     for party in all_parties:
         max_support_diff = -1
         max_oppose_diff = -1
@@ -379,7 +404,7 @@ def get_party_diff_data(congress_num):
             for other_party, counts in party_data.items():
                 if other_party == party: # 현 정당일 경우 패스
                     continue
-                other_total = total_lookup.get((cluster, party), 1)
+                other_total = total_lookup.get((cluster, other_party), 1)
                 other_supports.append(counts['찬성'] / other_total)
                 other_opposes.append(counts['반대'] / other_total)
             if not other_supports or not other_opposes:
@@ -387,7 +412,82 @@ def get_party_diff_data(congress_num):
 
             # 평균 찬성/반대율 구하기
             avg_support = sum(other_supports) / len(other_supports)
+            avg_oppose = sum(other_opposes) / len(other_opposes)
             
+            # 편차
+            support_diff = abs(this_support - avg_support)
+            oppose_diff = abs(this_oppose - avg_oppose)
+
+            # 편차 큰 클러스터 구하기
+            if support_diff > max_support_diff:
+                max_support_diff = support_diff
+                max_support_cluster = cluster
+            if oppose_diff > max_oppose_diff:
+                max_oppose_diff = oppose_diff
+                max_oppose_cluster = cluster
+        visual_entry = {}
+        for label, cluster_id in {
+            'relative_support_cluster': max_support_cluster,
+            'relative_oppose_cluster': max_oppose_cluster,
+        }.items():
+            if cluster_id is not None:
+                cluster_visual = visual_data.get(cluster_id, {})
+                parties_data = cluster_visual.get('parties', {})
+                this_party_data = parties_data.get(party, {'support': 0, 'oppose': 0})
+                visual_entry[cluster_id] = {
+                '찬성': {
+                    'party_percentage': this_party_data['support'],
+                    'average_percentage': cluster_visual.get('avg_support', 0),
+                },
+                '반대': {
+                    'party_percentage': this_party_data['oppose'],
+                    'average_percentage': cluster_visual.get('avg_oppose', 0),
+                }
+            }
+        
+        party_relative_diff[party] = {
+            'relative_support_cluster': max_support_cluster,
+            'relative_oppose_cluster': max_oppose_cluster,
+            'visual_data': visual_entry
+        }
+
+    # 구조 단순화
+    simplified_result = {}
+    for party, data in party_relative_diff.items():
+        simplified_result[party] = {}
+
+        for label in ['relative_support_cluster', 'relative_oppose_cluster']:
+            cluster_id = data[label]
+            if cluster_id is None:
+                continue
+
+            cluster_data = data['visual_data'].get(cluster_id, {})
+            simplified_result[party][label.replace('_cluster', '')] = {
+                'cluster': cluster_id,
+                '찬성': cluster_data.get('찬성', {
+                    'party_percentage': 0,
+                    'average_percentage': 0
+                }),
+                '반대': cluster_data.get('반대', {
+                    'party_percentage': 0,
+                    'average_percentage': 0
+                }),
+            }
+    flattened_result = []
+    for party, data in simplified_result.items():
+        for label_key in ['support', 'oppose']:
+            cluster_info = data.get(label_key)
+            if not cluster_info:
+                continue
+
+            flattened_result.append({
+                'party': party,
+                'label': label_key,  # 'support' or 'oppose'
+                'cluster': cluster_info['cluster'],
+                '찬성': cluster_info['찬성'],
+                '반대': cluster_info['반대'],
+            })
+    return flattened_result
 
 def dashboard(request, congress_num):
     # 대수 필터링
@@ -425,6 +525,10 @@ def dashboard(request, congress_num):
     # 정당 클러스트 하이라이트 차트
     top_diffs = get_party_cluster_highlight()
 
+    # 정당별 특이 클러스트 목록
+    party_relative_diff = get_party_relative_diff_data(congress_num)
+    print(party_relative_diff)
+
     context = {
         'congress_num': congress_num,
         'party_names': data['party_names'],
@@ -444,6 +548,10 @@ def dashboard(request, congress_num):
         'ranking_data': divergence_ranking,
 
         'top_diffs': json.dumps(top_diffs),
+
+        'party_relative_diff': party_relative_diff,
+        'labels': ['relative_support', 'relative_oppose'],
+        'vote_types': ['찬성', '반대'],
     }
 
     return render(request, 'dashboard.html', context)
