@@ -2,7 +2,7 @@
 
 {% block body %}
 <div class="flex flex-col md:flex-row h-screen">
-  <!-- 사이드바 -->
+  <!-- 왼쪽 사이드바 -->
   <aside class="w-full md:w-64 bg-white shadow-md border-r">
     <div class="p-4 text-xl font-bold border-b">대수 선택</div>
     <nav class="p-4 space-y-2">
@@ -16,20 +16,30 @@
     </nav>
   </aside>
 
-  <!-- 메인 -->
-  <main class="flex-1 flex flex-col overflow-hidden">
-    <div class="p-4 border-b flex flex-col items-center md:flex-row md:justify-between gap-2">
-      <h1 class="text-2xl font-bold text-center">
-        🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
-      </h1>
-      <div id="breadcrumb" class="text-sm text-gray-500"></div>
-      <button id="backButton"
-        class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
-        뒤로가기
-      </button>
-    </div>
-    <div id="treemap" class="flex-1 overflow-auto bg-gray-50"></div>
-  </main>
+  <!-- 메인 영역 + 우측 패널을 flex로 묶음 -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- 메인: 트리맵 -->
+    <main id="mainContent" class="flex-1 flex flex-col overflow-hidden p-4 bg-gray-50">
+      <div class="border-b flex flex-col items-center md:flex-row md:justify-between gap-2 mb-2">
+        <h1 class="text-2xl font-bold text-center">
+          🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
+        </h1>
+        <div id="breadcrumb" class="text-sm text-gray-500"></div>
+        <button id="backButton"
+          class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+          뒤로가기
+        </button>
+      </div>
+      <div id="treemap" class="flex-1 overflow-auto"></div>
+    </main>
+
+    <!-- 우측 패널 -->
+    <aside id="infoPanel" class="w-80 bg-white border-l shadow-lg p-4 overflow-auto hidden">
+      <button id="closePanelBtn" class="float-right text-xl font-bold">&times;</button>
+      <h2 id="panelTitle" class="font-bold text-lg mb-2"></h2>
+      <div id="panelContent" class="text-sm"></div>
+    </aside>
+  </div>
 </div>
 {% endblock %}
 
@@ -39,15 +49,18 @@
   const container = document.getElementById("treemap");
   const backButton = d3.select("#backButton");
   const breadcrumb = document.getElementById("breadcrumb");
+
+  const infoPanel = document.getElementById("infoPanel");
+  const closePanelBtn = document.getElementById("closePanelBtn");
+  const panelTitle = document.getElementById("panelTitle");
+  const panelContent = document.getElementById("panelContent");
+
   let svg, currentNode, hierarchyRoot;
 
-  const pastelColors = d3.scaleOrdinal(d3.schemePastel1);
-
-  function getFontSize(width, height, text, isDistrict) {
-    const base = isDistrict ? 16 : 10;
-    const scale = Math.min(width / (text.length * 0.6), height / 1.2);
-    return Math.max(10, Math.min(scale, isDistrict ? 24 : 14)) + "px";
-  }
+  // 닫기 버튼 이벤트
+  closePanelBtn.addEventListener("click", () => {
+    infoPanel.classList.add("hidden");
+  });
 
   function updateBreadcrumb(node) {
     let path = [];
@@ -59,7 +72,139 @@
     breadcrumb.textContent = path.length ? path.join(" > ") : "";
   }
 
-  function render(node, width, height) {
+  // 표결 요약 JSON → 보기 좋은 HTML 테이블 변환
+function renderSummary(data) {
+  if (!data || !data.length) {
+    return "<p>데이터가 없습니다.</p>";
+  }
+
+  // 각각의 항목별로 가장 높은 클러스터 찾기
+  const maxByType = {
+    찬성: null,
+    반대: null,
+    기타: null,
+  };
+
+  data.forEach(item => {
+    ['찬성', '반대', '기타'].forEach(type => {
+      const val = parseInt(item[type]) || 0;
+      if (!maxByType[type] || val > parseInt(maxByType[type][type])) {
+        maxByType[type] = item;
+      }
+    });
+  });
+
+  const uniqueClusters = new Set();
+  let html = '<div class="space-y-4">';
+
+  // max_type에 따라 클러스터 텍스트 반환하는 함수
+  function getClusterText(max_type, keywords) {
+    if (max_type === "찬성") {
+      return `
+        <div class="mb-2 flex items-start text-orange-600 font-semibold text-sm flex-col">
+          <div>
+            <span class="mr-1">⭕️</span>
+            <span>이런 법안을 지지해요!</span>
+          </div>
+          <div class="ml-6 mt-1 font-bold text-gray-800">
+            ${keywords.join(', ')}
+          </div>
+        </div>
+      `;
+    } else if (max_type === "반대") {
+      return `
+        <div class="mb-2 flex items-start text-red-600 font-semibold text-sm flex-col">
+          <div>
+            <span class="mr-1">❌</span>
+            <span>이 법안은 지지하지 않아요</span>
+          </div>
+          <div class="ml-6 mt-1 font-bold text-gray-800">
+            ${keywords.join(', ')}
+          </div>
+        </div>
+      `;
+    } else if (max_type === "기타") {
+      return `
+        <div class="mb-2 flex items-start text-gray-600 font-semibold text-sm flex-col">
+          <div>
+            <span class="mr-1">😭</span>
+            <span>이런 법안에는 기권,불참이 높아요</span>
+          </div>
+          <div class="ml-6 mt-1 font-bold text-gray-800">
+            ${keywords.join(', ')}
+          </div>
+        </div>
+      `;
+    } else {
+      return '';
+    }
+  }
+
+
+
+  Object.entries(maxByType).forEach(([type, item]) => {
+    if (!item || uniqueClusters.has(item.cluster_keyword)) return;
+    uniqueClusters.add(item.cluster_keyword);
+
+    // cluster_keyword 파싱
+    let keywords = [];
+    try {
+      keywords = JSON.parse(item.cluster_keyword.replace(/'/g, '"'));
+    } catch (e) {
+      keywords = item.cluster_keyword.replace(/[\[\]]/g, '').split(',');
+    }
+    keywords = keywords.map(k => k.trim());
+
+    html += `
+      <div class="card rounded-lg shadow-md bg-white p-4">
+        <div class="flex flex-wrap gap-2 mb-4">
+          ${keywords.map(k => `<span class="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">${k}</span>`).join('')}
+        </div>
+
+        <div class="flex gap-4 mb-4">
+          <div class="flex-1 text-center">
+            <div class="text-gray-500 text-sm">찬성</div>
+            <div class="text-2xl font-bold text-indigo-600">${item.찬성}</div>
+          </div>
+          <div class="flex-1 text-center">
+            <div class="text-gray-500 text-sm">반대</div>
+            <div class="text-2xl font-bold text-red-600">${item.반대}</div>
+          </div>
+          <div class="flex-1 text-center">
+            <div class="text-gray-500 text-sm">기타</div>
+            <div class="text-2xl font-bold text-gray-600">${item.기타}</div>
+          </div>
+        </div>
+
+        <div class="cluster border-t pt-2 text-sm text-gray-700">
+          ${getClusterText(item.max_type, keywords)}
+          <ul class="list-disc list-inside mt-1">
+            <li>찬성: ${item.찬성}</li>
+            <li>반대: ${item.반대}</li>
+            <li>기타: ${item.기타}</li>
+          </ul>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+
+
+
+
+
+  // 우측 패널 열기
+  function openPanel(title, contentHtml) {
+    panelTitle.textContent = title;
+    panelContent.innerHTML = contentHtml;
+    infoPanel.classList.remove("hidden");
+  }
+
+  function render(node, width, height, selectedMemberName = null) {
     d3.select("#treemap svg").remove();
 
     svg = d3.select("#treemap").append("svg")
@@ -74,10 +219,9 @@
     const x = d3.scaleLinear().domain([node.x0, node.x1]).range([0, width]);
     const y = d3.scaleLinear().domain([node.y0, node.y1]).range([0, height]);
 
-    const childrenToShow = (node.depth <= 1) 
+    const childrenToShow = (node.depth <= 1)
       ? (node.children || []).filter(d => d.data.type !== "District")
       : (node.children || []);
-
 
     const nodes = group.selectAll("g")
       .data(childrenToShow)
@@ -85,13 +229,12 @@
       .attr("transform", d => `translate(${x(d.x0)},${y(d.y0)})`)
       .style("cursor", d => d.children ? "pointer" : "default")
       .on("click", async (event, d) => {
-        if (d.children) {          // SIDO·SIGUNGU 클릭
+        if (d.children) {  // SIDO·SIGUNGU 클릭
           currentNode = d;
           render(d, width, height);
-
-        } else if (d.data.type === "District") {  // 👉 지역구 의원 노드 클릭
-          const memberName = d.data.member_name;  // 또는 member_id
-
+          infoPanel.classList.add("hidden");  // 탐색 시 패널 닫기
+        } else if (d.data.type === "District") {  // 지역구 클릭
+          const memberName = d.data.member_name;
           if (!memberName) {
             alert("이 지역구에는 등록된 의원 정보가 없습니다.");
             return;
@@ -104,15 +247,10 @@
             if (!res.ok) throw new Error("API 호출 실패");
 
             const summary = await res.json();
-            console.log("표결 요약:", summary);
-
-            // --- 원하는 UI에 표시 ---
-            // 예시 1) 간단 alert
-            alert(JSON.stringify(summary, null, 2));
-
-            // 예시 2) 오른쪽 패널 / 모달에 출력
-            // showVoteSummaryModal(memberName, summary);
-
+            const summaryHtml = renderSummary(summary);
+            openPanel(memberName + " 의원 표결 요약", summaryHtml);
+            // 선택된 의원 이름을 넘겨서 다시 렌더
+            render(node, width, height, memberName);
           } catch (err) {
             console.error(err);
             alert("표결 정보를 가져오지 못했습니다.");
@@ -120,55 +258,42 @@
         }
       });
 
-
     const sidoColors = d3.scaleOrdinal(d3.schemeCategory10);
     const sigunguColors = d3.scaleOrdinal(d3.schemeTableau10);
 
     nodes.append("rect")
-      .transition().duration(400)
+      .transition().duration(300)
+      .attr("opacity", d => {
+      if (d.data.type === "District") {
+        // 선택된 의원이 있으면, 해당 의원만 1, 나머지는 0.2
+        return selectedMemberName && d.data.member_name === selectedMemberName ? 1 : 0.2;
+      }
+      return 1; // SIDO, SIGUNGU는 항상 1
+    })
       .attr("width", d => x(d.x1) - x(d.x0))
       .attr("height", d => y(d.y1) - y(d.y0))
       .attr("fill", d => {
         if (d.data.type === "District") return d.data.color || "#888";
-
-        if (d.data.type === "SIDO") {
-          return sidoColors(d.data.name);
-        }
-
-        if (d.data.type === "SIGUNGU") {
-          return sigunguColors(d.data.name);
-        }
-
-        // 기본 색상
+        if (d.data.type === "SIDO") return sidoColors(d.data.name);
+        if (d.data.type === "SIGUNGU") return sigunguColors(d.data.name);
         return "#ccc";
       });
 
-
     nodes.append("text")
       .attr("x", d => (x(d.x1) - x(d.x0)) / 2)
-      .attr("y", d => (y(d.y1) - y(d.y0)) / 2)
+      .attr("y", d => (y(d.y1) - y(d.y0)) / 2 - 5)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
       .style("pointer-events", "none")
-      .style("fill", d => {
+      .style("fill", "#FFFFFF", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";
         if (d.data.type === "SIGUNGU") return "#6A8CA3";
-        return d.data.color || "#888888";  // District 등 기본 색상
       })
-      .style("fill", d => "#FFFFFF")  // 글자 색은 항상 흰색
-
       .style("font-weight", "600")
-      .style("font-size", d => {
-        if (d.data.type === "SIDO") return "18px";
-        if (d.data.type === "SIGUNGU") return "14px";
-        if (d.data.type === "District") return "12px";
-        return "10px";
-      })
-      .text(d => {
-        if (d.data.type === "District" && currentNode.depth <= 1) return "";
-        return d.data.name;
-      });
-  }
+      .style("font-size", "12px")
+      .style("text-shadow", "2px 2px 4px rgba(0,0,0,0.5)")
+      .text(d => d.data.name);
+      }
 
   function resize() {
     if (!hierarchyRoot || !currentNode) return;
@@ -198,8 +323,10 @@
 
     currentNode = hierarchyRoot;
     render(currentNode, container.clientWidth, container.clientHeight);
+    infoPanel.classList.add("hidden");  // 초기에는 우측 패널 숨김
   }
 
+  // 대수 버튼 이벤트
   document.querySelectorAll(".age-btn").forEach(button => {
     button.addEventListener("click", async () => {
       const age = button.getAttribute("data-age");
@@ -209,14 +336,17 @@
     });
   });
 
+  // 뒤로가기 버튼
   backButton.on("click", () => {
     if (currentNode.parent) {
       currentNode = currentNode.parent;
       render(currentNode, container.clientWidth, container.clientHeight);
+      infoPanel.classList.add("hidden");  // 뒤로 갈 때 우측 패널 숨김
     }
   });
 
   window.addEventListener("resize", resize);
+
   window.addEventListener("DOMContentLoaded", () => {
     const first = document.querySelector(".age-btn");
     if (first) first.click();

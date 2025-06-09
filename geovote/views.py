@@ -107,6 +107,7 @@ def region_tree_data(request):
 from django.http import JsonResponse
 from django.db.models import Count
 from .models import Vote
+from billview.models import Bill
 
 def member_vote_summary_api(request):
     member_name = request.GET.get('member_name')
@@ -114,44 +115,73 @@ def member_vote_summary_api(request):
         return JsonResponse({'error': 'member_name parameter is required'}, status=400)
 
     try:
+        # 해당 의원의 모든 표결 결과를 가져옴
         votes = Vote.objects.filter(member__name=member_name)\
-            .values('bill__cluster', 'bill__name', 'result')\
-            .annotate(count=Count('id'))\
-            .order_by('bill__cluster')
+            .values('bill__cluster', 'result')\
+            .annotate(count=Count('id'))
     except Exception as e:
-        print(f"🔥 Error fetching votes for member: {member_name}")
-        print(f"🔥 Exception: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch votes', 'details': str(e)}, status=500)
 
+    # 클러스터별 cluster_keyword 매핑
+    clusters = set(vote['bill__cluster'] for vote in votes)
+    cluster_keywords = {}
+    for cluster in clusters:
+        bill = Bill.objects.filter(cluster=cluster).first()
+        cluster_keywords[cluster] = bill.cluster_keyword if bill else "알 수 없음"
+
+    # 표결 결과 집계
     cluster_summary = {}
     for vote in votes:
         cluster = vote['bill__cluster']
-        if cluster not in cluster_summary:
-            cluster_summary[cluster] = {'cluster': cluster, 'bills': {}}
-        bill_name = vote['bill__name']
-        if bill_name not in cluster_summary[cluster]['bills']:
-            cluster_summary[cluster]['bills'][bill_name] = {'찬성': 0, '반대': 0, '기타': 0}
-        result = vote['result']
-        if result == '찬성':
-            cluster_summary[cluster]['bills'][bill_name]['찬성'] += vote['count']
-        elif result == '반대':
-            cluster_summary[cluster]['bills'][bill_name]['반대'] += vote['count']
+        keyword = cluster_keywords.get(cluster, "알 수 없음")
+
+        if keyword not in cluster_summary:
+            cluster_summary[keyword] = {'찬성': 0, '반대': 0, '기타': 0}
+
+        if vote['result'] == '찬성':
+            cluster_summary[keyword]['찬성'] += vote['count']
+        elif vote['result'] == '반대':
+            cluster_summary[keyword]['반대'] += vote['count']
         else:
-            cluster_summary[cluster]['bills'][bill_name]['기타'] += vote['count']
+            cluster_summary[keyword]['기타'] += vote['count']
 
-    data = []
-    for cluster, info in cluster_summary.items():
-        bills_list = []
-        for bill_name, counts in info['bills'].items():
-            bills_list.append({
-                'bill_name': bill_name,
-                '찬성': counts['찬성'],
-                '반대': counts['반대'],
-                '기타': counts['기타']
-            })
-        data.append({'cluster': cluster, 'bills': bills_list})
+    # 클러스터별 대표 성향(max_type) 포함 정렬
+    sorted_clusters = []
+    for keyword, counts in cluster_summary.items():
+        max_vote_type = max(counts, key=counts.get)  # 가장 높은 투표 결과 항목
+        max_value = counts[max_vote_type]
+        sorted_clusters.append({
+            'cluster_keyword': keyword,
+            '찬성': counts['찬성'],
+            '반대': counts['반대'],
+            '기타': counts['기타'],
+            'max_type': max_vote_type,  # 대표 성향 포함
+            'max_value': max_value,
+        })
 
-    return JsonResponse(data, safe=False)
+    # 정렬: 찬성 > 반대 > 기타
+    def sort_group(vote_type):
+        return sorted(
+            [c for c in sorted_clusters if c['max_type'] == vote_type],
+            key=lambda x: x['max_value'],
+            reverse=True
+        )
+
+    final_sorted = sort_group('찬성') + sort_group('반대') + sort_group('기타')
+
+    # 이제 max_type 포함해서 응답 (max_value는 숨김)
+    for item in final_sorted:
+        item.pop('max_value')
+
+    return JsonResponse(final_sorted, safe=False)
+
+
+
+
+
+
 
 
 
