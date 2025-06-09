@@ -1,0 +1,198 @@
+import os
+import django
+import json
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # 프로젝트 루트 경로 추가
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lawRadar.settings') # Django 환경 설정
+django.setup()
+
+from geovote.models import Age, Party, Member, Vote
+from billview.models import Bill
+from main.models import AgeSummary, PartyVoteSummary, PartyClusterVoteSummary, ClusterKeyword
+from django.db.models import Count, F
+
+def import_age_summary(congress_num):
+    try:
+        age = Age.objects.get(number=congress_num)
+    except Age.DoesNotExist:
+        print(f"{congress_num}대에 해당하는 Age 객체가 없습니다.")
+        return
+
+    total_bills = Bill.objects.filter(age=age).count()
+    total_parties = Member.objects.filter(age=age).values('party').distinct().count()
+    gender_counts = Member.objects.filter(age=age).values('gender').annotate(count=Count('id'))
+
+    male_count = 0
+    female_count = 0
+    for g in gender_counts:
+        if g['gender'] == '남':
+            male_count = g['count']
+        elif g['gender'] == '여':
+            female_count = g['count']
+
+    total = male_count + female_count
+    female_percent = round((female_count / total) * 100, 1) if total > 0 else 0
+
+    age_summary, created = AgeSummary.objects.update_or_create(
+        age=age,
+        defaults={
+            'total_bills': total_bills,
+            'total_parties': total_parties,
+            'male_count': male_count,
+            'female_count': female_count,
+            'female_percent': female_percent,
+        }
+    )
+    print(f"AgeSummary 저장됨: {age_summary}")
+
+# 정당별 투표 통계
+def import_party_vote_summary(congress_num):
+    try:
+        age = Age.objects.get(number=congress_num)
+    except Age.DoesNotExist:
+        print(f"{congress_num}대에 해당하는 Age 객체가 없습니다.")
+        return
+
+    votes = Vote.objects.filter(age=age).select_related('member__party')
+
+    # 정당별 멤버 수 집계
+    top_parties = (
+        Member.objects.filter(age=age)
+        .values('party')
+        .annotate(member_count=Count('id'))
+        .order_by('-member_count')
+    )
+    top_party_ids = [p['party'] for p in top_parties]
+    parties = Party.objects.filter(id__in=top_party_ids)
+
+    # party_id를 key로 멤버 수를 빠르게 조회하기 위한 딕셔너리
+    member_count_map = {p['party']: p['member_count'] for p in top_parties}
+
+    # result_types = ['찬성', '반대', '기권', '불참']
+
+    for party in parties:
+        party_votes = votes.filter(member__party=party)
+        total_votes = party_votes.count()
+
+        support_count = party_votes.filter(result='찬성').count()
+        oppose_count = party_votes.filter(result='반대').count()
+        abstain_count = party_votes.filter(result='기권').count()
+        absent_count = party_votes.filter(result='불참').count()
+
+        member_count = member_count_map.get(party.id, 0)
+
+        # 비율 계산
+        support_ratio = (support_count / total_votes * 100) if total_votes else 0
+        oppose_ratio = (oppose_count / total_votes * 100) if total_votes else 0
+        abstain_ratio = (abstain_count / total_votes * 100) if total_votes else 0
+        absent_ratio = (absent_count / total_votes * 100) if total_votes else 0
+
+        pvs, created = PartyVoteSummary.objects.update_or_create(
+            age=age,
+            party=party,
+            defaults={
+                'member_count': member_count,
+                'support_ratio': support_ratio,
+                'oppose_ratio': oppose_ratio,
+                'abstain_ratio': abstain_ratio,
+                'absent_ratio': absent_ratio,
+                'total_votes': total_votes,
+            }
+        )
+        print(f"PartyVoteSummary 저장됨: {pvs}")
+
+# 정당/클러스터별 표결 통계
+def import_party_cluster_vote_summary(congress_num, top_n_clusters=20):
+    try:
+        age = Age.objects.get(number=congress_num)
+    except Age.DoesNotExist:
+        print(f"{congress_num}대에 해당하는 Age 객체가 없습니다.")
+        return
+
+    votes = Vote.objects.filter(age=age).select_related('member__party', 'bill')
+
+    # 해당 대수의 모든 정당 조회
+    party_ids_in_age = Member.objects.filter(age=age).values_list('party', flat=True).distinct()
+    parties = Party.objects.filter(id__in=party_ids_in_age)
+
+    # 투표 결과 집계
+    vote_summary = (
+        votes
+        .values(
+            cluster=F('bill__cluster'),
+            cluster_keyword=F('bill__cluster_keyword'),
+            party_name=F('member__party__party'),
+            vote_result=F('result')
+        )
+        .annotate(count=Count('id'))
+    )
+
+    # 총 투표 수 계산 (클러스터-정당별)
+    total_votes_qs = (
+        votes
+        .values(cluster=F('bill__cluster'), party_name=F('member__party__party'))
+        .annotate(total_count=Count('id'))
+    )
+    total_dict = {(tv['cluster'], tv['party_name']): tv['total_count'] for tv in total_votes_qs}
+
+    # 결과 정리
+    result_types = ['찬성', '반대', '기권', '불참']
+    cluster_party_result = {}
+
+    for row in vote_summary:
+        cluster = row['cluster']
+        keyword = row['cluster_keyword']
+        party_name = row['party_name']
+        result = row['vote_result']
+        count = row['count']
+
+        if cluster not in cluster_party_result:
+            cluster_party_result[cluster] = {}
+        if party_name not in cluster_party_result[cluster]:
+            cluster_party_result[cluster][party_name] = {r: 0 for r in result_types}
+        cluster_party_result[cluster][party_name][result] += count
+
+        # ClusterKeyword도 저장
+        ClusterKeyword.objects.update_or_create(
+            age=age,
+            cluster_num=cluster,
+            defaults={'keyword_json': json.dumps(keyword) if isinstance(keyword, (list, dict)) else str(keyword)}
+        )
+
+    # 모든 클러스터에 대해 저장
+    for cluster_num, party_data in cluster_party_result.items():
+        for party in parties:
+            party_name = party.party
+            result_counts = party_data.get(party_name, {r: 0 for r in result_types})
+            total = total_dict.get((cluster_num, party_name), 0)
+
+            pcs, created = PartyClusterVoteSummary.objects.update_or_create(
+                age=age,
+                cluster_num=cluster_num,
+                party=party,
+                defaults={
+                    'cluster_keyword': json.dumps(party_data.get(party_name, {})),
+                    'support_count': result_counts['찬성'],
+                    'oppose_count': result_counts['반대'],
+                    'abstain_count': result_counts['기권'],
+                    'absent_count': result_counts['불참'],
+                    'total_votes': total,
+                }
+            )
+            print(f"PartyClusterVoteSummary 저장됨: {pcs}")
+
+def run_all(congress_num):
+    print(f"{congress_num}대 데이터 임포트 시작")
+    import_age_summary(congress_num)
+    import_party_vote_summary(congress_num)
+    import_party_cluster_vote_summary(congress_num)
+    print(f"{congress_num}대 데이터 임포트 완료")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        congress_num = int(sys.argv[1])
+        run_all(congress_num)
+    else:
+        print("사용법: python import_db.py [국회대수]")
