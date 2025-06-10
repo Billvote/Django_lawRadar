@@ -26,11 +26,6 @@
 <!-- Stats Cards -->
 {% include 'Stats_cards.html' %}
 
-<!-- 권력 집중도 -->
-<div class="dashboard-section" style="padding: 2rem;">
-{% include 'hhi_cards.html' %}
-</div>
-
 <!-- Chart Section -->
 <div class="grid grid-cols-1 gap-6 mb-6">
   <!-- 정당별 법안 발의 수 -->
@@ -39,24 +34,30 @@
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
+<!-- 권력 집중도 -->
+<div class="dashboard-section">
+{% include 'hhi_cards.html' %}
+</div>
+
+<!-- 정당/클러스터별 표결 현황 -->
 <div class="grid grid-cols-5 gap-4 mb-4">
-  <div class="col-span-3 bg-white p-4 rounded shadow">
+  <div class="col-span-5 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">👀정당/클러스터별 표결 현황</h2>
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
-  <div class="col-span-2 bg-white p-4 rounded shadow">
+</div>
+<!-- 클러스터 통계 -->
+<div class="grid grid-cols-3 grid-rows-1 gap-4 mb-4">
+  <div class="col-span-3 row-start-1 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
     {% include 'relativeDiff.html' %}
   </div>
-</div>
-<!-- 클러스터 선택 드롭다운 -->
-<!-- <div class="mb-4">
-  <div class="bg-white p-4 rounded shadow">
-    {% include 'clusterSelect.html' %}
-    <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
+  <div class="col-span-2 row-start-1 bg-white p-4 rounded shadow">
+    <h2>가장 많이 찬성한 클러스터</h2>
   </div>
-</div> -->
+</div>
+
 
 </div>
 {% endblock %}
@@ -266,52 +267,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-// 권력 집중도-----------
-  document.addEventListener("DOMContentLoaded", function () {
-    var options = {
-      chart: {
-        type: 'bar',
-        height: 400
-      },
-      series: [{
-        name: '의석 점유율 (%)',
-        data: {{ party_concentration_top2_seat_shares|safe }}
-      }],
-      xaxis: {
-        categories: {{ party_concentration_names|safe }},
-        labels: {
-          rotate: -45,
-          style: { fontSize: '12px' }
-        }
-      },
-      plotOptions: {
-        bar: {
-          borderRadius: 4,
-          horizontal: false,
-        }
-      },
-      colors: ['#3b82f6'],  // Tailwind blue-500
-      dataLabels: {
-        enabled: true,
-        formatter: function (val) {
-          return val + "%";
-        }
-      },
-      tooltip: {
-        y: {
-          formatter: function (val) {
-            return val + "%";
-          }
-        }
-      },
-      title: {
-        text: "{{ party_concentration_age.number }}대 국회 정당별 의석 점유율",
-        align: 'center',
-        style: { fontSize: '20px' }
-      }
-    };
+// 권력 집중도 시계열-----------
+  document.addEventListener('DOMContentLoaded', function () {
+    const ages = {{ timeseries_data_age|safe }};
+    const hhiValues = {{ timeseries_data_hhi|safe }};
+    const top2Ratios = {{ timeseries_data_top2_ratio|safe }};
 
-    var chart = new ApexCharts(document.querySelector("#seatShareChart"), options);
+    const options = {
+      chart: { type: 'line', height: 350 },
+      xaxis: { categories: ages, title: { text: '국회 대수' } },
+      yaxis: [
+      {
+        seriesName: 'HHI 지수',
+        title: { text: 'HHI 지수' },
+        min: 0,
+        max: 1,
+        opposite: false,
+      },
+      {
+        seriesName: '점유율 (%)',
+        title: { text: '점유율 (%)' },
+        min: 0,
+        max: 100,
+        opposite: true,
+      }
+    ],
+    series: [
+      {
+        name: 'HHI 지수',
+        type: 'line',
+        data: hhiValues,
+        yAxisIndex: 0,
+      },
+      {
+        name: '점유율 (%)',
+        type: 'line',
+        data: top2Ratios,
+        yAxisIndex: 1,
+      }
+    ],
+    tooltip: {
+      shared: true,
+      intersect: false
+    }
+  };
+
+    const chart = new ApexCharts(document.querySelector("#hhi-top2-chart"), options);
     chart.render();
   });
 

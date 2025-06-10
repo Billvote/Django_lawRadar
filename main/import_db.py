@@ -21,8 +21,8 @@ def import_agesStats(congress_num):
 
     total_bills = Bill.objects.filter(age=age).count()
     total_parties = Member.objects.filter(age=age).values('party').distinct().count()
+    
     gender_counts = Member.objects.filter(age=age).values('gender').annotate(count=Count('id'))
-
     male_count = 0
     female_count = 0
     for g in gender_counts:
@@ -34,6 +34,15 @@ def import_agesStats(congress_num):
     total = male_count + female_count
     female_percent = round((female_count / total) * 100, 1) if total > 0 else 0
 
+    # HHI 계산
+    pcs = PartyConcentration.objects.filter(age=age)
+    total_members = sum(pc.member_count for pc in pcs)
+    if total_members > 0:
+        seat_shares = [pc.member_count / total_members * 100 for pc in pcs]
+        hhi = sum((share / 100) ** 2 for share in seat_shares)
+    else:
+        hhi = 0
+
     age_stats, created = AgeStats.objects.update_or_create(
         age=age,
         defaults={
@@ -42,6 +51,7 @@ def import_agesStats(congress_num):
             'male_count': male_count,
             'female_count': female_count,
             'female_percent': female_percent,
+            'hhi': round(hhi, 4),
         }
     )
     print(f"AgeStats 저장됨: {age_stats}")
@@ -204,6 +214,8 @@ def import_partyConcentration(congress_num):
     .order_by('-member_count')  # 전체 정당 다 가져옴
     )
     
+    total_members = sum([p['member_count'] for p in all_parties])  # 전체 의원 수 계산
+
     # 찬성 비율 구하기 (전체 정당에 대해)
     party_ids = [p['party'] for p in all_parties]
     vote_supports = (
@@ -213,31 +225,10 @@ def import_partyConcentration(congress_num):
     )
     vote_support_dict = {v['party']: v['avg_support'] for v in vote_supports}
 
-
-    # for p in all_parties:
-    # party = Party.objects.get(id=p['party'])
-    # member_count = p['member_count']
-
-    # # 1) 의석수 기준 상위 정당 2개
-    # top_parties = (
-    #     Member.objects.filter(age=age)
-    #     .values('party')
-    #     .annotate(member_count=Count('id'))
-    #     .order_by('-member_count')[:2]
-    # )
-
-    # 2) 표결 찬성 비율 평균 (PartyClusterStats 기준)
-    # PartyClusterStats는 여러 클러스터에 걸쳐 있으니, 같은 정당의 평균 찬성률 구함
-    # vote_supports = (
-    #     PartyClusterStats.objects.filter(age=age, party__in=[p['party'] for p in all_parties])
-    #     .values('party')
-    #     .annotate(avg_support=Avg('support_ratio'))
-    # )
-    # vote_support_dict = {v['party']: v['avg_support'] for v in vote_supports}
-
-    # 3) DB 저장 (rank 1, 2)
     for rank, party_data in enumerate(all_parties, start=1):
         party_obj = Party.objects.get(id=party_data['party'])
+        seat_share = (party_data['member_count'] / total_members * 100) if total_members > 0 else 0
+        
         PartyConcentration.objects.update_or_create(
             age=age,
             party=party_obj,
@@ -246,16 +237,17 @@ def import_partyConcentration(congress_num):
                 'rank': rank,
                 'member_count': party_data['member_count'],
                 'vote_support_ratio': vote_support_dict.get(party_obj.id, 0),
+                'seat_share': seat_share,
             }
         )
     print(f"PartyConcentration 저장 완료: {congress_num}대")
 
 def run_all(congress_num):
     print(f"{congress_num}대 데이터 임포트 시작")
-    import_agesStats(congress_num)
     import_partyStats(congress_num)
     import_partyClusterStats(congress_num)
     import_partyConcentration(congress_num)
+    import_agesStats(congress_num)
 
     print(f"{congress_num}대 데이터 임포트 완료")
 
