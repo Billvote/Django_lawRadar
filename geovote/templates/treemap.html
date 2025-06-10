@@ -29,7 +29,8 @@
           🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
         </h1>
         <div id="breadcrumb" class="text-sm text-gray-500"></div>
-        <button id="backButton"
+        <!-- 뒤로가기버튼 -->
+        <button id="backButton" 
           class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
           뒤로가기
         </button>
@@ -47,8 +48,6 @@
 </div>
 
 {% endblock %}
-
-
 {% block script %}
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script>
@@ -65,6 +64,9 @@
   // 닫기 버튼 이벤트
   closePanelBtn.addEventListener("click", () => {
     infoPanel.classList.add("hidden");
+
+    // 트리맵 리사이즈
+    setTimeout(resize, 400); // 패널이 사라지는 애니메이션 고려하여 약간 지연
   });
 
   function updateBreadcrumb(node) {
@@ -79,32 +81,17 @@
 
   // 표결 요약 JSON → 보기 좋은 HTML 테이블 변환
 function renderSummary(data) {
-  if (!data || !data.length) {
+  if (!data || Object.keys(data).length === 0) {
     return "<p>데이터가 없습니다.</p>";
   }
 
-  // 각각의 항목별로 가장 높은 클러스터 찾기
-  const maxByType = {
-    찬성: null,
-    반대: null,
-    기타: null,
-  };
-
-  data.forEach(item => {
-    ['찬성', '반대', '기타'].forEach(type => {
-      const val = parseInt(item[type]) || 0;
-      if (!maxByType[type] || val > parseInt(maxByType[type][type])) {
-        maxByType[type] = item;
-      }
-    });
-  });
-
+  const voteTypes = ['찬성', '반대', '기권', '불참'];
   const uniqueClusters = new Set();
   let html = '<div class="space-y-4">';
 
-  // max_type에 따라 클러스터 텍스트 반환하는 함수
-  function getClusterText(max_type, keywords) {
-    if (max_type === "찬성") {
+  // 클러스터 텍스트 반환 함수 (기존 그대로)
+  function getClusterText(type, keywords) {
+    if (type === "찬성") {
       return `
         <div class="mb-2 flex items-start text-blue-600 font-semibold text-sm flex-col">
           <div>
@@ -116,7 +103,7 @@ function renderSummary(data) {
           </div>
         </div>
       `;
-    } else if (max_type === "반대") {
+    } else if (type === "반대") {
       return `
         <div class="mb-2 flex items-start text-red-600 font-semibold text-sm flex-col">
           <div>
@@ -128,13 +115,24 @@ function renderSummary(data) {
           </div>
         </div>
       `;
-    } else if (max_type === "기타") {
-      // 문장 부분만 whitespace-nowrap, 전체는 flex-col 유지
+    } else if (type === "기권") {
       return `
         <div class="mb-2 flex items-start text-gray-600 font-semibold text-sm flex-col">
           <div class="whitespace-nowrap">
+            <span class="mr-1">🚫</span>
+            <span>이런 법안에는 기권이 많아요</span>
+          </div>
+          <div class="ml-6 mt-1 font-bold text-gray-800">
+            ${keywords.join(', ')}
+          </div>
+        </div>
+      `;
+    } else if (type === "불참") {
+      return `
+        <div class="mb-2 flex items-start text-gray-400 font-semibold text-sm flex-col">
+          <div class="whitespace-nowrap">
             <span class="mr-1">😭</span>
-            <span>이런 법안에는 기권,불참이 높아요</span>
+            <span>이런 법안에는 불참이 많아요</span>
           </div>
           <div class="ml-6 mt-1 font-bold text-gray-800">
             ${keywords.join(', ')}
@@ -146,11 +144,13 @@ function renderSummary(data) {
     }
   }
 
-  Object.entries(maxByType).forEach(([type, item]) => {
-    if (!item || uniqueClusters.has(item.cluster_keyword)) return;
+  voteTypes.forEach(type => {
+    const item = data[type];
+    if (!item) return;
+    if (uniqueClusters.has(item.cluster_keyword)) return;
     uniqueClusters.add(item.cluster_keyword);
 
-    // cluster_keyword 파싱
+    // cluster_keyword 파싱 (문자열 배열 형태인 경우 대비)
     let keywords = [];
     try {
       keywords = JSON.parse(item.cluster_keyword.replace(/'/g, '"'));
@@ -164,47 +164,146 @@ function renderSummary(data) {
         <div class="flex flex-wrap gap-2 mb-4">
           ${keywords.map(k => `<span class="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">${k}</span>`).join('')}
         </div>
-        ${getClusterText(item.max_type, keywords)}
+        ${getClusterText(type, keywords)}
         <hr class="my-2 border-gray-200">
         <div class="flex gap-4">
           <div class="flex-1 text-center">
             <div class="text-gray-500 text-sm">찬성</div>
-            <div class="text-2xl font-bold text-indigo-600">${item.찬성}</div>
+            <div class="text-2xl font-bold text-indigo-600">${item.ratios.찬성.toFixed(1)}%</div>
           </div>
           <div class="flex-1 text-center">
             <div class="text-gray-500 text-sm">반대</div>
-            <div class="text-2xl font-bold text-red-600">${item.반대}</div>
+            <div class="text-2xl font-bold text-red-600">${item.ratios.반대.toFixed(1)}%</div>
           </div>
           <div class="flex-1 text-center">
-            <div class="text-gray-500 text-sm">기타</div>
-            <div class="text-2xl font-bold text-gray-600">${item.기타}</div>
+            <div class="text-gray-500 text-sm">기권</div>
+            <div class="text-2xl font-bold text-gray-600">${item.ratios.기권.toFixed(1)}%</div>
+          </div>
+          <div class="flex-1 text-center">
+            <div class="text-gray-500 text-sm">불참</div>
+            <div class="text-2xl font-bold text-gray-400">${item.ratios.불참.toFixed(1)}%</div>
           </div>
         </div>
+        <div class="mt-2 text-sm text-gray-500">법안 수: ${item.bill_count}</div>
       </div>
     `;
-
   });
 
   html += '</div>';
   return html;
 }
 
+
+
   // 우측 패널 열기
   function openPanel(title, contentHtml) {
     panelTitle.textContent = title;
     panelContent.innerHTML = contentHtml;
     infoPanel.classList.remove("hidden");
+    mainContent.classList.add("main-blur");
+    setTimeout(resize, 400); // 트리맵 리사이즈
   }
+
+  // 뒤로가기 버튼
+  backButton.on("click", () => {
+    if (currentNode.parent) {
+      currentNode = currentNode.parent;
+    }
+    render(currentNode, container.clientWidth, container.clientHeight);  // 2) 트리맵 다시 그리기 (상위 노드 기준)
+    updateBreadcrumb(currentNode); // 3) breadcrumb 갱신
+    infoPanel.classList.add("hidden"); // 우측 패널 숨기기
+    setTimeout(() => {
+      resize();
+      updateBreadcrumb(currentNode);  // breadcrumb는 필요하면 갱신
+    }, 400);
+  });
+
+  // 대수 버튼 클릭 이벤트
+  document.querySelectorAll(".age-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const newAge = btn.dataset.age;
+      document.querySelectorAll(".age-btn").forEach(b => b.classList.remove("text-cyan-500", "bg-indigo-600"));
+      btn.classList.add("text-cyan-500");
+      await init(newAge);
+    });
+  });
 
   function render(node, width, height, selectedMemberName = null) {
     d3.select("#treemap svg").remove();
-
-    svg = d3.select("#treemap").append("svg")
-      .attr("width", width)
-      .attr("height", height);
+    const treemapContainer = d3.select("#treemap");
+    treemapContainer.selectAll(".district-cards").remove(); // 기존 카드 제거
 
     updateBreadcrumb(node);
     backButton.classed("hidden", !node.parent);
+
+    const isDistrictLevel =
+      node.children && node.children.every(d => d.data.type === "District");
+
+    if (isDistrictLevel) {
+      // 트리맵 대신 카드 UI로 표시
+      const container = treemapContainer
+        .append("div")
+        .attr("class", "district-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4");
+
+      node.children.forEach(d => {
+        const isSelected = selectedMemberName && d.data.member_name === selectedMemberName; // 선택된 카드인지 여부
+        const card = container.append("div")
+          .attr("class", `
+            rounded-xl p-5 shadow-md hover:shadow-xl
+            transition-all duration-300 cursor-pointer flex flex-row items-center gap-3
+            bg-white ${isSelected ? "opacity-100" : "opacity-80"}
+          `)
+          .style("border", `4px solid ${d.data.color || "#ccc"}`)
+          .on("click", async () => {
+            const memberName = d.data.member_name;
+            if (!memberName) {
+              alert("이 지역구에는 등록된 의원 정보가 없습니다.");
+              return;
+            }
+
+            try {
+              const res = await fetch(
+                `/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`
+              );
+              if (!res.ok) throw new Error("API 호출 실패");
+
+              const summary = await res.json();
+              const summaryHtml = renderSummary(summary);
+              openPanel(memberName + " 의원 표결 요약", summaryHtml);
+            } catch (err) {
+              console.error(err);
+              alert("표결 정보를 가져오지 못했습니다.");
+            }
+          });
+
+        // 상단 지역구 이름
+        card.append("div")
+          .attr("class", "text-xl font-semibold text-gray-800 mb-2")
+          .text(d.data.name);
+
+        // 중간 의원 이름
+        card.append("div")
+          .attr("class", "text-base font-medium text-blue-700")
+          .text(d.data.member_name || "의원 정보 없음");
+
+        // 하단 소속 정당 / 위원회 (있을 경우)
+        const details = [];
+        if (d.data.party) details.push(d.data.party);
+
+        if (details.length > 0) {
+          card.append("div")
+            .attr("class", "text-sm text-gray-500 mt-1")
+            .text(details.join(" · "));
+        }
+      });
+
+      return;  // 여기서 종료, 아래 트리맵 렌더링은 실행하지 않음
+    }
+
+    // 아래는 기존 트리맵 렌더링
+    const svg = treemapContainer.append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
     const group = svg.append("g");
 
@@ -221,11 +320,11 @@ function renderSummary(data) {
       .attr("transform", d => `translate(${x(d.x0)},${y(d.y0)})`)
       .style("cursor", d => d.children ? "pointer" : "default")
       .on("click", async (event, d) => {
-        if (d.children) {  // SIDO·SIGUNGU 클릭
+        if (d.children) {
           currentNode = d;
           render(d, width, height);
-          infoPanel.classList.add("hidden");  // 탐색 시 패널 닫기
-        } else if (d.data.type === "District") {  // 지역구 클릭
+          infoPanel.classList.add("hidden");
+        } else if (d.data.type === "District") {
           const memberName = d.data.member_name;
           if (!memberName) {
             alert("이 지역구에는 등록된 의원 정보가 없습니다.");
@@ -241,8 +340,6 @@ function renderSummary(data) {
             const summary = await res.json();
             const summaryHtml = renderSummary(summary);
             openPanel(memberName + " 의원 표결 요약", summaryHtml);
-            // 선택된 의원 이름을 넘겨서 다시 렌더
-            render(node, width, height, memberName);
           } catch (err) {
             console.error(err);
             alert("표결 정보를 가져오지 못했습니다.");
@@ -260,15 +357,10 @@ function renderSummary(data) {
 
     nodes.append("rect")
       .transition().duration(300)
-      .attr("opacity", d => {
-      if (d.data.type === "District") {
-        // 선택된 의원이 있으면, 해당 의원만 1, 나머지는 0.2
-        return selectedMemberName && d.data.member_name === selectedMemberName ? 1 : 0.2;
-      }
-      return 1; // SIDO, SIGUNGU는 항상 1
-    })
       .attr("width", d => x(d.x1) - x(d.x0))
       .attr("height", d => y(d.y1) - y(d.y0))
+      .attr("rx", 5)  // 반지름 값(원하는 둥근 정도)
+      .attr("ry", 5)
       .attr("fill", d => {
         if (d.data.type === "District") return d.data.color || "#888";
         if (d.data.type === "SIDO") return sidoColors(d.data.name);
@@ -286,20 +378,20 @@ function renderSummary(data) {
       .style("font-weight", "700")
       .style("letter-spacing", "0.02em")
       .style("fill", "#222")
-      .style("fill", "#FFFFFF", d => {
+      .style("fill", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";
         if (d.data.type === "SIGUNGU") return "#6A8CA3";
+        return "#222";  // 기본값
       })
       .style("font-weight", "600")
-      // 아래처럼 font-size를 격자 크기에 따라 동적으로 계산
       .style("font-size", d => {
         const width = x(d.x1) - x(d.x0);
         const height = y(d.y1) - y(d.y0);
-        // 예시: 격자 대각선의 1/8, 최소 14px
         return Math.max(Math.min(Math.sqrt(width * width + height * height) / 8, 32), 12) + "px";
-})
+      })
       .text(d => d.data.name);
-      }
+    }
+
 
   function resize() {
     if (!hierarchyRoot || !currentNode) return;
@@ -332,35 +424,26 @@ function renderSummary(data) {
     infoPanel.classList.add("hidden");  // 초기에는 우측 패널 숨김
   }
 
-  // 대수 버튼 이벤트
-  document.querySelectorAll(".age-btn").forEach(button => {
-    button.addEventListener("click", async () => {
-      const age = button.getAttribute("data-age");
-      await init(age);
-      document.querySelectorAll(".age-btn").forEach(btn => {
-        btn.classList.remove("text-white", "bg-indigo-600", "text-cyan-500");
-        btn.classList.add("text-gray-700");
-      });
-      button.classList.remove("text-gray-700");
-      button.classList.add("text-cyan-500");
-    });
+  // 초기화: 선택된 대수
+  const selectedAge = document.querySelector('.age-btn.text-cyan-500')?.dataset.age;
+  if (selectedAge) {
+    init(selectedAge);
+  }
+
+  // 리사이즈 대응
+  window.addEventListener("resize", () => {
+    resize();
   });
 
-
-  // 뒤로가기 버튼
-  backButton.on("click", () => {
-    if (currentNode.parent) {
-      currentNode = currentNode.parent;
-      render(currentNode, container.clientWidth, container.clientHeight);
-      infoPanel.classList.add("hidden");  // 뒤로 갈 때 우측 패널 숨김
+  document.addEventListener("DOMContentLoaded", () => {
+    const firstAgeBtn = document.querySelector('.age-btn');
+    if (firstAgeBtn) {
+      firstAgeBtn.classList.add("text-cyan-500");
+      const selectedAge = firstAgeBtn.dataset.age;
+      init(selectedAge); // 직접 초기화 함수 호출
+    } else {
+      console.error("초기화할 age 버튼이 없습니다!");
     }
-  });
-
-  window.addEventListener("resize", resize);
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const first = document.querySelector(".age-btn");
-    if (first) first.click();
   });
 </script>
 {% endblock %}

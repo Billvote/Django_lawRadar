@@ -249,5 +249,26 @@ def import_votes(csv_path):
 # ----------< 실행 >-------------------------
 # 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
+def run_all(congress_num):
+    print(f'{congress_num}대 데이터 임포트 시작')
+
+    base_path = settings.BASE_DIR / 'geovote' / 'data'
+    import
+
 csv_path = settings.BASE_DIR / 'geovote' / 'data' / 'vote.csv'
-import_votes(csv_path)
+import_ages(base_path / f'ages_{congress_num}.csv')
+import_parties(base_path / f'parties_{congress_num}.csv')
+import_districts(base_path / f'districts_{congress_num}.csv')
+import_members(base_path / f'members_{congress_num}.csv')
+import_bills(base_path / f'bills_{congress_num}.csv')
+import_votes(base_path / f'votes_{congress_num}.csv')
+
+print(f"{congress_num}대 데이터 임포트 완료")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        congress_num = int(sys.argv[1])
+        run_all(congress_num)
+    else:
+        print("사용법: python import_db.py [국회대수]")

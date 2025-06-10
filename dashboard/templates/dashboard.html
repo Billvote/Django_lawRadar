@@ -33,70 +33,37 @@
     <h2 class="text-xl font-semibold mb-6">💬정당별 표결 현황</h2>
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
+
+<!-- 권력 집중도 -->
+<div class="dashboard-section">
+{% include 'hhi_cards.html' %}
 </div>
 
+<!-- 정당/클러스터별 표결 현황 -->
 <div class="grid grid-cols-5 gap-4 mb-4">
-  <div class="col-span-3 bg-white p-4 rounded shadow">
+  <div class="col-span-5 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">👀정당/클러스터별 표결 현황</h2>
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
-
-  <div class="col-span-2 bg-white p-4 rounded shadow">
+</div>
+<!-- 클러스터 통계 -->
+<div class="grid grid-cols-3 grid-rows-1 gap-4 mb-4">
+  <div class="col-span-3 row-start-1 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
     {% include 'relativeDiff.html' %}
   </div>
-</div>
-<!-- 클러스터 선택 드롭다운 -->
-<!-- <div class="mb-4">
-  <div class="bg-white p-4 rounded shadow">
-    {% include 'clusterSelect.html' %}
-    <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
-  </div>
-</div> -->
-
-
-
-<!-- 성별 차트 -->
-<div class="mb-4">
-  <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">👫성별에 따라 가장 차이 나는 표결은?</h2>
-    {{ ranking_data|json_script:"gender-chart-data" }}
-    <select name="" id="genderChartSelect" class="border rounded px-3 py-2">
-      <option value="찬성">찬성률 순</option>
-      <option value="반대">반대율 순</option>
-    </select>
-    {% include 'genderVoteChart.html' %}
+  <div class="col-span-2 row-start-1 bg-white p-4 rounded shadow">
+    <h2>가장 많이 찬성한 클러스터</h2>
   </div>
 </div>
 
-<!-- 정당별 클러스터 하이라이트 차트 -->
-<!-- <div class="mb-4">
-  <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
-    <select name="" id="partySelector" class="mb-4 p-2 border rounded">
-      {% for party in top_diffs.keys %}
-        <option value="{{ party }}">{{ party }}</option>
-      {% endfor %}
-    </select>
-    <canvas id="diffClusterChart"></canvas>
-  </div>
-</div> -->
 
 </div>
 {% endblock %}
 
 {% block script %}
 {% load static %}
-
-{{ {
-    "series": series,
-    "categories": categories,
-    "partyColors": party_colors,
-    "partyNames": party_names,
-    "clusterVoteData": cluster_vote_data,
-    "clusterNums": cluster_nums
-} | json_script:"chart-config" }}
 
 <script>
   // 기본 통계 차트------------------
@@ -105,9 +72,9 @@
   const categories = {{ categories|safe }};
   const partyNames = {{ party_names|safe }};
   const partyColors = {{ party_colors|safe }};
-  const resultTypes =  ['찬성', '반대', '기권', '불참'];
-  // const clusterVoteData = JSON.parse(document.getElementById("cluster-vote-data").textContent);
-  // const clusterNums = clusterVoteData.clusters;
+  const resultTypes = ['찬성', '반대', '기권', '불참'];
+  const clusterKeywords = {{ cluster_keywords|safe }};
+  const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
 
   var options = {
     chart: {
@@ -159,13 +126,13 @@
       opacity: 1
     },
     tooltip: {
-      y: {
-        formatter: function (val) {
-          return val.toFixed(1) + '%';
+        y: {
+          formatter: function (value) {
+            return value + '%';
+          }
         }
       }
-    }
-  };
+    };
   new ApexCharts(document.querySelector("#voteChart"), options).render();
 
   // 클러스터별 표결 결과 차트-------------------------------
@@ -270,14 +237,13 @@ document.addEventListener('DOMContentLoaded', () => {
       colors: partyColors,
       legend: { position: 'top' }, // 범례 위치
       fill: { opacity: 1 },
-      
       tooltip: {
         y: {
-          formatter: function (val) {
-            return val.toFixed(1) + '%';
+          formatter: function (value) {
+            return value + '%';
           }
         }
-      },
+      }
     };
 
 
@@ -307,155 +273,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-// 성별 클러스터별 찬반 비율 차트 -------------------------
-  document.addEventListener('DOMContentLoaded', () => {
-    const genderData = JSON.parse(document.getElementById('gender-chart-data').textContent);
-    const chartContainer = document.getElementById('genderVoteChart');
-    const select = document.getElementById('genderChartSelect');
-    // console.log(genderData);
-
-    if (!genderData || !chartContainer) {
-      console.warn("gender data or chart container missing");
-      return;
-    }
-  
-  let chart = null;
-
-  function renderChart(type) {
-    const sortedData = genderData
-      .slice()
-      .sort((a, b) => Math.abs(b[`${type}_차이`]) - Math.abs(a[`${type}_차이`]));
-    const topClusters = sortedData.slice(0, 5);
-
-    const maleSeries = topClusters.map(item => -item[`남성_${type}률`]);
-    const femaleSeries = topClusters.map(item => item[`여성_${type}률`]);
-
-    const categories = topClusters.map(item => `${item.cluster} (#${item.cluster_num})`);
+// 권력 집중도 시계열-----------
+  document.addEventListener('DOMContentLoaded', function () {
+    const ages = {{ timeseries_data_age|safe }};
+    const hhiValues = {{ timeseries_data_hhi|safe }};
+    const top2Ratios = {{ timeseries_data_top2_ratio|safe }};
 
     const options = {
-      chart: {
-        type: 'bar',
-        height: 400,
-        stacked: true,
-        toolbar: { show: false }
+      chart: { type: 'line', height: 350 },
+      xaxis: { categories: ages, title: { text: '국회 대수' } },
+      yaxis: [
+      {
+        seriesName: 'HHI 지수',
+        title: { text: 'HHI 지수' },
+        min: 0,
+        max: 1,
+        opposite: false,
       },
-      plotOptions: {
-        bar: {
-          horizontal: true,
-          barHeight: '60%',
-        }
+      {
+        seriesName: '점유율 (%)',
+        title: { text: '점유율 (%)' },
+        min: 0,
+        max: 100,
+        opposite: true,
+      }
+    ],
+    series: [
+      {
+        name: 'HHI 지수',
+        type: 'line',
+        data: hhiValues,
+        yAxisIndex: 0,
       },
-      colors: ['#1E90FF', '#FF69B4'],
-      series: [
-        { name: '남성 비율', data: maleSeries },
-        { name: '여성 비율', data: femaleSeries }
-      ],
-      xaxis: {
-        categories: categories,
-        labels: { formatter: val => Math.abs(val) + '%' },
-        title: { text: `${type}률 (%)` },
-        min: -100,
-        max: 100
-      },
-      tooltip: {
-        shared: true,
-        intersect: false,
-        x: { formatter: val => val },
-        y: { formatter: val => Math.abs(val) + '%' }
-      },
-      dataLabels: { enabled: false },
-      legend: { position: 'top' }
-    };
+      {
+        name: '점유율 (%)',
+        type: 'line',
+        data: top2Ratios,
+        yAxisIndex: 1,
+      }
+    ],
+    tooltip: {
+      shared: true,
+      intersect: false
+    }
+  };
 
-    if (chart) chart.destroy();
-    chart = new ApexCharts(chartContainer, options);
+    const chart = new ApexCharts(document.querySelector("#hhi-top2-chart"), options);
     chart.render();
-  }
-
-  // 초기 렌더링
-  renderChart('찬성');
-
-  // 드롭다운 이벤트
-  select.addEventListener('change', (e) => {
-    const selected = e.target.value;
-    renderChart(selected);
   });
-});
 
-// 정당별 특이 클러스터-------------------------------
-  // const clusterKeywords = {{ cluster_keywords|safe }};
-  // const partyClusterHighlight = {{ top_diffs|safe }};
-  
-  // const selector = document.getElementById('partySelector');
-  // const title = document.getElementById('highlightTitle');
-  // const ctx = document.getElementById('diffClusterChart').getContext('2d');
-  // let chartInstance = null;
-
-  // function updateChart(party) {
-  //   const data = partyClusterHighlight[party];
-  //   const labels = data.map(item => {
-  //     const keyword = clusterKeywords[item.cluster] || `클러스터 ${item.cluster}`;
-  //     return `${keyword} (${item.cluster})`;
-  //   });
-
-  //   const diffs = data.map(item => item.diff);
-  //   const bgColors = data.map(item => item.diff > 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)');
-
-  //   const chartData = {
-  //     labels: labels,
-  //     datasets: [{
-  //       label: `${party} 찬성률 - 전체 평균`,
-  //       data: diffs,
-  //       backgroundColor: bgColors,
-  //       borderColor: 'rgba(0, 0, 0, 0.1)',
-  //       borderWidth: 1
-  //     }]
-  //   };
-
-  //   const chartOptions = {
-  //     indexAxis: 'y',
-  //     scales: {
-  //       x: {
-  //         title: {
-  //           display: true,
-  //           text: '평균 대비 찬성률 편차 (%)'
-  //         }
-  //       }
-  //     },
-  //     responsive: true,
-  //     plugins: {
-  //       legend: { display: false },
-  //       tooltip: {
-  //         callbacks: {
-  //           label: function(context) {
-  //             const item = data[context.dataIndex];
-  //             return `편차: ${item.diff}% (정당 ${item.rate}%, 평균 ${item.avg}%)`;
-  //           }
-  //         }
-  //       }
-  //     }
-  //   };
-
-  //   if (chartInstance) {
-  //     chartInstance.destroy();
-  //   }
-
-  //   chartInstance = new Chart(ctx, {
-  //     type: 'bar',
-  //     data: chartData,
-  //     options: chartOptions
-  //   });
-
-  //   title.textContent = `${party} 특이 클러스터`;
-  // }
-
-  // 초기 렌더링
-  // const initialParty = selector.value;
-  // updateChart(initialParty);
-
-  // // 드롭다운 변경 시 차트 업데이트
-  // selector.addEventListener('change', () => {
-  //   updateChart(selector.value);
-  // });
 </script>
 {% endblock %}

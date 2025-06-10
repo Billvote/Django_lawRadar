@@ -9,10 +9,10 @@ django.setup()
 
 from geovote.models import Age, Party, Member, Vote
 from billview.models import Bill
-from main.models import AgeSummary, PartyVoteSummary, PartyClusterVoteSummary, ClusterKeyword
-from django.db.models import Count, F
+from main.models import AgeStats, PartyStats, PartyClusterStats, ClusterKeyword, PartyConcentration
+from django.db.models import Count, F, Avg
 
-def import_age_summary(congress_num):
+def import_agesStats(congress_num):
     try:
         age = Age.objects.get(number=congress_num)
     except Age.DoesNotExist:
@@ -21,8 +21,8 @@ def import_age_summary(congress_num):
 
     total_bills = Bill.objects.filter(age=age).count()
     total_parties = Member.objects.filter(age=age).values('party').distinct().count()
+    
     gender_counts = Member.objects.filter(age=age).values('gender').annotate(count=Count('id'))
-
     male_count = 0
     female_count = 0
     for g in gender_counts:
@@ -34,7 +34,16 @@ def import_age_summary(congress_num):
     total = male_count + female_count
     female_percent = round((female_count / total) * 100, 1) if total > 0 else 0
 
-    age_summary, created = AgeSummary.objects.update_or_create(
+    # HHI 계산
+    pcs = PartyConcentration.objects.filter(age=age)
+    total_members = sum(pc.member_count for pc in pcs)
+    if total_members > 0:
+        seat_shares = [pc.member_count / total_members * 100 for pc in pcs]
+        hhi = sum((share / 100) ** 2 for share in seat_shares)
+    else:
+        hhi = 0
+
+    age_stats, created = AgeStats.objects.update_or_create(
         age=age,
         defaults={
             'total_bills': total_bills,
@@ -42,12 +51,13 @@ def import_age_summary(congress_num):
             'male_count': male_count,
             'female_count': female_count,
             'female_percent': female_percent,
+            'hhi': round(hhi, 4),
         }
     )
-    print(f"AgeSummary 저장됨: {age_summary}")
+    print(f"AgeStats 저장됨: {age_stats}")
 
 # 정당별 투표 통계
-def import_party_vote_summary(congress_num):
+def import_partyStats(congress_num):
     try:
         age = Age.objects.get(number=congress_num)
     except Age.DoesNotExist:
@@ -88,7 +98,7 @@ def import_party_vote_summary(congress_num):
         abstain_ratio = (abstain_count / total_votes * 100) if total_votes else 0
         absent_ratio = (absent_count / total_votes * 100) if total_votes else 0
 
-        pvs, created = PartyVoteSummary.objects.update_or_create(
+        pvs, created = PartyStats.objects.update_or_create(
             age=age,
             party=party,
             defaults={
@@ -100,10 +110,10 @@ def import_party_vote_summary(congress_num):
                 'total_votes': total_votes,
             }
         )
-        print(f"PartyVoteSummary 저장됨: {pvs}")
+        print(f"PartyStats 저장됨: {pvs}")
 
 # 정당/클러스터별 표결 통계
-def import_party_cluster_vote_summary(congress_num, top_n_clusters=20):
+def import_partyClusterStats(congress_num, top_n_clusters=20):
     try:
         age = Age.objects.get(number=congress_num)
     except Age.DoesNotExist:
@@ -167,26 +177,78 @@ def import_party_cluster_vote_summary(congress_num, top_n_clusters=20):
             result_counts = party_data.get(party_name, {r: 0 for r in result_types})
             total = total_dict.get((cluster_num, party_name), 0)
 
-            pcs, created = PartyClusterVoteSummary.objects.update_or_create(
+            if total > 0:
+                support_ratio = (result_counts['찬성'] / total) * 100
+                oppose_ratio = (result_counts['반대'] / total) * 100
+                abstain_ratio = (result_counts['기권'] / total) * 100
+                absent_ratio = (result_counts['불참'] / total) * 100
+            else:
+                support_ratio = oppose_ratio = abstain_ratio = absent_ratio = 0
+
+            pcs, created = PartyClusterStats.objects.update_or_create(
                 age=age,
                 cluster_num=cluster_num,
                 party=party,
                 defaults={
                     'cluster_keyword': json.dumps(party_data.get(party_name, {})),
-                    'support_count': result_counts['찬성'],
-                    'oppose_count': result_counts['반대'],
-                    'abstain_count': result_counts['기권'],
-                    'absent_count': result_counts['불참'],
+                    'support_ratio': support_ratio,
+                    'oppose_ratio': oppose_ratio,
+                    'abstain_ratio': abstain_ratio,
+                    'absent_ratio': absent_ratio,
                     'total_votes': total,
-                }
-            )
-            print(f"PartyClusterVoteSummary 저장됨: {pcs}")
+                    }
+                    )
+            print(f"PartyClusterStats 저장됨: {pcs}")
+
+def import_partyConcentration(congress_num):
+    try:
+        age = Age.objects.get(number=congress_num)
+    except Age.DoesNotExist:
+        print(f"{congress_num}대에 해당하는 Age 객체가 없습니다.")
+        return
+
+    all_parties = (
+    Member.objects.filter(age=age)
+    .values('party')
+    .annotate(member_count=Count('id'))
+    .order_by('-member_count')  # 전체 정당 다 가져옴
+    )
+    
+    total_members = sum([p['member_count'] for p in all_parties])  # 전체 의원 수 계산
+
+    # 찬성 비율 구하기 (전체 정당에 대해)
+    party_ids = [p['party'] for p in all_parties]
+    vote_supports = (
+        PartyClusterStats.objects.filter(age=age, party__in=party_ids)
+        .values('party')
+        .annotate(avg_support=Avg('support_ratio'))
+    )
+    vote_support_dict = {v['party']: v['avg_support'] for v in vote_supports}
+
+    for rank, party_data in enumerate(all_parties, start=1):
+        party_obj = Party.objects.get(id=party_data['party'])
+        seat_share = (party_data['member_count'] / total_members * 100) if total_members > 0 else 0
+        
+        PartyConcentration.objects.update_or_create(
+            age=age,
+            party=party_obj,
+            rank=rank,
+            defaults={
+                'rank': rank,
+                'member_count': party_data['member_count'],
+                'vote_support_ratio': vote_support_dict.get(party_obj.id, 0),
+                'seat_share': seat_share,
+            }
+        )
+    print(f"PartyConcentration 저장 완료: {congress_num}대")
 
 def run_all(congress_num):
     print(f"{congress_num}대 데이터 임포트 시작")
-    import_age_summary(congress_num)
-    import_party_vote_summary(congress_num)
-    import_party_cluster_vote_summary(congress_num)
+    import_partyStats(congress_num)
+    import_partyClusterStats(congress_num)
+    import_partyConcentration(congress_num)
+    import_agesStats(congress_num)
+
     print(f"{congress_num}대 데이터 임포트 완료")
 
 if __name__ == "__main__":
