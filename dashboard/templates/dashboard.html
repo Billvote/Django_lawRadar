@@ -33,6 +33,7 @@
     <h2 class="text-xl font-semibold mb-6">💬정당별 표결 현황</h2>
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
+</div>
 
 <div class="grid grid-cols-5 gap-4 mb-4">
   <div class="col-span-3 bg-white p-4 rounded shadow">
@@ -40,6 +41,7 @@
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
+
   <div class="col-span-2 bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
     {% include 'relativeDiff.html' %}
@@ -60,12 +62,16 @@
   <div class="bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">👫성별에 따라 가장 차이 나는 표결은?</h2>
     {{ ranking_data|json_script:"gender-chart-data" }}
+    <select name="" id="genderChartSelect" class="border rounded px-3 py-2">
+      <option value="찬성">찬성률 순</option>
+      <option value="반대">반대율 순</option>
+    </select>
     {% include 'genderVoteChart.html' %}
   </div>
 </div>
 
 <!-- 정당별 클러스터 하이라이트 차트 -->
-<div class="mb-4">
+<!-- <div class="mb-4">
   <div class="bg-white p-4 rounded shadow">
     <h2 class="text-xl font-semibold mb-6">정당별 특이 클러스터</h2>
     <select name="" id="partySelector" class="mb-4 p-2 border rounded">
@@ -75,7 +81,7 @@
     </select>
     <canvas id="diffClusterChart"></canvas>
   </div>
-</div>
+</div> -->
 
 </div>
 {% endblock %}
@@ -99,10 +105,9 @@
   const categories = {{ categories|safe }};
   const partyNames = {{ party_names|safe }};
   const partyColors = {{ party_colors|safe }};
-  const resultTypes = ['찬성', '반대', '기권', '불참'];
-  const clusterKeywords = {{ cluster_keywords|safe }};
-  const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
-
+  const resultTypes =  ['찬성', '반대', '기권', '불참'];
+  // const clusterVoteData = JSON.parse(document.getElementById("cluster-vote-data").textContent);
+  // const clusterNums = clusterVoteData.clusters;
 
   var options = {
     chart: {
@@ -152,40 +157,51 @@
     },
     fill: {
       opacity: 1
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val.toFixed(1) + '%';
+        }
+      }
     }
   };
   new ApexCharts(document.querySelector("#voteChart"), options).render();
 
-  // 클러스터별 표결 결과 차트
+  // 클러스터별 표결 결과 차트-------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  const clusterSelect = document.getElementById('clusterSelect');
+    const clusterVoteData = JSON.parse(document.getElementById("cluster-vote-data").textContent);
+    const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
+    const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
+    const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
 
-    const clusterVoteData = JSON.parse('{{ cluster_vote_data|escapejs }}');
-    console.log("클러스터별 정당 투표 데이터:", clusterVoteData);
-    
-    const clusterSelect = document.getElementById('clusterSelect');
+    console.log(clusterVoteData);
     if (!clusterSelect) {
       console.error("clusterSelect element not found!");
       return;
     }
 
     // 라벨-클러스터 번호 매핑
-    const labelToClusters = {};
-    clusterNums.forEach(({ cluster_num, label }) => {
-      if (!labelToClusters[label]) {
-        labelToClusters[label] = [];
-      }
-      labelToClusters[label].push(cluster_num);
-    });
-    console.log("자동 생성된 labelToClusters:", labelToClusters);
+    const clusterNums = clusterVoteData.map(d => ({
+      cluster_num: d.cluster_num,
+      cluster_label: d.cluster_label
+    }));
 
+    const labelToClusters = {};
+    clusterNums.forEach(({ cluster_num, cluster_label }) => {
+      if (!labelToClusters[cluster_label]) {
+        labelToClusters[cluster_label] = [];
+      }
+      labelToClusters[cluster_label].push(cluster_num);
+    });
 
     let clusterChart = null;
 
   function drawClusterChart(clusterNum) {
-    console.log("Drawing chart for cluster:", clusterNum);
-    const data = clusterVoteData.cluster_data[clusterNum];
-    console.log("Cluster data for clusterNum:", data);
-    console.log(Object.keys(clusterVoteData.cluster_data));
+    const clusterObj = clusterVoteData.find(d => d.cluster_num == clusterNum);
+    const data = clusterObj?.votes;
+    console.log('drawClusterChart called with:', clusterNum);
 
     if (!data) {
         console.warn("No data for cluster:", clusterNum);
@@ -199,14 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     // resultTypes, partName 매칭
-    const series = partyNames.map(party => ({
-        name: party,
-        data: resultTypes.map(type => {
-          const value = data[party]?.[type] || 0;
-          // console.log(`Party: ${party}, Type: ${type}, Value: ${value}`);
-          return value;
-        })
-      }));
+    const series = partyNames.map(party => {
+    const partyData = data.find(d => d.party === party);
+    return {
+      name: party,
+      data: resultTypes.map((type, idx) => {
+        return partyData ? partyData.data[idx] : 0;
+      })
+    };
+  });
 
     // 차트 옵션
     const options = {
@@ -252,8 +269,17 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       colors: partyColors,
       legend: { position: 'top' }, // 범례 위치
-      fill: { opacity: 1 }
+      fill: { opacity: 1 },
+      
+      tooltip: {
+        y: {
+          formatter: function (val) {
+            return val.toFixed(1) + '%';
+          }
+        }
+      },
     };
+
 
     if (clusterChart) {
       clusterChart.updateOptions(options, true, true);
@@ -286,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const genderData = JSON.parse(document.getElementById('gender-chart-data').textContent);
     const chartContainer = document.getElementById('genderVoteChart');
     const select = document.getElementById('genderChartSelect');
+    // console.log(genderData);
 
     if (!genderData || !chartContainer) {
       console.warn("gender data or chart container missing");
@@ -357,78 +384,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 정당별 특이 클러스터-------------------------------
   // const clusterKeywords = {{ cluster_keywords|safe }};
-  const partyClusterHighlight = {{ top_diffs|safe }};
+  // const partyClusterHighlight = {{ top_diffs|safe }};
   
-  const selector = document.getElementById('partySelector');
-  const title = document.getElementById('highlightTitle');
-  const ctx = document.getElementById('diffClusterChart').getContext('2d');
-  let chartInstance = null;
+  // const selector = document.getElementById('partySelector');
+  // const title = document.getElementById('highlightTitle');
+  // const ctx = document.getElementById('diffClusterChart').getContext('2d');
+  // let chartInstance = null;
 
-  function updateChart(party) {
-    const data = partyClusterHighlight[party];
-    const labels = data.map(item => {
-      const keyword = clusterKeywords[item.cluster] || `클러스터 ${item.cluster}`;
-      return `${keyword} (${item.cluster})`;
-    });
+  // function updateChart(party) {
+  //   const data = partyClusterHighlight[party];
+  //   const labels = data.map(item => {
+  //     const keyword = clusterKeywords[item.cluster] || `클러스터 ${item.cluster}`;
+  //     return `${keyword} (${item.cluster})`;
+  //   });
 
-    const diffs = data.map(item => item.diff);
-    const bgColors = data.map(item => item.diff > 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)');
+  //   const diffs = data.map(item => item.diff);
+  //   const bgColors = data.map(item => item.diff > 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)');
 
-    const chartData = {
-      labels: labels,
-      datasets: [{
-        label: `${party} 찬성률 - 전체 평균`,
-        data: diffs,
-        backgroundColor: bgColors,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        borderWidth: 1
-      }]
-    };
+  //   const chartData = {
+  //     labels: labels,
+  //     datasets: [{
+  //       label: `${party} 찬성률 - 전체 평균`,
+  //       data: diffs,
+  //       backgroundColor: bgColors,
+  //       borderColor: 'rgba(0, 0, 0, 0.1)',
+  //       borderWidth: 1
+  //     }]
+  //   };
 
-    const chartOptions = {
-      indexAxis: 'y',
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: '평균 대비 찬성률 편차 (%)'
-          }
-        }
-      },
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const item = data[context.dataIndex];
-              return `편차: ${item.diff}% (정당 ${item.rate}%, 평균 ${item.avg}%)`;
-            }
-          }
-        }
-      }
-    };
+  //   const chartOptions = {
+  //     indexAxis: 'y',
+  //     scales: {
+  //       x: {
+  //         title: {
+  //           display: true,
+  //           text: '평균 대비 찬성률 편차 (%)'
+  //         }
+  //       }
+  //     },
+  //     responsive: true,
+  //     plugins: {
+  //       legend: { display: false },
+  //       tooltip: {
+  //         callbacks: {
+  //           label: function(context) {
+  //             const item = data[context.dataIndex];
+  //             return `편차: ${item.diff}% (정당 ${item.rate}%, 평균 ${item.avg}%)`;
+  //           }
+  //         }
+  //       }
+  //     }
+  //   };
 
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
+  //   if (chartInstance) {
+  //     chartInstance.destroy();
+  //   }
 
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: chartData,
-      options: chartOptions
-    });
+  //   chartInstance = new Chart(ctx, {
+  //     type: 'bar',
+  //     data: chartData,
+  //     options: chartOptions
+  //   });
 
-    title.textContent = `${party} 특이 클러스터`;
-  }
+  //   title.textContent = `${party} 특이 클러스터`;
+  // }
 
   // 초기 렌더링
-  const initialParty = selector.value;
-  updateChart(initialParty);
+  // const initialParty = selector.value;
+  // updateChart(initialParty);
 
-  // 드롭다운 변경 시 차트 업데이트
-  selector.addEventListener('change', () => {
-    updateChart(selector.value);
-  });
+  // // 드롭다운 변경 시 차트 업데이트
+  // selector.addEventListener('change', () => {
+  //   updateChart(selector.value);
+  // });
 </script>
 {% endblock %}
