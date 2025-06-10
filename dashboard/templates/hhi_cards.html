@@ -1,0 +1,15 @@
+  <!-- 카드 UI -->
+  <div class="flex gap-6 mb-8">
+    <div class="bg-white shadow rounded-xl p-6 w-64">
+      <h2 class="text-lg font-semibold mb-2">상위 2당 점유율</h2>
+      <p class="text-3xl text-blue-600 font-bold">{{ party_concentration_top2_ratio }}%</p>
+    </div>
+    <div class="bg-white shadow rounded-xl p-6 w-64">
+      <h2 class="text-lg font-semibold mb-2">권력 집중도 (HHI)</h2>
+      <p class="text-3xl text-red-500 font-bold">{{ party_concentration_hhi }}</p>
+      <p class="text-sm text-gray-500">의석수 기준 상위 2당</p>
+    </div>
+  </div>
+
+  <!-- 막대 그래프 -->
+  <div id="seatShareChart" class="bg-white p-4 shadow rounded-xl"></div>
