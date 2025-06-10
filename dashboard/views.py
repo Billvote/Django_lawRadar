@@ -1,13 +1,14 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.safestring import mark_safe
-from django.db.models import Count, Min, Q, F, FloatField, ExpressionWrapper
+from django.db.models import Count, Min, Sum, Q, F, FloatField, ExpressionWrapper
 from collections import Counter, defaultdict
 from geovote.models import Vote, Member, Party, Age
 from billview.models import Bill
+from main.models import AgeStats, PartyClusterStats, ClusterKeyword
 import json
 
-# 정당별 표결 현황
-def get_party_vote_data(congress_num):
+# 정당별 통계
+def get_partyStats_data(congress_num):
     try:
         ages = Age.objects.get(number=congress_num)
     except Age.DoesNotExist:
@@ -15,11 +16,19 @@ def get_party_vote_data(congress_num):
             'error': f'{congress_num}대에 해당하는 Age 객체가 없습니다'
             }
 
+    # 인스턴스
     votes = Vote.objects.filter(age__number=congress_num).select_related('member__party', 'bill')
+    age_stats = AgeStats.objects.get(age=ages)
 
-    # 해당 대수에 투표한 정당만 가져오기
-    party_ids = votes.values_list('member__party', flat=True).distinct()
-    parties = Party.objects.filter(id__in=party_ids)
+    # 저장할 리스트 생성
+    result_types = ['찬성', '반대', '기권', '불참']
+    series = []
+    result_data = {r: [] for r in result_types}
+    party_names = []
+    party_colors = []
+
+    # 카테고리는 표결 결과 (y축)
+    categories = result_types
 
     # 모든 대수 공통: 멤버 수 기준 상위 8개 정당만 필터링
     top_parties = (
@@ -31,51 +40,62 @@ def get_party_vote_data(congress_num):
     )
 
     top_party_ids = [p['party'] for p in top_parties]
-    parties = Party.objects.filter(id__in=top_party_ids)
+    parties = Party.objects.filter(id__in=top_party_ids)  # 실제 정당 객체 리스트
 
-    # 정당별 찬반기권불참 비율 계산
-    result_types = ['찬성', '반대', '기권', '불참']
-    series = []
-    result_data = {r: [] for r in result_types}
-    party_names = []
-    party_colors = []
-
-    for party in parties:
-        party_votes = votes.filter(member__party=party)
-        total = party_votes.count()
-
-        proportions = {
-        r: (party_votes.filter(result=r).count() / total * 100 if total else 0)
-        for r in result_types
+    # 딕셔너리 매핑
+    party_id_to_name_color = {
+        p['party']: (p['party__party'], p['party__color'])
+        for p in top_parties
     }
 
+    # 표결별 집계
+    vote_counts = votes.filter(
+        member__party__id__in=top_party_ids
+        ).values(
+            'member__party', 'result'
+        ).annotate(
+            count=Count('id')
+        )
+    # 정당별 총 표결수
+    total_counts = votes.filter(
+        member__party__id__in=top_party_ids
+        ).values(
+            'member__party'
+        ).annotate(
+            total=Count('id')
+        )
+    # dict 변환
+    party_total_dict = {entry['member__party']: entry['total'] for entry in total_counts}
+    party_result_dict = defaultdict(dict)
+    for entry in vote_counts:
+        party_id = entry['member__party']
+        result = entry['result']
+        count = entry['count']
+        party_result_dict[party_id][result] = count
+
+    # 최종 정당별 시리즈 구성
+    for party_id in top_party_ids:
+        party_name, color = party_id_to_name_color[party_id]
+        total = party_total_dict.get(party_id, 0)
+
+        proportions = {
+            r: (party_result_dict[party_id].get(r, 0) / total * 100 if total else 0)
+            for r in result_types
+        }
+
         series.append({
-            'name': party.party,
+            'name': party_name,
             'data': [round(proportions[r], 1) for r in result_types]
         })
+        party_names.append(party_name)
+        party_colors.append(color)
 
-        party_names.append(party.party)
-        party_colors.append(party.color)
-
-    # 카테고리는 표결 결과 (y축)
-    categories = result_types
-
-    total_bills = Bill.objects.filter(age=ages).count() # 대수별 총 의안
-    total_parties = Member.objects.filter(age=ages).values('party').distinct().count()
-    gender_counts = Member.objects.filter(age=ages).values('gender').annotate(count=Count('id'))
-
-    # 성비
-    male_count = 0
-    female_count = 0
-    
-    for g in gender_counts:
-        if g['gender'] == '남':
-            male_count = g['count']
-        elif g['gender'] == '여':
-            female_count = g['count']
-
-    total = male_count + female_count
-    female_percent = round((female_count / total) * 100, 1) if total > 0 else 0
+    # 통계 가져오기
+    total_bills = age_stats.total_bills
+    total_parties = age_stats.total_parties
+    male_count = age_stats.male_count
+    female_count = age_stats.female_count
+    female_percent = age_stats.female_percent
 
     return {
         'party_names': party_names,
@@ -94,7 +114,8 @@ def get_party_vote_data(congress_num):
         },
     }
 
-def get_party_cluster_vote_data(congress_num, top_n_clusters=20):
+# 정당/클러스터별 통계
+def get_partyClusterStats_data(congress_num, top_n_clusters=20):
     age = get_object_or_404(Age, number=congress_num)
     votes = Vote.objects.filter(age=age).select_related('member__party', 'bill')
 
@@ -108,89 +129,144 @@ def get_party_cluster_vote_data(congress_num, top_n_clusters=20):
     )
     party_names = [p['party__party'] for p in top_parties]
     party_colors = [p['party__color'] for p in top_parties]
+    top_party_ids = [p['party'] for p in top_parties]
 
-    # 기본 투표 결과 집계
-    vote_summary = (
-        votes
-        .values(
-            cluster=F('bill__cluster'),
-            cluster_keyword=F('bill__cluster_keyword'),
-            party_name=F('member__party__party'),
-            party_color=F('member__party__color'),
-            vote_result=F('result'))
-        .annotate(count=Count('id'))
+    # 상위 N개 클러스터 (전체 투표 수 기준)
+    top_clusters = (
+        PartyClusterStats.objects
+        .filter(age=age, party__id__in=top_party_ids)
+        .values('cluster_num')
+        .annotate(cluster_votes=Sum('total_votes'))
+        .order_by('-cluster_votes')[:top_n_clusters]
     )
+    top_cluster_nums = [c['cluster_num'] for c in top_clusters]
 
-    # 총 투표 수 계산: 정당-클러스터별
-    total_votes = (
-        votes
-        .values(cluster=F('bill__cluster'), party_name=F('member__party__party'))
-        .annotate(total_count=Count('id'))
-    )
-
-    total_dict = {(tv['cluster'], tv['party_name']): tv['total_count'] for tv in total_votes}
-    
-    # 구조화
-    result_types = ['찬성', '반대', '기권', '불참']
-    cluster_party_result = {}
-
-    for row in vote_summary:
-        cluster = row['cluster']
-        keyword = row['cluster_keyword']
-        party = row['party_name']
-        result = row['vote_result']
-        count = row['count']
-
-        if cluster not in cluster_party_result:
-            cluster_party_result[cluster] = {}
-        if party not in cluster_party_result[cluster]:
-            cluster_party_result[cluster][party] = {r: 0 for r in result_types}
-        cluster_party_result[cluster][party][result] += count
-
-    # 상위 N개 클러스터 필터링
-    cluster_vote_counts = (
-        votes.values(
-            cluster=F('bill__cluster'),
-            cluster_keyword=F('bill__cluster_keyword'))
-        .annotate(vote_count=Count('id'))
-        .order_by('-vote_count')
-    )
-    
-    top_clusters = [c['cluster'] for c in cluster_vote_counts]
-
-    # cluster_num + keyword 매핑
+    # 클러스터별 키워드 매핑
+    keywords_raw = ClusterKeyword.objects.filter(age=age, cluster_num__in=top_cluster_nums)
     cluster_keywords = {}
-    for row in cluster_vote_counts:
+    for ck in keywords_raw:
         try:
-            keyword_list = json.loads(row['cluster_keyword'])
+            keyword_list = json.loads(ck.keyword_json)
             keyword_display = ', '.join(keyword_list)
-        except Exception:
-            keyword_display = str(row['cluster_keyword'])
-        cluster_keywords[row['cluster']] = keyword_display
+        except:
+            keyword_display = ck.keyword_json
+        cluster_keywords[ck.cluster_num] = keyword_display
 
-    # 필터링된 클러스터 결과만 추출
-    filtered_result = {
-        c: cluster_party_result[c] for c in top_clusters if c in cluster_party_result
-    }
+    # 정당/클러스터 통계 가져오기
+    stats = PartyClusterStats.objects.filter(
+        age=age,
+        cluster_num__in=top_cluster_nums,
+        party__id__in=top_party_ids
+    ).select_related('party')
 
-    # 모든 클러스터에 대해 상위 정당의 데이터 보장
-    for cluster in filtered_result:
+    result_types = ['찬성', '반대', '기권', '불참']
+    cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
+
+    for row in stats:
+        party_name = row.party.party
+        cluster = row.cluster_num
+        cluster_data[cluster][party_name] = {
+            '찬성': round(row.support_ratio * row.total_votes / 100),
+            '반대': round(row.oppose_ratio * row.total_votes / 100),
+            '기권': round(row.abstain_ratio * row.total_votes / 100),
+            '불참': round(row.absent_ratio * row.total_votes / 100),
+        }
+
+    # 누락된 정당에 대해 0으로 초기화
+    for cluster in cluster_data:
         for party in party_names:
-            if party not in filtered_result[cluster]:
-                filtered_result[cluster][party] = {r: 0 for r in result_types}
-    
-    # 최종 구조화
-    cluster_data = {}
-    for cluster_num, data in filtered_result.items():
-        cluster_data[cluster_num] = data
+            cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
 
     return {
-        'cluster_data': cluster_data,
+        'cluster_data': dict(cluster_data),
         'party_names': party_names,
         'party_colors': party_colors,
         'result_types': result_types,
         'cluster_keywords': cluster_keywords,
-        }
+    }
+#----
+    # # 기본 투표 결과 집계
+    # vote_summary = (
+    #     votes
+    #     .values(
+    #         cluster=F('bill__cluster'),
+    #         cluster_keyword=F('bill__cluster_keyword'),
+    #         party_name=F('member__party__party'),
+    #         party_color=F('member__party__color'),
+    #         vote_result=F('result'))
+    #     .annotate(count=Count('id'))
+    # )
+
+    # # 총 투표 수 계산: 정당-클러스터별
+    # total_votes = (
+    #     votes
+    #     .values(cluster=F('bill__cluster'), party_name=F('member__party__party'))
+    #     .annotate(total_count=Count('id'))
+    # )
+
+    # total_dict = {(tv['cluster'], tv['party_name']): tv['total_count'] for tv in total_votes}
+    
+    # # 구조화
+    # result_types = ['찬성', '반대', '기권', '불참']
+    # cluster_party_result = {}
+
+    # for row in vote_summary:
+    #     cluster = row['cluster']
+    #     keyword = row['cluster_keyword']
+    #     party = row['party_name']
+    #     result = row['vote_result']
+    #     count = row['count']
+
+    #     if cluster not in cluster_party_result:
+    #         cluster_party_result[cluster] = {}
+    #     if party not in cluster_party_result[cluster]:
+    #         cluster_party_result[cluster][party] = {r: 0 for r in result_types}
+    #     cluster_party_result[cluster][party][result] += count
+
+    # # 상위 N개 클러스터 필터링
+    # cluster_vote_counts = (
+    #     votes.values(
+    #         cluster=F('bill__cluster'),
+    #         cluster_keyword=F('bill__cluster_keyword'))
+    #     .annotate(vote_count=Count('id'))
+    #     .order_by('-vote_count')
+    # )
+    
+    # top_clusters = [c['cluster'] for c in cluster_vote_counts]
+
+    # # cluster_num + keyword 매핑
+    # cluster_keywords = {}
+    # for row in cluster_vote_counts:
+    #     try:
+    #         keyword_list = json.loads(row['cluster_keyword'])
+    #         keyword_display = ', '.join(keyword_list)
+    #     except Exception:
+    #         keyword_display = str(row['cluster_keyword'])
+    #     cluster_keywords[row['cluster']] = keyword_display
+
+    # # 필터링된 클러스터 결과만 추출
+    # filtered_result = {
+    #     c: cluster_party_result[c] for c in top_clusters if c in cluster_party_result
+    # }
+
+    # # 모든 클러스터에 대해 상위 정당의 데이터 보장
+    # for cluster in filtered_result:
+    #     for party in party_names:
+    #         if party not in filtered_result[cluster]:
+    #             filtered_result[cluster][party] = {r: 0 for r in result_types}
+    
+    # # 최종 구조화
+    # cluster_data = {}
+    # for cluster_num, data in filtered_result.items():
+    #     cluster_data[cluster_num] = data
+
+    # return {
+    #     'cluster_data': cluster_data,
+    #     'party_names': party_names,
+    #     'party_colors': party_colors,
+    #     'result_types': result_types,
+    #     'cluster_keywords': cluster_keywords,
+    #     }
 
 def get_gender_vote_data():
     # 성별/클러스터별 찬반 투표 수 계산
@@ -494,8 +570,8 @@ def dashboard(request, congress_num):
     if congress_num not in [20, 21, 22]: # 유효하지 않은 링크 처리
         raise Http404("Invalid congress num")
 
-    data = get_party_vote_data(congress_num)
-    cluster_vote_data = get_party_cluster_vote_data(congress_num, top_n_clusters=10)
+    data = get_partyStats_data(congress_num)
+    cluster_vote_data = get_partyClusterStats_data(congress_num, top_n_clusters=10)
 
     # 클러스터 대표 키워드 가져오기
     bills = Bill.objects.filter(age__number=congress_num)
