@@ -26,6 +26,11 @@
 <!-- Stats Cards -->
 {% include 'Stats_cards.html' %}
 
+<!-- 권력 집중도 -->
+<div class="dashboard-section" style="padding: 2rem;">
+{% include 'hhi_cards.html' %}
+</div>
+
 <!-- Chart Section -->
 <div class="grid grid-cols-1 gap-6 mb-6">
   <!-- 정당별 법안 발의 수 -->
@@ -52,7 +57,6 @@
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
 </div> -->
-
 
 </div>
 {% endblock %}
@@ -119,8 +123,15 @@
     },
     fill: {
       opacity: 1
-    }
-  };
+    },
+    tooltip: {
+        y: {
+          formatter: function (value) {
+            return value + '%';
+          }
+        }
+      }
+    };
   new ApexCharts(document.querySelector("#voteChart"), options).render();
 
   // 클러스터별 표결 결과 차트
@@ -219,7 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       colors: partyColors,
       legend: { position: 'top' }, // 범례 위치
-      fill: { opacity: 1 }
+      fill: { opacity: 1 },
+      tooltip: {
+        y: {
+          formatter: function (value) {
+            return value + '%';
+          }
+        }
+      }
     };
 
     if (clusterChart) {
@@ -247,5 +265,55 @@ document.addEventListener('DOMContentLoaded', () => {
       drawClusterChart(e.target.value);
     });
   });
+
+// 권력 집중도-----------
+  document.addEventListener("DOMContentLoaded", function () {
+    var options = {
+      chart: {
+        type: 'bar',
+        height: 400
+      },
+      series: [{
+        name: '의석 점유율 (%)',
+        data: {{ party_concentration_top2_seat_shares|safe }}
+      }],
+      xaxis: {
+        categories: {{ party_concentration_names|safe }},
+        labels: {
+          rotate: -45,
+          style: { fontSize: '12px' }
+        }
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          horizontal: false,
+        }
+      },
+      colors: ['#3b82f6'],  // Tailwind blue-500
+      dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+          return val + "%";
+        }
+      },
+      tooltip: {
+        y: {
+          formatter: function (val) {
+            return val + "%";
+          }
+        }
+      },
+      title: {
+        text: "{{ party_concentration_age.number }}대 국회 정당별 의석 점유율",
+        align: 'center',
+        style: { fontSize: '20px' }
+      }
+    };
+
+    var chart = new ApexCharts(document.querySelector("#seatShareChart"), options);
+    chart.render();
+  });
+
 </script>
 {% endblock %}

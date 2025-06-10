@@ -82,3 +82,16 @@ class ClusterKeyword(models.Model):
 
     def __str__(self):
         return f"{self.age} 클러스터 {self.cluster_num}"
+    
+class PartyConcentration(models.Model):
+    age = models.ForeignKey(Age, on_delete=models.CASCADE) # 대수
+    party = models.ForeignKey(Party, on_delete=models.CASCADE)
+    rank = models.PositiveSmallIntegerField()  # 의석수 기준 순위 (1, 2)
+    member_count = models.PositiveIntegerField(default=0)  # 해당 대수에서 의석수
+    vote_support_ratio = models.FloatField(default=0.0)  # 표결 찬성 비율 평균
+
+    class Meta:
+        unique_together = ('age', 'party', 'rank')
+
+    def __str__(self):
+        return f"{self.age.number} {self.party.party} ({self.rank}위)"

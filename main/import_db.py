@@ -9,8 +9,8 @@ django.setup()
 
 from geovote.models import Age, Party, Member, Vote
 from billview.models import Bill
-from main.models import AgeStats, PartyStats, PartyClusterStats, ClusterKeyword
-from django.db.models import Count, F
+from main.models import AgeStats, PartyStats, PartyClusterStats, ClusterKeyword, PartyConcentration
+from django.db.models import Count, F, Avg
 
 def import_agesStats(congress_num):
     try:
@@ -190,11 +190,73 @@ def import_partyClusterStats(congress_num, top_n_clusters=20):
                     )
             print(f"PartyClusterStats 저장됨: {pcs}")
 
+def import_partyConcentration(congress_num):
+    try:
+        age = Age.objects.get(number=congress_num)
+    except Age.DoesNotExist:
+        print(f"{congress_num}대에 해당하는 Age 객체가 없습니다.")
+        return
+
+    all_parties = (
+    Member.objects.filter(age=age)
+    .values('party')
+    .annotate(member_count=Count('id'))
+    .order_by('-member_count')  # 전체 정당 다 가져옴
+    )
+    
+    # 찬성 비율 구하기 (전체 정당에 대해)
+    party_ids = [p['party'] for p in all_parties]
+    vote_supports = (
+        PartyClusterStats.objects.filter(age=age, party__in=party_ids)
+        .values('party')
+        .annotate(avg_support=Avg('support_ratio'))
+    )
+    vote_support_dict = {v['party']: v['avg_support'] for v in vote_supports}
+
+
+    # for p in all_parties:
+    # party = Party.objects.get(id=p['party'])
+    # member_count = p['member_count']
+
+    # # 1) 의석수 기준 상위 정당 2개
+    # top_parties = (
+    #     Member.objects.filter(age=age)
+    #     .values('party')
+    #     .annotate(member_count=Count('id'))
+    #     .order_by('-member_count')[:2]
+    # )
+
+    # 2) 표결 찬성 비율 평균 (PartyClusterStats 기준)
+    # PartyClusterStats는 여러 클러스터에 걸쳐 있으니, 같은 정당의 평균 찬성률 구함
+    # vote_supports = (
+    #     PartyClusterStats.objects.filter(age=age, party__in=[p['party'] for p in all_parties])
+    #     .values('party')
+    #     .annotate(avg_support=Avg('support_ratio'))
+    # )
+    # vote_support_dict = {v['party']: v['avg_support'] for v in vote_supports}
+
+    # 3) DB 저장 (rank 1, 2)
+    for rank, party_data in enumerate(all_parties, start=1):
+        party_obj = Party.objects.get(id=party_data['party'])
+        PartyConcentration.objects.update_or_create(
+            age=age,
+            party=party_obj,
+            rank=rank,
+            defaults={
+                'rank': rank,
+                'member_count': party_data['member_count'],
+                'vote_support_ratio': vote_support_dict.get(party_obj.id, 0),
+            }
+        )
+    print(f"PartyConcentration 저장 완료: {congress_num}대")
+
 def run_all(congress_num):
     print(f"{congress_num}대 데이터 임포트 시작")
     import_agesStats(congress_num)
     import_partyStats(congress_num)
     import_partyClusterStats(congress_num)
+    import_partyConcentration(congress_num)
+
     print(f"{congress_num}대 데이터 임포트 완료")
 
 if __name__ == "__main__":
