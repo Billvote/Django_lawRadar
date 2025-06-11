@@ -25,7 +25,7 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # API 키 가져오기
-ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
+# ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
 
 
 # Quick-start development settings - unsuitable for production

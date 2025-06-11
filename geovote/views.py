@@ -133,39 +133,39 @@ def member_vote_summary_api(request):
 
 
 #---------------------의원사진 추가 ----------------------
-from django.shortcuts import render
-from .models import Member, District
-from .member_pic import fetch_member_photo_map
-from django.http import JsonResponse
+# from django.shortcuts import render
+# from .models import Member, District
+# from .member_pic import fetch_member_photo_map
+# from django.http import JsonResponse
 
-def district_member_cards_api(request):
-    district_id = request.GET.get('district_id')
-    if not district_id:
-        return JsonResponse({'error': 'district_id 파라미터가 필요합니다.'}, status=400)
+# def district_member_cards_api(request):
+#     district_id = request.GET.get('district_id')
+#     if not district_id:
+#         return JsonResponse({'error': 'district_id 파라미터가 필요합니다.'}, status=400)
 
-    try:
-        district = District.objects.get(id=district_id)
-    except District.DoesNotExist:
-        return JsonResponse({'error': '해당 district_id에 해당하는 지역구가 없습니다.'}, status=404)
+#     try:
+#         district = District.objects.get(id=district_id)
+#     except District.DoesNotExist:
+#         return JsonResponse({'error': '해당 district_id에 해당하는 지역구가 없습니다.'}, status=404)
 
-    photo_map = fetch_member_photo_map()
+#     photo_map = fetch_member_photo_map()
 
-    # 해당 지역구에 속한 의원들
-    members = Member.objects.filter(district_id=district_id)
+#     # 해당 지역구에 속한 의원들
+#     members = Member.objects.filter(district_id=district_id)
 
-    cards = []
-    for member in members:
-        district_name = district.SGG
-        key = f"{member.name}|{district_name}"
-        photo_url = photo_map.get(key, '기본이미지URL')  # fallback 이미지 설정
-        cards.append({
-            'name': member.name,
-            'district': district_name,
-            'party': member.party,
-            'photo_url': photo_url,
-        })
+#     cards = []
+#     for member in members:
+#         district_name = district.SGG
+#         key = f"{member.name}|{district_name}"
+#         photo_url = photo_map.get(key, '기본이미지URL')  # fallback 이미지 설정
+#         cards.append({
+#             'name': member.name,
+#             'district': district_name,
+#             'party': member.party,
+#             'photo_url': photo_url,
+#         })
 
-    return JsonResponse(cards, safe=False)
+#     return JsonResponse(cards, safe=False)
 
 
 
