@@ -1,45 +1,3 @@
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.core.serializers.json import DjangoJSONEncoder
-# from .models import District
-import json
-
-# # geojson api
-# def district_geojson(request):
-#     features = []
-#     for district in District.objects.all():
-#         # 각 지역구에 속한 가장 최근 대수의 의원 가져오기 (예: 22대만 필터링)
-#         member = district.member_set.filter(age=22).first()  # 원하는 대수로 필터링 가능
-
-#         feature = {
-#             "type": "Feature",
-#             "geometry": district.boundary,
-#             "properties": {
-#                 "SIDO_SGG": district.SIDO_SGG,
-#                 "SGG": district.SGG,
-#                 "SIDO": district.SIDO,
-#                 "member_name": member.name if member else None,
-#                 "party": str(member.party.party) if member and member.party else None,
-#                 "gender": member.gender if member else None,
-#             },
-#         }
-#         features.append(feature)
-
-#     return JsonResponse(
-#         {"type": "FeatureCollection", "features": features},
-#         json_dumps_params={'ensure_ascii': False}) # 한글 깨짐 문제 해결
-
-def geovote_main(request):
-    return render(request, 'geovote_main.html')
-
-def map_view(request):
-    return render(request, 'map_22대.html')
-
-# # 테스트용
-# def map22(request):
-#     return render(request, 'map_22.html')
-
-#-------------------------------tree map -------------------------------
 
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -172,6 +130,45 @@ def member_vote_summary_api(request):
             }
 
     return JsonResponse(max_clusters)
+
+
+#---------------------의원사진 추가 ----------------------
+from django.shortcuts import render
+from .models import Member, District
+from .member_pic import fetch_member_photo_map
+from django.http import JsonResponse
+
+def district_member_cards_api(request):
+    district_id = request.GET.get('district_id')
+    if not district_id:
+        return JsonResponse({'error': 'district_id 파라미터가 필요합니다.'}, status=400)
+
+    try:
+        district = District.objects.get(id=district_id)
+    except District.DoesNotExist:
+        return JsonResponse({'error': '해당 district_id에 해당하는 지역구가 없습니다.'}, status=404)
+
+    photo_map = fetch_member_photo_map()
+
+    # 해당 지역구에 속한 의원들
+    members = Member.objects.filter(district_id=district_id)
+
+    cards = []
+    for member in members:
+        district_name = district.SGG
+        key = f"{member.name}|{district_name}"
+        photo_url = photo_map.get(key, '기본이미지URL')  # fallback 이미지 설정
+        cards.append({
+            'name': member.name,
+            'district': district_name,
+            'party': member.party,
+            'photo_url': photo_url,
+        })
+
+    return JsonResponse(cards, safe=False)
+
+
+
 
 
 

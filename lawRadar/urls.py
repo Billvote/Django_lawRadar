@@ -39,18 +39,12 @@ urlpatterns = [
     path('billview/', bill_v.index_bill, name='index'),
     path('billview/<int:id>/', bill_v.detail_bill, name='detail'),
 
-    # geovote
-    # path('map/', geovote_views.map_view, name='map'),
-    path('geovote/', geovote_v.geovote_main, name='geovote'),
-
-    # path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
-    # path('map22/', geovote_views.map22, name='map22'), # 테스트용
-
     # tree map
     path('treemap/', geovote_v.treemap_view, name='treemap'),
     path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
     path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
 
+    # path('api/member-photo-map/', member_photo_map, name='member_photo_map'),
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
