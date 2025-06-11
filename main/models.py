@@ -12,6 +12,7 @@ class AgeStats(models.Model):
     female_percent = models.FloatField(default=0)                  # 여성 비율(%)
 
     hhi = models.FloatField(default=0.0)  # 정당 집중도
+    enp = models.FloatField(default=0.0) # 정당 유효수
 
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Max
 from billview.models import Bill
 from geovote.models import Vote
 import logging
@@ -36,7 +36,9 @@ def search(request):
             Q(title__icontains=query) |
             Q(summary__icontains=query) |
             Q(cluster_keyword__icontains=query)
-        )
+        ).annotate(
+            last_vote_date=Max('vote__date')
+        ).order_by('-last_vote_date')
         total_results_count = results.count() # result 개수
 
         # results에 label count 매핑
@@ -46,11 +48,15 @@ def search(request):
             .exclude(label__isnull=True)
             .values('label')
             .annotate(count=Count('id'))
+            # .order_by('-count')
         )
         label_counts = {item['label']: item['count'] for item in label_counts}
 
         for bill in results:
             bill.label_count = label_counts.get(bill.label, '-')
+        
+        # label_count 기준으로 results 정렬 (내림차순)
+        results = sorted(results, key=lambda b: label_counts.get(b.label, 0), reverse=True)
 
         # 페이지네이션
         paginator = Paginator(results, 10)

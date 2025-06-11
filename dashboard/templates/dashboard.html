@@ -34,15 +34,29 @@
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
-<!-- 권력 집중도 -->
+  
+  <!-- enp 프로그래스 바 -->
+  <div class="dashboard-section mt-6">
+    <h1 class="text-2xl font-bold">유효한 정당</h1>
+    {% include 'enp.html' %}
+  </div>
+  
+  <!-- 권력 집중도 -->
+  <div class="flex justify-between items-center mt-6">
+    <h1 class="text-2xl font-bold">권력 집중도</h1>
+  </div>
 <div class="dashboard-section">
 {% include 'hhi_cards.html' %}
 </div>
 
+
+  <div class="flex justify-between items-center mt-6">
+    <h1 class="text-2xl font-bold">클러스터</h1>
+  </div>
 <!-- 정당/클러스터별 표결 현황 -->
-<div class="grid grid-cols-5 gap-4 mb-4">
+<div class="grid grid-cols-5 gap-4 mt-6">
   <div class="col-span-5 bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">👀정당/클러스터별 표결 현황</h2>
+    <h2 class="text-xl font-semibold">👀정당/클러스터별 표결 현황</h2>
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
@@ -142,11 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
     const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
     const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
-    // const clusterNums = JSON.parse(document.getElementById("cluster-nums").textContent);
-    // const clusterKeywords = JSON.parse(document.getElementById("cluster-keywords").textContent);
-
-
-    console.log(clusterVoteData);
 
     if (!clusterSelect) {
       console.error("clusterSelect element not found!");
@@ -159,34 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const option = document.createElement('option');
       option.value = cluster.cluster_num;  // 실제 클러스터 번호 (29, 30 등)
       option.textContent = `Cluster ${cluster.cluster_num}: ${cluster.cluster_keywords}`;
-      clusterSelect.appendChild(option);
+      // clusterSelect.appendChild(option);
     });
-
-    // // 라벨-클러스터 번호 매핑
-    // const clusterNums = Object.entries(clusterVoteData).map(d => ({
-    //   cluster_num: d.cluster_num,
-    //   cluster_label: d.cluster_label
-    // }));
-    // console.log(clusterNums)
-    // console.log("Raw data:", document.getElementById("cluster-vote-data").textContent);
-
-
-    // const labelToClusters = {};
-    // clusterNums.forEach(({ cluster_num, cluster_label }) => {
-    //   if (!labelToClusters[cluster_label]) {
-    //     labelToClusters[cluster_label] = [];
-    //   }
-    //   labelToClusters[cluster_label].push(cluster_num);
-    // });
-
-      // 드롭다운에 클러스터 옵션 추가
-  // clusterNums.forEach(clusterNum => {
-  //   const option = document.createElement('option');
-  //   option.value = clusterNum;
-  //   option.textContent = `Cluster ${clusterNum}: ${clusterKeywords[clusterNum]}`;
-  //   clusterSelect.appendChild(option);
-  // });
-
 
     let clusterChart = null;
 
@@ -302,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('DOMContentLoaded', function () {
     const ages = {{ timeseries_data_age|safe }};
     const hhiValues = {{ timeseries_data_hhi|safe }};
+    const enpValues = {{ timeseries_data_enp|safe }};
     const top2Ratios = {{ timeseries_data_top2_ratio|safe }};
 
     const options = {
@@ -346,6 +330,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const chart = new ApexCharts(document.querySelector("#hhi-top2-chart"), options);
     chart.render();
   });
+
+// enp 프로그래스 바------------------
+document.addEventListener("DOMContentLoaded", function () {
+  const ages = {{ timeseries_data_age|safe }};
+  const enpValues = {{ timeseries_data_enp|safe }};
+  const totalParties = {{ timeseries_data_total_parties|safe }};
+  
+  const container = document.getElementById("enp-progress-bars");
+
+  for (let i = 0; i < ages.length; i++) {
+    const ratio = ((enpValues[i] / totalParties[i]) * 100).toFixed(1);
+
+    const barWrapper = document.createElement("div");
+    barWrapper.style.marginBottom = "12px";
+
+barWrapper.innerHTML = `
+  <div class="mb-5">
+    <div class="flex justify-between items-center mb-1">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 10a8 8 0 1116 0A8 8 0 012 10z" />
+        </svg>
+        <span class="font-semibold text-gray-800">${ages[i]}</span>
+      </div>
+      <span class="text-sm text-gray-500">${enpValues[i]}개 / ${totalParties[i]}개 (${ratio}%)</span>
+    </div>
+    <div class="w-full bg-gray-100 rounded-full h-4">
+      <div class="bg-gradient-to-r from-pink-400 to-pink-600 h-4 rounded-full text-xs text-white text-right pr-2 font-medium"
+           style="width: ${ratio}%; min-width: 2rem;">
+        ${ratio}%
+      </div>
+    </div>
+  </div>
+`;
+
+
+    container.appendChild(barWrapper);
+  }
+});
 
 </script>
 {% endblock %}

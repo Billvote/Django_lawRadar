@@ -236,6 +236,7 @@ def get_partyConcentration_data(congress_num):
     top2_data = data[:2]
     top2_ratio = sum([pc.seat_share for pc in top2_data])
     hhi = AgeStats.objects.get(age=ages).hhi
+    enp = AgeStats.objects.get(age=ages).enp
 
     top2_datail = [
         {
@@ -253,15 +254,18 @@ def get_partyConcentration_data(congress_num):
         'top2_ratio': round(top2_ratio, 2),
         'top2_datail': top2_datail,
         'hhi': round(hhi, 4),
+        'enp': round(enp, 4),
         'age': ages,
     }
 
-# 권력 집중도 시계열 차트
+# 시계열 차트
 def get_concentration_timeseries():
     age_objs = Age.objects.all().order_by('number')
     
     ages = []
+    total_parties = []
     hhi_values = [] # hhi 시계열
+    enp_values = [] # enp 시계열
     top2_seat_shares_series = []  # 양당 점유율 시계열
 
     for age in age_objs:
@@ -274,14 +278,20 @@ def get_concentration_timeseries():
         top2_ratio = sum([pc.seat_share for pc in top2])
 
         ages.append(f"{age.number}대")
+        total_parties.append(stats.total_parties)
         hhi_values.append(round(stats.hhi, 4))
+        enp_values.append(round(stats.enp, 4))
         top2_seat_shares_series.append(round(top2_ratio, 2))
     
     return {
         'ages': ages,
+        'total_parties': total_parties,
         'hhi_values': hhi_values,
+        'enp_values': enp_values,
         'top2_seat_shares_series': top2_seat_shares_series,
     }
+
+# 특이 클러스터
 
 # dashboard.html로 보내는 함수
 def dashboard(request, congress_num):
@@ -350,11 +360,14 @@ def dashboard(request, congress_num):
         'party_concentration_top2_ratio': party_concentration_data.get('top2_ratio'),
         'party_concentration_top2_datail': party_concentration_data.get('top2_datail'),
         'party_concentration_hhi': party_concentration_data.get('hhi'),
+        'party_concentration_enp': party_concentration_data.get('enp'),
         'party_concentration_age': party_concentration_data.get('age'),
 
         # 시계열
         'timeseries_data_age': timeseries_data['ages'],
+        'timeseries_data_total_parties': timeseries_data['total_parties'],
         'timeseries_data_hhi': timeseries_data['hhi_values'],
+        'timeseries_data_enp': timeseries_data['enp_values'],
         'timeseries_data_top2_ratio': timeseries_data['top2_seat_shares_series'],
     }
 
