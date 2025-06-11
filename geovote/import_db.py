@@ -301,7 +301,7 @@ import_members(csv_path / f'member.csv')
 import_bills(csv_path / f'bill_labeled(1).csv')
 import_votes(csv_path / f'vote.csv')
 
-print(f"{congress_num}대 데이터 임포트 완료")
+print(f"데이터 임포트 완료")
 
 if __name__ == "__main__":
     run_all()

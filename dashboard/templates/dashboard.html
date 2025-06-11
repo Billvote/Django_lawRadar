@@ -71,10 +71,10 @@
   const colors = {{ party_colors|safe }};
   const categories = {{ categories|safe }};
   const partyNames = {{ party_names|safe }};
-  const partyColors = {{ party_colors|safe }};
-  const resultTypes = ['찬성', '반대', '기권', '불참'];
-  const clusterKeywords = {{ cluster_keywords|safe }};
-  const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
+  // const partyColors = {{ party_colors|safe }};
+  // const resultTypes = ['찬성', '반대', '기권', '불참'];
+  // const clusterKeywords = {{ cluster_keywords|safe }};
+  // const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
 
   var options = {
     chart: {
@@ -102,7 +102,7 @@
     },
     series: series,
     xaxis: {
-      categories: resultTypes,  // x축: 표결 결과
+      categories: categories,  // x축: 표결 결과
       title: {
         text: '비율 (%)'
       },
@@ -142,35 +142,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
     const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
     const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
+    // const clusterNums = JSON.parse(document.getElementById("cluster-nums").textContent);
+    // const clusterKeywords = JSON.parse(document.getElementById("cluster-keywords").textContent);
+
 
     console.log(clusterVoteData);
+
     if (!clusterSelect) {
       console.error("clusterSelect element not found!");
       return;
     }
 
-    // 라벨-클러스터 번호 매핑
-    const clusterNums = clusterVoteData.map(d => ({
-      cluster_num: d.cluster_num,
-      cluster_label: d.cluster_label
-    }));
-
-    const labelToClusters = {};
-    clusterNums.forEach(({ cluster_num, cluster_label }) => {
-      if (!labelToClusters[cluster_label]) {
-        labelToClusters[cluster_label] = [];
-      }
-      labelToClusters[cluster_label].push(cluster_num);
+    const clusterKeys = Object.keys(clusterVoteData);
+    clusterKeys.forEach(key => {
+      const cluster = clusterVoteData[key];
+      const option = document.createElement('option');
+      option.value = cluster.cluster_num;  // 실제 클러스터 번호 (29, 30 등)
+      option.textContent = `Cluster ${cluster.cluster_num}: ${cluster.cluster_keywords}`;
+      clusterSelect.appendChild(option);
     });
+
+    // // 라벨-클러스터 번호 매핑
+    // const clusterNums = Object.entries(clusterVoteData).map(d => ({
+    //   cluster_num: d.cluster_num,
+    //   cluster_label: d.cluster_label
+    // }));
+    // console.log(clusterNums)
+    // console.log("Raw data:", document.getElementById("cluster-vote-data").textContent);
+
+
+    // const labelToClusters = {};
+    // clusterNums.forEach(({ cluster_num, cluster_label }) => {
+    //   if (!labelToClusters[cluster_label]) {
+    //     labelToClusters[cluster_label] = [];
+    //   }
+    //   labelToClusters[cluster_label].push(cluster_num);
+    // });
+
+      // 드롭다운에 클러스터 옵션 추가
+  // clusterNums.forEach(clusterNum => {
+  //   const option = document.createElement('option');
+  //   option.value = clusterNum;
+  //   option.textContent = `Cluster ${clusterNum}: ${clusterKeywords[clusterNum]}`;
+  //   clusterSelect.appendChild(option);
+  // });
+
 
     let clusterChart = null;
 
   function drawClusterChart(clusterNum) {
-    const clusterObj = clusterVoteData.find(d => d.cluster_num == clusterNum);
-    const data = clusterObj?.votes;
-    console.log('drawClusterChart called with:', clusterNum);
+    const clusterObj = Object.values(clusterVoteData).find(c => c.cluster_num == clusterNum);
+    // const data = clusterObj?.votes;
+    // console.log('drawClusterChart called with:', clusterNum);
 
-    if (!data) {
+    if (!clusterObj) {
         console.warn("No data for cluster:", clusterNum);
         const chartContainer = document.querySelector("#clusterVoteChart");
         chartContainer.innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
@@ -181,14 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const partyStats = clusterObj.party_stats;
+
     // resultTypes, partName 매칭
     const series = partyNames.map(party => {
-    const partyData = data.find(d => d.party === party);
-    return {
-      name: party,
-      data: resultTypes.map((type, idx) => {
-        return partyData ? partyData.data[idx] : 0;
-      })
+      const stats = partyStats[party];
+      return {
+        name: party,
+        data: resultTypes.map(type => stats ? stats[type] : 0)
     };
   });
 
@@ -221,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       series: series,
       xaxis: {
-        categories: ['찬성', '반대', '기권', '불참'], // X축에 4개의 항목
+        categories: resultTypes,
         title: { text: '비율 (%)' }, // X축 제목
         labels: {
           formatter: function (val) {
