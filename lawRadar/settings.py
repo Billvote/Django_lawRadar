@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+import environ
 # from django.contrib.gis import gdal
 
 # GDAL 라이브러리 경로 설정
@@ -18,6 +19,13 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 환경변수 로드
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# API 키 가져오기
+ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
 
 
 # Quick-start development settings - unsuitable for production

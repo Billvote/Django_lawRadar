@@ -1,12 +1,8 @@
 {% extends "base.html" %}
-
 {% block body %}
 <!-- 상단 네비게이션 바 -->
 <nav class="bg-white shadow-sm border-b flex items-center justify-between p-6">
-  <!-- 왼쪽: 타이틀 -->
   <div class="text-2xl font-bold text-gray-800">대수 선택</div>
-
-  <!-- 오른쪽: 대수 선택 -->
   <div class="space-x-4">
     {% for age in ages %}
       <button
@@ -28,24 +24,31 @@
         <h1 class="text-2xl font-bold text-center">
           🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
         </h1>
+        <h2 class="text-base text-gray-600 text-center mt-1 font-normal">
+          이 페이지에서는 우리 지역구 의원의 클러스터별 표결 정보, 주요 성향을 확인해볼 수 있습니다
+        </h2>
         <div id="breadcrumb" class="text-sm text-gray-500"></div>
         <!-- 뒤로가기버튼 -->
-        <button id="backButton" 
-          class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+        <button id="backButton"
+                class="hidden bg-pink-300 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-pink-400 transition duration-300 ease-in-out transform hover:scale-105">
           뒤로가기
         </button>
       </div>
       <div id="treemap"  class="flex-1 overflow-auto max-h-[calc(100vh-160px)]"></div>
     </main>
 
-    <!-- 우측 패널 -->
-    <aside id="infoPanel" class="flex-[2_1_0%] bg-white border-l shadow-lg p-4 overflow-auto hidden">
-      <button id="closePanelBtn" class="float-right text-xl font-bold">&times;</button>
-      <h2 id="panelTitle" class="font-bold text-lg mb-2"></h2>
-      <div id="panelContent" class="text-sm"></div>
-    </aside>
-  </div>
-</div>
+    <!-- 팝업(모달) 영역 -->
+    <div id="popupModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" id="popupOverlay"></div>
+      <div class="relative bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] overflow-auto p-6">
+        <button id="closeModalBtn" class="sticky top-0 right-0 ml-auto z-10 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
+          &times;
+        </button>
+        <h2 id="modalTitle" class="font-bold text-lg mb-2"></h2>
+        <div id="modalContent" class="text-sm"></div>
+      </div>
+    </div>
+
 
 {% endblock %}
 {% block script %}
@@ -54,20 +57,18 @@
   const container = document.getElementById("treemap");
   const backButton = d3.select("#backButton");
   const breadcrumb = document.getElementById("breadcrumb");
-  const infoPanel = document.getElementById("infoPanel");
-  const closePanelBtn = document.getElementById("closePanelBtn");
-  const panelTitle = document.getElementById("panelTitle");
-  const panelContent = document.getElementById("panelContent");
+  const popupModal = document.getElementById("popupModal");
+  const popupOverlay = document.getElementById("popupOverlay");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  const backModalBtn = document.getElementById("backModalBtn");
+  const mainContent = document.getElementById("mainContent");
+  
 
   let svg, currentNode, hierarchyRoot;
+  let memberPhotoMap = {};
 
-  // 닫기 버튼 이벤트
-  closePanelBtn.addEventListener("click", () => {
-    infoPanel.classList.add("hidden");
-
-    // 트리맵 리사이즈
-    setTimeout(resize, 400); // 패널이 사라지는 애니메이션 고려하여 약간 지연
-  });
 
   function updateBreadcrumb(node) {
     let path = [];
@@ -78,6 +79,24 @@
     }
     breadcrumb.textContent = path.length ? path.join(" > ") : "";
   }
+
+  // 팝업 열기
+  function openPopup(title, contentHtml) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = contentHtml;
+    popupModal.classList.remove("hidden");
+    mainContent.classList.add("opacity-70", "blur-sm"); // 메인 콘텐츠 흐림
+  }
+
+  // 팝업 닫기
+  function closePopup() {
+    popupModal.classList.add("hidden");
+    mainContent.classList.remove("opacity-70", "blur-sm");
+  }
+
+  // 닫기/오버레이 클릭 시 팝업 닫기
+  closeModalBtn.addEventListener("click", closePopup);
+  popupOverlay.addEventListener("click", closePopup);
 
   // 표결 요약 JSON → 보기 좋은 HTML 테이블 변환
 function renderSummary(data) {
@@ -193,17 +212,6 @@ function renderSummary(data) {
   return html;
 }
 
-
-
-  // 우측 패널 열기
-  function openPanel(title, contentHtml) {
-    panelTitle.textContent = title;
-    panelContent.innerHTML = contentHtml;
-    infoPanel.classList.remove("hidden");
-    mainContent.classList.add("main-blur");
-    setTimeout(resize, 400); // 트리맵 리사이즈
-  }
-
   // 뒤로가기 버튼
   backButton.on("click", () => {
     if (currentNode.parent) {
@@ -211,7 +219,6 @@ function renderSummary(data) {
     }
     render(currentNode, container.clientWidth, container.clientHeight);  // 2) 트리맵 다시 그리기 (상위 노드 기준)
     updateBreadcrumb(currentNode); // 3) breadcrumb 갱신
-    infoPanel.classList.add("hidden"); // 우측 패널 숨기기
     setTimeout(() => {
       resize();
       updateBreadcrumb(currentNode);  // breadcrumb는 필요하면 갱신
@@ -260,16 +267,14 @@ function renderSummary(data) {
               alert("이 지역구에는 등록된 의원 정보가 없습니다.");
               return;
             }
-
             try {
               const res = await fetch(
                 `/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`
               );
               if (!res.ok) throw new Error("API 호출 실패");
-
               const summary = await res.json();
               const summaryHtml = renderSummary(summary);
-              openPanel(memberName + " 의원 표결 요약", summaryHtml);
+              openPopup(memberName + " 의원 표결 요약", summaryHtml);
             } catch (err) {
               console.error(err);
               alert("표결 정보를 가져오지 못했습니다.");
@@ -286,7 +291,14 @@ function renderSummary(data) {
           .attr("class", "text-base font-medium text-blue-700")
           .text(d.data.member_name || "의원 정보 없음");
 
-        // 하단 소속 정당 / 위원회 (있을 경우)
+        const key = `${d.data.member_name}|${d.data.name}`; // 또는 d.data.SGG 등 실제 구조에 맞게
+        const photoUrl = memberPhotoMap[key] || "/static/img/default-member.jpg";
+        card.append("img")
+          .attr("src", photoUrl)
+          .attr("alt", `${d.data.member_name} 의원 사진`)
+          .attr("class", "w-20 h-20 rounded-full object-cover border-2 border-gray-200 mb-1");
+
+        // 하단 소속 정당 
         const details = [];
         if (d.data.party) details.push(d.data.party);
 
@@ -304,16 +316,12 @@ function renderSummary(data) {
     const svg = treemapContainer.append("svg")
       .attr("width", width)
       .attr("height", height);
-
     const group = svg.append("g");
-
     const x = d3.scaleLinear().domain([node.x0, node.x1]).range([0, width]);
     const y = d3.scaleLinear().domain([node.y0, node.y1]).range([0, height]);
-
     const childrenToShow = (node.depth <= 1)
       ? (node.children || []).filter(d => d.data.type !== "District")
       : (node.children || []);
-
     const nodes = group.selectAll("g")
       .data(childrenToShow)
       .join("g")
@@ -323,14 +331,12 @@ function renderSummary(data) {
         if (d.children) {
           currentNode = d;
           render(d, width, height);
-          infoPanel.classList.add("hidden");
         } else if (d.data.type === "District") {
           const memberName = d.data.member_name;
           if (!memberName) {
             alert("이 지역구에는 등록된 의원 정보가 없습니다.");
             return;
           }
-
           try {
             const res = await fetch(
               `/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`
@@ -351,7 +357,6 @@ function renderSummary(data) {
       "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
       "#6ee7b7", "#7dd3fc", "#c4b5fd", "#fda4af", "#5eead4"
     ];
-
     const sidoColors = d3.scaleOrdinal(freshColors);
     const sigunguColors = d3.scaleOrdinal(freshColors);
 
@@ -421,7 +426,6 @@ function renderSummary(data) {
 
     currentNode = hierarchyRoot;
     render(currentNode, container.clientWidth, container.clientHeight);
-    infoPanel.classList.add("hidden");  // 초기에는 우측 패널 숨김
   }
 
   // 초기화: 선택된 대수
