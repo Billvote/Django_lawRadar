@@ -40,33 +40,8 @@
   </div>
 </div>
 
-                 <!-- 정당별 통계 -->
-    <div class="mt-6">
-      <h3 class="font-semibold text-gray-800 mb-2">정당별 통계</h3>
-      <table class="min-w-full text-sm border border-gray-300 rounded">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="px-4 py-2 text-left font-medium text-gray-700">정당</th>
-            <th class="px-4 py-2 text-left font-medium text-green-700">찬성</th>
-            <th class="px-4 py-2 text-left font-medium text-red-700">반대</th>
-            <th class="px-4 py-2 text-left font-medium text-yellow-700">기권</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for stat in party_stats %}
-            <tr class="border-t">
-              <td class="px-4 py-2">{{ stat.party_party }}</td>
-              <td class="px-4 py-2 text-green-600">{{ stat.agree }}</td>
-              <td class="px-4 py-2 text-red-600">{{ stat.oppose }}</td>
-              <td class="px-4 py-2 text-yellow-600">{{ stat.abstain }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
                 <!-- 의원 목록 -->
-             <div>
+             <!-- <div>
                 <h3 class="font-semibold text-gray-900">{{ vote.member.name }}</h3>
                 <ul class="space-y-1 text-sm">
                     {% for vote in votes %}
@@ -77,6 +52,75 @@
                     </li>
                     {% endfor %}
                 </ul>
-             </div>
+             </div> -->
 
+<!-- 히트맵 -->
+<div class="col-span-2 row-start-1 bg-white p-4 rounded shadow">
+  <h2>히트맵</h2>
+  <div id="vote-heatmap"></div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+const rawData = {{ heatmap_data|safe }};
+
+const colorMap = {
+  '찬성': '#34d399',
+  '반대': '#f87171',
+  '기권': '#fbbf24',
+  '불참': '#d1d5db'
+};
+
+
+// rawData는 2차원 배열 (10행 x 30열)
+const dataPoints = [];
+for(let row=0; row < rawData.length; row++) {
+  for(let col=0; col < rawData[row].length; col++) {
+    dataPoints.push({
+      x: (col + 1).toString(),  // 열 번호 (문자열)
+      y: row + 1,              // 행 번호 (숫자)
+      fillColor: colorMap[rawData[row][col]] || '#fff'
+    });
+  }
+}
+
+const series = [{
+  name: '투표결과',
+  data: dataPoints
+}];
+
+var options = {
+  chart: {
+    type: 'heatmap',
+    height: 350
+  },
+  series: series,
+  xaxis: {
+    title: { text: '의원 번호 (열)' },
+    categories: [...Array(30).keys()].map(i => (i + 1).toString())
+  },
+  yaxis: {
+    title: { text: '행 번호' }
+  },
+  plotOptions: {
+    heatmap: {
+      enableShades: false,
+      colorScale: {
+        ranges: [
+          { from: 0, to: 0, color: '#fff' } // 기본 색상 흰색
+        ]
+      }
+    }
+  },
+  dataLabels: {
+    enabled: false
+  }
+};
+
+var chart = new ApexCharts(document.querySelector("#vote-heatmap"), options);
+chart.render();
+
+</script>
 {% endblock %}

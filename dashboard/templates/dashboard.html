@@ -34,15 +34,29 @@
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
-<!-- 권력 집중도 -->
+  
+  <!-- enp 프로그래스 바 -->
+  <div class="dashboard-section mt-6">
+    <h1 class="text-2xl font-bold">유효한 정당</h1>
+    {% include 'enp.html' %}
+  </div>
+  
+  <!-- 권력 집중도 -->
+  <div class="flex justify-between items-center mt-6">
+    <h1 class="text-2xl font-bold">💪​국회 권력은 얼마나 집중돼 있을까?</h1>
+    <p class="text-sm text-gray-500">의석수 상위 2개 당 기준</p>
+  </div>
 <div class="dashboard-section">
 {% include 'hhi_cards.html' %}
 </div>
 
+
+  <div class="flex justify-between items-center mt-6">
+    <h1 class="text-2xl font-bold">👀정당/클러스터별 표결 현황</h1>
+  </div>
 <!-- 정당/클러스터별 표결 현황 -->
-<div class="grid grid-cols-5 gap-4 mb-4">
+<div class="grid grid-cols-5 gap-4 mt-6">
   <div class="col-span-5 bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">👀정당/클러스터별 표결 현황</h2>
     {% include 'clusterSelect.html' %}
     <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
   </div>
@@ -71,10 +85,10 @@
   const colors = {{ party_colors|safe }};
   const categories = {{ categories|safe }};
   const partyNames = {{ party_names|safe }};
-  const partyColors = {{ party_colors|safe }};
-  const resultTypes = ['찬성', '반대', '기권', '불참'];
-  const clusterKeywords = {{ cluster_keywords|safe }};
-  const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
+  // const partyColors = {{ party_colors|safe }};
+  // const resultTypes = ['찬성', '반대', '기권', '불참'];
+  // const clusterKeywords = {{ cluster_keywords|safe }};
+  // const clusterNums = JSON.parse('{{ cluster_nums|safe }}');
 
   var options = {
     chart: {
@@ -102,7 +116,7 @@
     },
     series: series,
     xaxis: {
-      categories: resultTypes,  // x축: 표결 결과
+      categories: categories,  // x축: 표결 결과
       title: {
         text: '비율 (%)'
       },
@@ -143,34 +157,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
     const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
 
-    console.log(clusterVoteData);
     if (!clusterSelect) {
       console.error("clusterSelect element not found!");
       return;
     }
 
-    // 라벨-클러스터 번호 매핑
-    const clusterNums = clusterVoteData.map(d => ({
-      cluster_num: d.cluster_num,
-      cluster_label: d.cluster_label
-    }));
-
-    const labelToClusters = {};
-    clusterNums.forEach(({ cluster_num, cluster_label }) => {
-      if (!labelToClusters[cluster_label]) {
-        labelToClusters[cluster_label] = [];
-      }
-      labelToClusters[cluster_label].push(cluster_num);
+    const clusterKeys = Object.keys(clusterVoteData);
+    clusterKeys.forEach(key => {
+      const cluster = clusterVoteData[key];
+      const option = document.createElement('option');
+      option.value = cluster.cluster_num;  // 실제 클러스터 번호 (29, 30 등)
+      option.textContent = `Cluster ${cluster.cluster_num}: ${cluster.cluster_keywords}`;
+      // clusterSelect.appendChild(option);
     });
 
     let clusterChart = null;
 
   function drawClusterChart(clusterNum) {
-    const clusterObj = clusterVoteData.find(d => d.cluster_num == clusterNum);
-    const data = clusterObj?.votes;
-    console.log('drawClusterChart called with:', clusterNum);
+    const clusterObj = Object.values(clusterVoteData).find(c => c.cluster_num == clusterNum);
+    // const data = clusterObj?.votes;
+    // console.log('drawClusterChart called with:', clusterNum);
 
-    if (!data) {
+    if (!clusterObj) {
         console.warn("No data for cluster:", clusterNum);
         const chartContainer = document.querySelector("#clusterVoteChart");
         chartContainer.innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
@@ -181,14 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const partyStats = clusterObj.party_stats;
+
     // resultTypes, partName 매칭
     const series = partyNames.map(party => {
-    const partyData = data.find(d => d.party === party);
-    return {
-      name: party,
-      data: resultTypes.map((type, idx) => {
-        return partyData ? partyData.data[idx] : 0;
-      })
+      const stats = partyStats[party];
+      return {
+        name: party,
+        data: resultTypes.map(type => stats ? stats[type] : 0)
     };
   });
 
@@ -221,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       series: series,
       xaxis: {
-        categories: ['찬성', '반대', '기권', '불참'], // X축에 4개의 항목
+        categories: resultTypes,
         title: { text: '비율 (%)' }, // X축 제목
         labels: {
           formatter: function (val) {
@@ -277,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('DOMContentLoaded', function () {
     const ages = {{ timeseries_data_age|safe }};
     const hhiValues = {{ timeseries_data_hhi|safe }};
+    const enpValues = {{ timeseries_data_enp|safe }};
     const top2Ratios = {{ timeseries_data_top2_ratio|safe }};
 
     const options = {
@@ -321,6 +330,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const chart = new ApexCharts(document.querySelector("#hhi-top2-chart"), options);
     chart.render();
   });
+
+// enp 프로그래스 바------------------
+document.addEventListener("DOMContentLoaded", function () {
+  const ages = {{ timeseries_data_age|safe }};
+  const enpValues = {{ timeseries_data_enp|safe }};
+  const totalParties = {{ timeseries_data_total_parties|safe }};
+  
+  const container = document.getElementById("enp-progress-bars");
+
+  for (let i = 0; i < ages.length; i++) {
+    const ratio = ((enpValues[i] / totalParties[i]) * 100).toFixed(1);
+
+    const barWrapper = document.createElement("div");
+    barWrapper.style.marginBottom = "12px";
+
+barWrapper.innerHTML = `
+  <div class="mb-5">
+    <div class="flex justify-between items-center mb-1">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 10a8 8 0 1116 0A8 8 0 012 10z" />
+        </svg>
+        <span class="font-semibold text-gray-800">${ages[i]}</span>
+      </div>
+      <span class="text-sm text-gray-500">${enpValues[i]}개 / ${totalParties[i]}개 (${ratio}%)</span>
+    </div>
+    <div class="w-full bg-gray-100 rounded-full h-4">
+      <div class="bg-gradient-to-r from-pink-400 to-pink-600 h-4 rounded-full text-xs text-white text-right pr-2 font-medium"
+           style="width: ${ratio}%; min-width: 2rem;">
+        ${ratio}%
+      </div>
+    </div>
+  </div>
+`;
+
+
+    container.appendChild(barWrapper);
+  }
+});
 
 </script>
 {% endblock %}

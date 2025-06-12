@@ -39,9 +39,15 @@ def import_agesStats(congress_num):
     total_members = sum(pc.member_count for pc in pcs)
     if total_members > 0:
         seat_shares = [pc.member_count / total_members * 100 for pc in pcs]
+
         hhi = sum((share / 100) ** 2 for share in seat_shares)
+        
+        enp_denominator = sum((share / 100) ** 2 for share in seat_shares)
+        enp = 1 / enp_denominator if enp_denominator > 0 else 0
+    
     else:
         hhi = 0
+        enp = 0
 
     age_stats, created = AgeStats.objects.update_or_create(
         age=age,
@@ -52,6 +58,7 @@ def import_agesStats(congress_num):
             'female_count': female_count,
             'female_percent': female_percent,
             'hhi': round(hhi, 4),
+            'enp': round(enp, 4),
         }
     )
     print(f"AgeStats 저장됨: {age_stats}")

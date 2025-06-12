@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import pandas as pd
 import json
 
@@ -14,297 +15,230 @@ from django.conf import settings
 from geovote.models import District, Member, Party, Age, Vote
 from billview.models import Bill
 
+# ---------- Helper Functions ----------
+def safe_str(val):
+    return str(val).strip() if not pd.isna(val) else ""
 
+def get_age_instance(age_number):
+    return Age.objects.get(number=age_number)
+
+def get_or_none(dict_, key):
+    return dict_.get(key, None)
+
+# ---------- 1. Age ----------
 def import_ages(csv_path):
     """
     csv_path에 있는 age 데이터(age number)들을 DB에 import.
     중복된 number는 건너뜀.
     """
     df = pd.read_csv(csv_path)
-    existing_numbers = set(Age.objects.values_list('number', flat=True))
+    created, skipped = 0, 0
 
-    new_ages = []
     for _, row in df.iterrows():
-        number = row['number']
-        if number not in existing_numbers:
-            new_ages.append(Age(number=number))
+        number = int(row['number'])
+        obj, created_flag = Age.objects.get_or_create(number=number)
+        if created_flag:
+            created += 1
         else:
-            print(f"[SKIP] 이미 존재하는 대수: {number}")
+            skipped += 1
 
-    if new_ages:
-        with transaction.atomic():
-            Age.objects.bulk_create(new_ages)
-        print(f"[DONE] {len(new_ages)}개의 대수 저장 완료")
-    else:
-        print("[INFO] 저장할 신규 대수가 없습니다.")
+    print(f"[AGE] 신규 {created}개, 업데이트 {skipped}개")
 
-# 의안
-def import_bills(csv_path):
-    # CSV 파일 읽기 (인코딩 이슈가 있다면 encoding='utf-8-sig' 사용)
+# ---------- 2. Party ----------
+def import_parties(csv_path):
     df = pd.read_csv(csv_path)
+    created, skipped = 0, 0
 
-    # FK 및 중복 캐싱
-    age_dict = {age.number: age for age in Age.objects.all()}
-    existing_bill_ids = set(Bill.objects.values_list('bill_id', flat=True))
-    existing_bill_numbers = set(Bill.objects.values_list('bill_number', flat=True))
-
-    records = []
     for _, row in df.iterrows():
-        try:
-            cluster_value = int(row['cluster'])
-            bill_id = str(row['bill_id']).strip()
-            bill_number = str(row['bill_number']).strip()
+        name = safe_str(row['party'])
+        color = safe_str(row.get('color')) or '#000000'
+        obj, created_flag = Party.objects.get_or_create(party=name, defaults={'color': color})
+        if created_flag:
+            created += 1
+        else:
+            skipped += 1
 
-            if bill_id in existing_bill_ids or bill_number in existing_bill_numbers:
-                print(f"[SKIP] 중복 법안: bill_id={bill_id}, bill_number={bill_number}")
-                continue
+    print(f"[PARTY] 신규 {created}개, 업데이트 {skipped}개")
 
-            age = age_dict.get(int(row['age']))
-            if not age:
-                print(f"[SKIP] 유효하지 않은 age: {row['age']}")
-                continue
-
-            summary = str(row.get('summary', '')).strip()
-            summary = summary if summary and not pd.isna(summary) else None
-
-            # cluster_keyword 처리
-            raw_keyword = row.get('cluster_keyword')
-            if pd.isna(raw_keyword):
-                cluster_keyword = ''
-            else:
-                cluster_keyword = str(raw_keyword).strip()
-
-            # label 처리
-            label_value = row.get('label')
-            if pd.isna(label_value):
-                label_value = None
-            else:
-                try:
-                    label_value = int(float(label_value))
-                except ValueError:
-                    label_value = None
-
-            records.append(Bill(
-                age=age,
-                title=str(row['title']).strip(),
-                bill_id=bill_id,
-                bill_number=bill_number,
-                summary=summary,
-                cluster=cluster_value,
-                cluster_keyword=cluster_keyword,
-                label=label_value   # label 필드 추가
-            ))
-
-        except Exception as e:
-            print(f"[ERROR] 행 처리 실패: {e} (row={row.to_dict()})")
-            continue
-
-    if records:
-        Bill.objects.bulk_create(records, batch_size=1000)
-        print(f"[DONE] {len(records)}개의 법안 저장 완료")
-    else:
-        print("[INFO] 저장할 법안이 없습니다.")
-
-# 1) 지역구
+# ---------- 3. District ----------
 def import_districts(csv_path):
     df = pd.read_csv(csv_path)
-    
-    existing_sggs = set(District.objects.values_list('SGG', flat=True))
-    
-    records = []
+    created, skipped = 0, 0
+
     for _, row in df.iterrows():
-        if row['SGG_Code'] in existing_sggs:
-            print(f"[SKIP] 이미 존재하는 구역: {row['SGG_Code']}")
-            continue
-        
-        records.append(District(
-            # id=row['id'],
-            SGG_Code=row['SGG_Code'],
-            SIDO_SGG=row['SIDO_SGG'],
-            SIDO=row['SIDO'],
-            SGG=row['SGG'],
-            SIGUNGU = row['SIGUNGU'],
-        ))
+        code = row['SGG_Code']
+        defaults = {
+            'SIDO_SGG': row['SIDO_SGG'],
+            'SIDO': row['SIDO'],
+            'SGG': row['SGG'],
+            'SIGUNGU': row['SIGUNGU'],
+        }
+        obj, created_flag = District.objects.update_or_create(SGG_Code=code, defaults=defaults)
+        if created_flag:
+            created += 1
+        else:
+            skipped += 1
 
-    District.objects.bulk_create(records)
-    print(f"[DONE] {len(records)}개의 구역 저장 완료")
+    print(f"[DISTRICT] 신규 {created}개, 업데이트 {skipped}개")
 
-
-# 2) 의원(수정 필요: 20대 지역구가 22대 geojson과 맞지 않는 문제 있음)
+# ---------- 4. Member ----------
 def import_members(csv_path):
     df = pd.read_csv(csv_path)
-
-    # FK 참조 테이블 캐싱
-    age_dict = {age.number: age for age in Age.objects.all()}
+    age_dict = {a.number: a for a in Age.objects.all()}
     party_dict = {p.party: p for p in Party.objects.all()}
     district_dict = {d.SIDO_SGG: d for d in District.objects.all()}
 
-    # 기존 (age_id, member_id) 조합 캐싱 (중복 검사)
-    existing_members = set(
-        Member.objects.values_list('age__number', 'member_id')
-    )
-
-    records = []
+    created, skipped = 0, 0
 
     for _, row in df.iterrows():
-        try:
-            age_number = int(row['age'])
-            member_id = str(row['member_id']).strip()
-            name = str(row['name']).strip()
-            party_name = str(row['party']).strip()
-            gender = str(row['gender']).strip()
-            sido_sgg = str(row.get('SIDO_SGG', '')).strip()
-            image_url = str(row.get('image_url', '')).strip() or None
+        age_number = int(row['age'])
+        member_id = safe_str(row['member_id'])
 
-            # 중복 검사
-            if (age_number, member_id) in existing_members:
-                continue
+        defaults = {
+            'name': safe_str(row['name']),
+            'party': party_dict.get(safe_str(row['party'])),
+            'gender': safe_str(row['gender']),
+            'district': district_dict.get(safe_str(row.get('SIDO_SGG'))),
+            'image_url': safe_str(row.get('image_url')) or None,
+        }
 
-            # FK 조회
-            age = age_dict.get(age_number)
-            party = party_dict.get(party_name)
-
-            if not age or not party:
-                print(f"[SKIP] 누락된 FK - age: {age}, party: {party_name} ({name})")
-                continue
-
-            # 지역구 처리
-            district = None
-            if sido_sgg and sido_sgg != "<비례대표>":
-                district = district_dict.get(sido_sgg)
-                if not district:
-                    print(f"[WARN] 지역구 없음: {sido_sgg} ({name})")
-
-            records.append(Member(
-                age=age,
-                name=name,
-                party=party,
-                district=district,
-                member_id=member_id,
-                gender=gender,
-                image_url=image_url,
-            ))
-
-        except Exception as e:
-            print(f"[ERROR] 처리 중 오류 발생 (row: {row.to_dict()}): {e}")
+        age = age_dict.get(age_number)
+        if not age or not defaults['party']:
+            print(f"[SKIP] FK 누락 - age or party 없음: {row.to_dict()}")
+            skipped += 1
             continue
 
-    # bulk insert
-    if records:
-        with transaction.atomic():
-            Member.objects.bulk_create(records, batch_size=1000)
-        print(f"[DONE] {len(records)}명의 의원 저장 완료")
-    else:
-        print("[INFO] 저장할 신규 의원 데이터가 없습니다")
-
-
-# 3) party 테이블 --------------------------------------------------------------------
-def import_parties(csv_path):
-    df = pd.read_csv(csv_path)
-    
-    # 이미 DB에 있는 정당명 셋으로 미리 조회
-    existing_parties = set(Party.objects.values_list('party', flat=True))
-    
-    records = []
-    for _, row in df.iterrows():
-        name = row['party'].strip()
-        color = row.get('color', '#000000').strip()
-
-        if name and name not in existing_parties:
-            records.append(Party(party=name, color=color))
+        obj, created_flag = Member.objects.update_or_create(
+            age=age, member_id=member_id,
+            defaults=defaults
+        )
+        if created_flag:
+            created += 1
         else:
-            print(f"[SKIP] 이미 존재하는 정당명: {name}")
+            skipped += 1
 
-    Party.objects.bulk_create(records)
-    print(f"[DONE] {len(records)}개의 정당 저장 완료")
+    print(f"[MEMBER] 신규 {created}명, 업데이트 {skipped}명")
 
-# 4) 표결------------------------------------------
+# ---------- 5. Bill ----------
+def import_bills(csv_path):
+    df = pd.read_csv(csv_path)
+    age_dict = {a.number: a for a in Age.objects.all()}
+    created, skipped = 0, 0
+
+    for _, row in df.iterrows():
+        bill_id = safe_str(row['bill_id'])
+        bill_number = safe_str(row['bill_number'])
+
+        try:
+            age = age_dict.get(int(row['age']))
+            if not age:
+                print(f"[SKIP] 유효하지 않은 age: {row['age']}")
+                skipped += 1
+                continue
+
+            defaults = {
+                'title': safe_str(row['title']),
+                'age': age,
+                'summary': safe_str(row.get('summary')) or None,
+                'cluster': int(row['cluster']),
+                'cluster_keyword': safe_str(row.get('cluster_keyword')),
+                'label': int(float(row['label'])) if not pd.isna(row.get('label')) else None,
+            }
+
+            obj, created_flag = Bill.objects.update_or_create(
+                bill_id=bill_id,
+                defaults={**defaults, 'bill_number': bill_number}
+            )
+            if created_flag:
+                created += 1
+            else:
+                skipped += 1
+
+        except Exception as e:
+            print(f"[ERROR] 법안 처리 실패: {e}, row={row.to_dict()}")
+            skipped += 1
+
+    print(f"[BILL] 신규 {created}개, 업데이트 {skipped}개")
+
+# ---------- 6. Vote ----------
 def import_votes(csv_path):
     df = pd.read_csv(csv_path)
 
-    # FK 테이블 미리 캐싱
+    # 필요 객체 캐싱
     member_dict = {
-        (m.age.number, m.member_id.strip()): m
-        for m in Member.objects.select_related('age')
+        (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
     }
-    bill_dict = {
-        b.bill_number.strip(): b
-        for b in Bill.objects.all()
+    bill_dict = {b.bill_number: b for b in Bill.objects.all()}
+
+    to_create = []
+    to_update = []
+    skipped = 0
+
+    # 미리 기존 Vote들 불러와서 캐싱
+    existing_votes = Vote.objects.all().select_related('member', 'age', 'bill')
+    vote_lookup = {
+        (v.age_id, v.member_id, v.bill_id): v for v in existing_votes
     }
 
-    # 중복 투표 방지용 기존 키 로드
-    existing_votes = set(
-        Vote.objects.values_list('age__number', 'member__member_id', 'bill__bill_number')
-    )
-
-    records = []
-    missing_bills = set()  # 한 의안 번호당 한 번만 출력하기 위한 집합
-
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Importing votes"):
         try:
-            age_num = int(row['age'])
-            member_id = str(row['member_id']).strip()
-            bill_number = str(row['bill_number']).strip()
-            result = str(row['result']).strip()
-            date = pd.to_datetime(row['date']).date()
+            age_number = int(row['age'])
+            member_id = safe_str(row['member_id'])
+            bill_number = safe_str(row['bill_number'])
 
-            vote_key = (age_num, member_id, bill_number)
-
-            if vote_key in existing_votes:
-                continue
-
-            member = member_dict.get((age_num, member_id))
+            member = member_dict.get((age_number, member_id))
             bill = bill_dict.get(bill_number)
 
-            if not member:
-                print(f"[SKIP] member FK 없음: {age_num}, {member_id}")
+            if not member or not bill:
+                skipped += 1
                 continue
 
-            if not bill:
-                if bill_number not in missing_bills:
-                    print(f"[SKIP] bill FK 없음: {bill_number}")
-                    missing_bills.add(bill_number)
-                continue
+            key = (member.age_id, member.id, bill.id)
+            result = safe_str(row['result'])
+            date = pd.to_datetime(row['date']).date()
 
-            records.append(Vote(
-                age=member.age,
-                member=member,
-                bill=bill,
-                result=result,
-                date=date,
-            ))
-
+            if key in vote_lookup:
+                vote = vote_lookup[key]
+                vote.result = result
+                vote.date = date
+                to_update.append(vote)
+            else:
+                vote = Vote(
+                    age=member.age,
+                    member=member,
+                    bill=bill,
+                    result=result,
+                    date=date
+                )
+                to_create.append(vote)
         except Exception as e:
-            print(f"[ERROR] 처리 중 오류 발생 (row: {row.to_dict()}): {e}")
-            continue
+            print(f"[ERROR] 표결 처리 실패: {e}, row={row.to_dict()}")
+            skipped += 1
 
-    # bulk insert
-    if records:
-        with transaction.atomic():
-            Vote.objects.bulk_create(records, batch_size=1000)
-        print(f"[DONE] {len(records)}개의 투표 내역 저장 완료")
-    else:
-        print("[INFO] 저장할 신규 투표 데이터가 없습니다")
+    # 한 번에 업데이트 및 생성
+    with transaction.atomic():
+        Vote.objects.bulk_update(to_update, ['result', 'date'], batch_size=1000)
+        Vote.objects.bulk_create(to_create, batch_size=1000)
+
+    print(f"[VOTE] 신규 {len(to_create)}개, 업데이트 {len(to_update)}개, 실패 {skipped}개")
 
 # ----------< 실행 >-------------------------
-# 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
+# 사용법: geovote 폴더 이동 -> 터미널에 `python import_db.py` 입력
 
-def run_all(congress_num):
-    print(f'{congress_num}대 데이터 임포트 시작')
+def run_all():
+    print(f'데이터 임포트 시작')
 
-    base_path = settings.BASE_DIR / 'geovote' / 'data'
+    csv_path = settings.BASE_DIR / 'geovote' / 'data'
+    import_ages(csv_path / f'age.csv')
+    import_parties(csv_path / f'party.csv')
+    import_districts(csv_path / f'district.csv')
+    import_members(csv_path / f'member.csv')
+    import_bills(csv_path / f'bill(2).csv')
+    import_votes(csv_path / f'vote.csv')
 
-csv_path = settings.BASE_DIR / 'geovote' / 'data'
-import_ages(csv_path / f'age.csv')
-import_parties(csv_path / f'party.csv')
-import_districts(csv_path / f'district.csv')
-import_members(csv_path / f'member.csv')
-import_bills(csv_path / f'bill_labeled(1).csv')
-import_votes(csv_path / f'vote.csv')
-
-
-print(f"{congress_num}대 데이터 임포트 완료")
+    print(f"✅ 데이터 임포트 완료")
 
 if __name__ == "__main__":
     run_all()
-    # 사용법: geovote 폴더 이동 -> 터미널에 `python import_db.py` 입력
+
+    

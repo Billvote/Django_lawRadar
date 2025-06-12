@@ -25,7 +25,7 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # API 키 가져오기
-ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
+# ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
 
 
 # Quick-start development settings - unsuitable for production
@@ -120,9 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 

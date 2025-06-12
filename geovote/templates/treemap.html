@@ -281,6 +281,12 @@ function renderSummary(data) {
             }
           });
 
+        //의원사진
+        card.append("img")
+          .attr("src", d.data.image_url || "https://via.placeholder.com/100")
+          .attr("alt", d.data.member_name || "의원 사진 없음")
+          .attr("class", "w-24 h-24 rounded-full object-cover border mb-3 shadow");
+
         // 상단 지역구 이름
         card.append("div")
           .attr("class", "text-xl font-semibold text-gray-800 mb-2")
@@ -291,17 +297,9 @@ function renderSummary(data) {
           .attr("class", "text-base font-medium text-blue-700")
           .text(d.data.member_name || "의원 정보 없음");
 
-        const key = `${d.data.member_name}|${d.data.name}`; // 또는 d.data.SGG 등 실제 구조에 맞게
-        const photoUrl = memberPhotoMap[key] || "/static/img/default-member.jpg";
-        card.append("img")
-          .attr("src", photoUrl)
-          .attr("alt", `${d.data.member_name} 의원 사진`)
-          .attr("class", "w-20 h-20 rounded-full object-cover border-2 border-gray-200 mb-1");
-
         // 하단 소속 정당 
         const details = [];
         if (d.data.party) details.push(d.data.party);
-
         if (details.length > 0) {
           card.append("div")
             .attr("class", "text-sm text-gray-500 mt-1")

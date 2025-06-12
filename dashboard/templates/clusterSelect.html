@@ -2,7 +2,7 @@
 <label for="clusterSelect" class="block font-semibold mb-2"></label>
 <select id="clusterSelect" class="w-full border rounded border-gray-300 rounded-md px-3 py-2">
     {% for cluster in cluster_vote_data %}
-    <option value="{{ cluster.cluster_num }}">#{{ cluster.cluster_label }} {{ cluster.cluster_keywords }}</option>
+    <option value="{{ cluster.cluster_num }}">#{{ cluster.cluster_num }} {{ cluster.cluster_keywords }}</option>
     {% endfor %}
 </select>
     {{ cluster_vote_data|json_script:"cluster-vote-data" }}

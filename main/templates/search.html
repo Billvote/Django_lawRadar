@@ -1,18 +1,38 @@
 {% extends "base.html" %}
 {% block body %}
+{% load custom_filters %}
 <div class="p-6 max-w-6xl mx-auto">
     <h2 class="font-bold text-4xl mb-2">"{{ query }}"</h2>
     <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
+    <div class="flex flex-wrap gap-2">
+      {% for cluster_num, keywords_str in cluster_keywords_dict.items %}
+        {% for kw in keywords_str|split_by_comma %}
+        <a href="{% url 'history:cluster_index' cluster_num %}" class="inline-block mb-2">
+            {% if kw in keyword_to_cluster %}
+              <span class="inline-block bg-cyan-100 text-cyan-800 text-sm font-medium px-2 py-1 rounded-full hover:bg-cyan-200 transition">
+                {{ kw }}
+              </span>
+            {% else %}
+              <span class="inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                #{{ kw }}
+              </span>
+            {% endif %}
+          </a>
+          {% endfor %}
+      {% endfor %}
+    </div>
 </div>
 {% if page_obj %}
 <div class="overflow-x-auto rounded-lg shadow">
     <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200 text-sm text-left">
         <thead class="bg-gray-100 text-gray-700 font-semibold">
             <tr>
-                <th scope="col" class="px-6 py-3 w-20">대수</th>
-                <th scope="col" class="px-6 py-3 w-60">의안명</th>
-                <th scope="col" class="px-6 py-3">요약</th>
-                <th scope="col" class="px-6 py-3 text-center w-32">개정 횟수</th>
+                <th scope="col" class="px-6 py-3 w-[10%] text-center">대수</th>
+                <th scope="col" class="px-6 py-3 w-[30%] text-center">의안명</th>
+                <th scope="col" class="px-6 py-3 w-[25%] text-center">요약</th>
+                <th scope="col" class="px-6 py-3 w-[10%] text-center">의안 번호</th>
+                <th scope="col" class="px-6 py-3 w-[15%] text-center">최근 표결 날짜</th>
+                <th scope="col" class="px-6 py-3 text-center w-[10%] text-center">개정 횟수</th>
             </tr>
             <!-- <th>최근 표결 날짜</th> -->
         </thead>
@@ -20,9 +40,21 @@
             {% for bill in page_obj %}
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
-                <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.title }}</td>
-                <td class="px-6 py-4 text-gray-700 line-clamp-2">{{ bill.summary|default:"요약 없음" }}</td>
-                <td class="px-6 py-4 text-center">{{ bill.label_count }}</td>
+                <td class="px-6 py-4 text-gray-800 font-medium">
+                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs block">
+                    {{ bill.title_custom|safe }}
+                  </a>
+                </td>
+                <td class="px-6 py-4 text-gray-700 line-clamp overflow-hidden">
+                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
+                    {{ bill.summary|truncatewords:20 }}
+                  </a>
+                </td>
+                <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.bill_number }}</td>
+                <td class="px-6 py-4 text-gray-800">
+                  {{ bill.last_vote_date|default:"-" }}
+                </td>
+                <td class="px-6 py-4 text-center">{{ bill.label_count }}건</td>
             </tr>
             {% endfor %}
             {% else %}
@@ -34,7 +66,7 @@
     </table>
 
 <!-- 페이지네이션 전체 컨테이너 -->
-<div class="pagination mt-4 flex justify-center space-x-2">
+<div class="pagination m-4 flex justify-center space-x-2">
   <!-- 이전 버튼 -->
   {% if page_obj.has_previous %}
     <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>

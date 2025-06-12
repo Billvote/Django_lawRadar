@@ -43,8 +43,6 @@ urlpatterns = [
     path('treemap/', geovote_v.treemap_view, name='treemap'),
     path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
     path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
-
-    # path('api/member-photo-map/', member_photo_map, name='member_photo_map'),
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),

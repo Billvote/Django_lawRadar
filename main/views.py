@@ -1,9 +1,10 @@
+from django.db.models import Q, Count, Max, Subquery, OuterRef
 from django.core.paginator import Paginator
+from collections import defaultdict
 from django.shortcuts import render
-from django.db.models import Q, Count
 from billview.models import Bill
 from geovote.models import Vote
-import logging
+import logging, re
 
 logger = logging.getLogger(__name__)
 
@@ -29,28 +30,70 @@ def search(request):
     query = request.GET.get('q', '')
     results = []
     page_obj = None
-    page_range = None # 기본값
+    page_range = None #
+    cluster_keyword_set = set()
+    cluster_to_keywords = defaultdict(set)
 
     if query:
-        results = Bill.objects.filter(
+        # 검색 해당 법안 고르기
+        matching_bills = Bill.objects.filter(
             Q(title__icontains=query) |
             Q(summary__icontains=query) |
             Q(cluster_keyword__icontains=query)
         )
-        total_results_count = results.count() # result 개수
 
-        # results에 label count 매핑
+        # 개정횟수 연산
         label_counts = (
-            Bill.objects
-            .filter(id__in=[bill.id for bill in results])
+            matching_bills
             .exclude(label__isnull=True)
             .values('label')
             .annotate(count=Count('id'))
         )
         label_counts = {item['label']: item['count'] for item in label_counts}
 
+        # 유니크 키워드 추출
+        for bill in matching_bills:
+            if bill.cluster_keyword and bill.cluster is not None:
+                keywords = [kw.strip() for kw in bill.cluster_keyword.strip().split(',')]
+                for kw in keywords:
+                    kw = kw.strip()
+                    if kw:
+                        cluster_to_keywords[bill.cluster].add(kw)
+        
+        # 클러스터 번호별 키워드 문자열 만들기
+        cluster_keywords_dict = {
+            cluster: ", ".join(sorted(keywords)) for cluster, keywords in cluster_to_keywords.items()
+            }
+
+
+        # 메인 쿼리
+        results = Bill.objects.filter(
+            Q(title__icontains=query) |
+            Q(summary__icontains=query) |
+            Q(cluster_keyword__icontains=query),
+            id__in=Subquery(
+                Bill.objects.filter(
+                    label=OuterRef('label')
+                    ).order_by('-bill_number').values('id')[:1])
+        ).annotate(
+            last_vote_date=Max('vote__date')
+        ).order_by('-bill_number')
+        total_results_count = results.count() # result 개수
+
+        
         for bill in results:
             bill.label_count = label_counts.get(bill.label, '-')
+            words = bill.title.split()
+            if len(words) > 4:
+                # 1~4번째 단어는 그대로, 5번째 단어부터는 줄바꿈해서 붙임
+                first_line = " ".join(words[:4])
+                second_line = " ".join(words[4:])
+                bill.title_custom = first_line + "<br>" + second_line
+            else:
+                bill.title_custom = bill.title
+        
+        # label_count 기준으로 results 정렬 (내림차순)
+        results = sorted(results, key=lambda b: label_counts.get(b.label, 0), reverse=True)
 
         # 페이지네이션
         paginator = Paginator(results, 10)
@@ -68,11 +111,14 @@ def search(request):
         
     else:
         total_results_count = 0 # 검색어 없으면 0개
+        cluster_keywords = []
         
     context = {
         'query': query,
         'page_obj': page_obj,
         'page_range': page_range,
         'total_results_count': total_results_count,
+        'cluster_keywords_dict': cluster_keywords_dict,
+        # 'bill.word_count': bill.word_count,
     }
     return render(request, 'search.html', context)
