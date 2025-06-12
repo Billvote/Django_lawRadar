@@ -233,7 +233,7 @@ def run_all():
     import_parties(csv_path / f'party.csv')
     import_districts(csv_path / f'district.csv')
     import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'bill(2).csv')
+    import_bills(csv_path / f'bill(3).csv')
     import_votes(csv_path / f'vote.csv')
 
     print(f"✅ 데이터 임포트 완료")
@@ -241,4 +241,3 @@ def run_all():
 if __name__ == "__main__":
     run_all()
 
-    

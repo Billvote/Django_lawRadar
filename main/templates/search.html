@@ -37,17 +37,16 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
             {% for bill in page_obj %}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50 hoverable-row">
                 <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
-                <td class="px-6 py-4 text-gray-800 font-medium">
+                <td class="px-6 py-4 text-gray-800 font-medium relative">
                   <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs block">
                     {{ bill.title_custom|safe }}
                   </a>
 
-                  <span class="tooltip absolute hidden bg-gray-700 text-white text-xs rounded px-2 py-1 mt-1 z-10">
+                  <span class="tooltip absolute hidden bg-gray-700 text-white text-xs rounded px-2 py-1 mt-1 z-10 left-0 top-full whitespace-nowrap">
                     {{ bill.summary|default:"설명이 없습니다." }}
                   </span>
-                
                 </td>
                 <!-- <td class="px-6 py-4 text-gray-700 line-clamp overflow-hidden"> -->
                   <!-- <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
@@ -98,7 +97,7 @@
 
 {% block script %}
 <script>
-  // 해시태그 하이라이팅
+  // 해시태그
     document.addEventListener('DOMContentLoaded', () => {
     const hashtags = document.querySelectorAll('.hashtag');
 
