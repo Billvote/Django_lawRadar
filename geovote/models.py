@@ -36,6 +36,7 @@ class Member(models.Model):
     district = models.ForeignKey(District, on_delete=models.CASCADE, null=True, blank=True)
     member_id = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)
+    image_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.party}, {self.district or '비례대표'})"

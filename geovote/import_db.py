@@ -154,6 +154,7 @@ def import_members(csv_path):
             party_name = str(row['party']).strip()
             gender = str(row['gender']).strip()
             sido_sgg = str(row.get('SIDO_SGG', '')).strip()
+            image_url = str(row.get('image_url', '')).strip() or None
 
             # 중복 검사
             if (age_number, member_id) in existing_members:
@@ -181,6 +182,7 @@ def import_members(csv_path):
                 district=district,
                 member_id=member_id,
                 gender=gender,
+                image_url=image_url,
             ))
 
         except Exception as e:
@@ -284,7 +286,6 @@ def import_votes(csv_path):
     else:
         print("[INFO] 저장할 신규 투표 데이터가 없습니다")
 
-
 # ----------< 실행 >-------------------------
 # 참고) age -> party -> district -> member -> bill -> vote 순으로 실행해야 함
 
@@ -300,6 +301,7 @@ import_districts(csv_path / f'district.csv')
 import_members(csv_path / f'member.csv')
 import_bills(csv_path / f'bill_labeled(1).csv')
 import_votes(csv_path / f'vote.csv')
+
 
 print(f"{congress_num}대 데이터 임포트 완료")
 
