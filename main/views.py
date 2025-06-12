@@ -54,7 +54,7 @@ def search(request):
         # 유니크 키워드 추출
         for bill in matching_bills:
             if bill.cluster_keyword and bill.cluster is not None:
-                keywords = re.split(r'[,\s/]+', bill.cluster_keyword.strip())
+                keywords = [kw.strip() for kw in bill.cluster_keyword.strip().split(',')]
                 for kw in keywords:
                     kw = kw.strip()
                     if kw:
@@ -83,6 +83,14 @@ def search(request):
         
         for bill in results:
             bill.label_count = label_counts.get(bill.label, '-')
+            words = bill.title.split()
+            if len(words) > 4:
+                # 1~4번째 단어는 그대로, 5번째 단어부터는 줄바꿈해서 붙임
+                first_line = " ".join(words[:4])
+                second_line = " ".join(words[4:])
+                bill.title_custom = first_line + "<br>" + second_line
+            else:
+                bill.title_custom = bill.title
         
         # label_count 기준으로 results 정렬 (내림차순)
         results = sorted(results, key=lambda b: label_counts.get(b.label, 0), reverse=True)
@@ -111,5 +119,6 @@ def search(request):
         'page_range': page_range,
         'total_results_count': total_results_count,
         'cluster_keywords_dict': cluster_keywords_dict,
+        # 'bill.word_count': bill.word_count,
     }
     return render(request, 'search.html', context)

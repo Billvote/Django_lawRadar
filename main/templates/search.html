@@ -6,19 +6,19 @@
     <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
     <div class="flex flex-wrap gap-2">
       {% for cluster_num, keywords_str in cluster_keywords_dict.items %}
+        {% for kw in keywords_str|split_by_comma %}
         <a href="{% url 'history:cluster_index' cluster_num %}" class="inline-block mb-2">
-          {% for kw in keywords_str|split_by_comma %}
             {% if kw in keyword_to_cluster %}
               <span class="inline-block bg-cyan-100 text-cyan-800 text-sm font-medium px-2 py-1 rounded-full hover:bg-cyan-200 transition">
-                #{{ kw }}
+                {{ kw }}
               </span>
             {% else %}
               <span class="inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
                 #{{ kw }}
               </span>
             {% endif %}
+          </a>
           {% endfor %}
-        </a>
       {% endfor %}
     </div>
 </div>
@@ -41,8 +41,8 @@
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
                 <td class="px-6 py-4 text-gray-800 font-medium">
-                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
-                    {{ bill.title }}
+                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs block">
+                    {{ bill.title_custom|safe }}
                   </a>
                 </td>
                 <td class="px-6 py-4 text-gray-700 line-clamp overflow-hidden">
