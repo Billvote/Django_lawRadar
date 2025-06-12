@@ -3,20 +3,19 @@
 {% load custom_filters %}
 <div class="p-6 max-w-6xl mx-auto">
     <h2 class="font-bold text-4xl mb-2">"{{ query }}"</h2>
-    <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
+    <br>
+    {% if total_results_count > 0 %}
+      <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
+    {% else %}
+      <p class="text-gray-600 mb-6">😥다른 키워드로 검색해보세요</p>
+    {% endif %}
     <div class="flex flex-wrap gap-2">
       {% for cluster_num, keywords_str in cluster_keywords_dict.items %}
         {% for kw in keywords_str|split_by_comma %}
         <a href="{% url 'history:cluster_index' cluster_num %}" class="inline-block mb-2">
-            {% if kw in keyword_to_cluster %}
-              <span class="inline-block bg-cyan-100 text-cyan-800 text-sm font-medium px-2 py-1 rounded-full hover:bg-cyan-200 transition">
-                {{ kw }}
-              </span>
-            {% else %}
-              <span class="inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+              <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
                 #{{ kw }}
               </span>
-            {% endif %}
           </a>
           {% endfor %}
       {% endfor %}
@@ -44,11 +43,16 @@
                   <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs block">
                     {{ bill.title_custom|safe }}
                   </a>
+
+                  <span class="tooltip absolute hidden bg-gray-700 text-white text-xs rounded px-2 py-1 mt-1 z-10">
+                    {{ bill.summary|default:"설명이 없습니다." }}
+                  </span>
+                
                 </td>
-                <td class="px-6 py-4 text-gray-700 line-clamp overflow-hidden">
-                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
+                <!-- <td class="px-6 py-4 text-gray-700 line-clamp overflow-hidden"> -->
+                  <!-- <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
                     {{ bill.summary|truncatewords:20 }}
-                  </a>
+                  </a> -->
                 </td>
                 <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.bill_number }}</td>
                 <td class="px-6 py-4 text-gray-800">
@@ -90,4 +94,45 @@
     <span class="px-3 py-1 text-gray-400">다음</span>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+  // 해시태그 하이라이팅
+    document.addEventListener('DOMContentLoaded', () => {
+    const hashtags = document.querySelectorAll('.hashtag');
+
+    hashtags.forEach(tag => {
+      tag.addEventListener('mouseenter', () => {
+        tag.style.backgroundColor = '#38bdf8';
+        tag.style.color = 'white';
+      });
+      tag.addEventListener('mouseleave', () => {
+        tag.style.backgroundColor = '';
+        tag.style.color = '';
+      });
+    });
+  });
+
+// summary 타이머
+  document.addEventListener("DOMContentLoaded", () => {
+    const rows = document.querySelectorAll(".hoverable-row");
+    
+    rows.forEach(row => {
+      let timer;
+      const tooltip = row.querySelector(".tooltip");
+
+      row.addEventListener("mouseenter", () => {
+        timer = setTimeout(() => {
+          tooltip.classList.remove("hidden");
+        }, 1500); // 1.5초 뒤에 툴팁 표시
+      });
+
+      row.addEventListener("mouseleave", () => {
+        clearTimeout(timer);
+        tooltip.classList.add("hidden");
+      });
+    });
+  });
+</script>
 {% endblock %}

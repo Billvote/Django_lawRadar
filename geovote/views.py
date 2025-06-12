@@ -52,7 +52,7 @@ def region_tree_data(request):
                 sigungu_node["children"].append({
                     "id": district.id,
                     "member_name": member.name if member else None,
-                    "image_url": member.image_url if member else None
+                    "image_url": member.image_url if member else None,
                     "name": label,
                     "type": "District",
                     "value": 1,

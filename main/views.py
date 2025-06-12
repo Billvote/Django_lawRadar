@@ -86,8 +86,8 @@ def search(request):
             words = bill.title.split()
             if len(words) > 4:
                 # 1~4번째 단어는 그대로, 5번째 단어부터는 줄바꿈해서 붙임
-                first_line = " ".join(words[:4])
-                second_line = " ".join(words[4:])
+                first_line = " ".join(words[:5])
+                second_line = " ".join(words[5:])
                 bill.title_custom = first_line + "<br>" + second_line
             else:
                 bill.title_custom = bill.title
