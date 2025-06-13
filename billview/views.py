@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Max
 from collections import defaultdict
 from django.shortcuts import render
 from geovote.models import Vote
@@ -33,14 +33,42 @@ def detail_bill(request, id):
     # votes = Vote.objects.filter(bill=bill).select_related('member', 'member__party')
     votes = Vote.objects.select_related('member', 'member__party').filter(bill=bill)
 
-    members = []
-    results = []
+    # 정당/정당 리스트
+    parties = sorted(set(vote.member.party.party for vote in votes))
+    members = sorted(set(vote.member.name for vote in votes))
 
-
+    # 정당별로 members에 대응하는 결과 채우기
+    # data[party][member] = vote_result (없으면 '불참')
+    data = defaultdict(dict)
     for vote in votes:
-        member_name = f"{vote.member.name} ({vote.member.party})"  # 혹은 .party.party
-        members.append(member_name)
-        results.append(vote.result)
+        party = vote.member.party.party
+        member = vote.member.name
+        result = vote.result
+        data[party][member] = result
+
+    # y축(정당)별로 members 순서대로 결과 리스트 만들기
+    heatmap_data = []
+    for party in parties:
+        row = []
+        for member in members:
+            row.append(data[party].get(member, '불참'))
+        heatmap_data.append(row)
+
+    results = ['찬성', '반대', '기권', '불참']
+# ------
+    # 의원-표결 매핑
+    vote_map = {vote.member.name: vote.result for vote in votes}
+
+    # member 순서대로 결과 리스트 생성
+    results = [vote_map.get(member, '불참') for member in members]
+
+    if bill.label:
+        revision_count = Bill.objects.filter(label=bill.label).count()
+    else:
+        revision_count = 1
+
+    # 최근 표결 날짜
+    last_vote_date = votes.aggregate(last_date=Max('date'))['last_date']
 
     # 1차원 results 리스트를 10 x 30 2차원 리스트로 변환
     heatmap_data = []
@@ -50,36 +78,16 @@ def detail_bill(request, id):
 
     context = {
         'bill': bill,
+        # 'results': results,
+        'last_vote_date': last_vote_date,
+        'revision_count': revision_count,  # 개정 횟수
+        'results': results,
+
         'heatmap_data': json.dumps(heatmap_data, ensure_ascii=False),
         'members': json.dumps(members, ensure_ascii=False),
-        # 'bill_title': json.dumps(bill.title, ensure_ascii=False),  # x축 하나
+        'parties': json.dumps(parties, ensure_ascii=False)
     }
-    # heatmap = get_vote_heatmap_data()
-    
-    # bill_age = bill.age # Bill의 age 값을 가져옴
-
-    # party_stats = Vote.objects.filter(
-    #     bill=bill,
-    #     member__age=bill_age
-    # ).annotate(
-    #     party_party=F('member__party__party')
-    # ).values(
-    #     'party_party'
-    # ).annotate(
-    #     agree=Count('id', filter=Q(result='찬성')),
-    #     oppose=Count('id', filter=Q(result='반대')),
-    #     abstain=Count('id', filter=Q(result='기권')),
-    # )
-
-    # context = {
-    #     'bill': bill,
-    #     'votes': votes,
-    #     'party_stats': party_stats,
-
-    #     'heatmap_data': json.dumps(heatmap['heatmap_data']),
-    #     'heatmap_members': json.dumps(heatmap['members']),
-    #     'heatmap_bills': json.dumps(heatmap['bills']),
-    # }
+   
     return render(request, 'detail.html', context)
 
 def index_bill(request):

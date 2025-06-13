@@ -1,41 +1,52 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="bg-white">
-  <div class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-8">{{bill.title}}</h2>
-    <div class="grid grid-cols-1 items-center gap-x-8 gap-y-16 sm:grid-cols-2">
+  <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl mb-10">
+      {{ bill.title }}
+    </h2>
+    <div class="grid grid-cols-1 gap-y-16 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-20">
+      
+      <div>
+        <dl class="space-y-8">
+          <div>
+            <dt class="text-lg font-semibold text-gray-900"></dt>
+            <dd class="mt-1 text-gray-600 text-base leading-relaxed">
+              의안 번호: {{ bill.bill_number }}
+              <br>
+              최근 표결: {{ last_vote_date }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-lg font-semibold text-gray-900">개정 횟수</dt>
+            <dd class="mt-1 text-gray-600 text-base leading-relaxed">
+              {{ revision_count }}회
+            </dd>
+          </div>
 
-    <div>
-      <dl class="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 sm:gap-y-16 lg:gap-x-8">
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900">키워드</dt>
-          <dd class="mt-2 text-sm text-gray-500"></dd>
-        </div>
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900">제안 이유 / 주요 내용</dt>
-          <dd class="mt-2 text-sm text-gray-500"></dd>
-        </div>
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900">히스토리</dt>
-          <dd class="mt-2 text-sm text-gray-500"></dd>
-        </div>
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900">표결 결과</dt>
-          <dd class="mt-2 text-sm text-gray-700">
+          <div>
+            <dt class="text-lg font-semibold text-gray-900">키워드</dt>
+            <dd class="mt-1 text-gray-600 text-base leading-relaxed">{{ bill.cluster_keyword }}</dd>
+          </div>
+          <div>
+            <dt class="text-lg font-semibold text-gray-900">요약</dt>
+            <dd class="mt-1 text-gray-600 text-base leading-relaxed">{{ bill.summary }}</dd>
+          </div>
+          <div>
+            <dt class="text-lg font-semibold text-gray-900">원문 보기</dt>
+            <dd class="mt-1 text-gray-700 text-base leading-relaxed">
+              <!-- 의안정보시스템 url -->
+            </dd>
+          </div>
+        </dl>
+      </div>
 
+      <div class="grid grid-cols-2 grid-rows-2 gap-6">
+        <!-- 이미지나 관련 정보 넣는 공간으로 활용 가능 -->
+        <!-- 예시 -->
+        <img src="{{ bill.image_url }}" alt="관련 이미지" class="w-full h-full object-cover rounded-lg" />
+      </div>
 
-
-  </dd>
-</div>
-          </dd>
-        </div>
-        <div class="border-t border-gray-200 pt-4">
-          <dt class="font-medium text-gray-900"></dt>
-          <dd class="mt-2 text-sm text-gray-500"></dd>
-        </div>
-      </dl>
-    </div>
-    <div class="grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 lg:gap-8">
     </div>
   </div>
 </div>
@@ -59,19 +70,35 @@
   <h2>히트맵</h2>
   <div id="vote-heatmap"></div>
 </div>
-
 {% endblock %}
+
 
 {% block script %}
 <script>
 const rawData = {{ heatmap_data|safe }};
+const members = {{ members|safe }};
+const parties = {{ parties|safe }};
+const voteResult = {{ results|safe }};
+
+console.log('데이터 확인', rawData, members, parties);
+
+const voteMap = {
+  "찬성": 3,
+  "기권": 2,
+  "반대": 1,
+  "불참": 0
+};
+const numericVotes = votes.map(v => voteMap[v]);
 
 const colorMap = {
-  '찬성': '#34d399',
-  '반대': '#f87171',
-  '기권': '#fbbf24',
-  '불참': '#d1d5db'
+  '찬성': 0,
+  '반대': 1,
+  '기권': 2,
+  '불참': 3
 };
+
+// 숫자별 색상 대응
+const colors = ['#34d399', '#f87171', '#fbbf24', '#d1d5db'];
 
 
 // rawData는 2차원 배열 (10행 x 30열)
@@ -79,43 +106,58 @@ const dataPoints = [];
 for(let row=0; row < rawData.length; row++) {
   for(let col=0; col < rawData[row].length; col++) {
     dataPoints.push({
-      x: (col + 1).toString(),  // 열 번호 (문자열)
-      y: row + 1,              // 행 번호 (숫자)
-      fillColor: colorMap[rawData[row][col]] || '#fff'
+      x: members[col],     // 의원 이름
+      y: parties[row],     // 정당 이름
+      z: colorMap[voteResult] ?? 3  // 숫자로 색 지정 (default 불참)
     });
   }
 }
 
 const series = [{
   name: '투표결과',
-  data: dataPoints
+  data: numericVotes
 }];
 
 var options = {
   chart: {
     type: 'heatmap',
-    height: 350
+    height: 400
   },
   series: series,
   xaxis: {
-    title: { text: '의원 번호 (열)' },
-    categories: [...Array(30).keys()].map(i => (i + 1).toString())
+    type: 'category',
+    categories: members,
+    title: { text: '국회의원' }
   },
   yaxis: {
-    title: { text: '행 번호' }
+    type: 'category',
+    categories: parties,
+    title: { text: '정당' }
   },
   plotOptions: {
-    heatmap: {
-      enableShades: false,
-      colorScale: {
-        ranges: [
-          { from: 0, to: 0, color: '#fff' } // 기본 색상 흰색
-        ]
-      }
+  heatmap: {
+    shadeIntensity: 0.5,
+    colorScale: {
+      ranges: [
+        { from: 0, to: 0, color: '#34d399', name: '찬성' },
+        { from: 1, to: 1, color: '#f87171', name: '반대' },
+        { from: 2, to: 2, color: '#fbbf24', name: '기권' },
+        { from: 3, to: 3, color: '#d1d5db', name: '불참' }
+      ]
     }
-  },
+  }
+},
   dataLabels: {
     enabled: false
+  },
+  tooltip: {
+    y: {
+      formatter: function(val) {
+        // 숫자를 다시 문자열 결과로 변환
+        const revMap = ['찬성', '반대', '기권', '불참'];
+        return revMap[val] || '불참';
+      }
+    }
   }
 };
 

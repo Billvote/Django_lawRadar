@@ -1,12 +1,52 @@
 from django.db.models import Q, Count, Max, Subquery, OuterRef
 from django.core.paginator import Paginator
-from collections import defaultdict
+from collections import defaultdict, Counter
 from django.shortcuts import render
 from billview.models import Bill
 from geovote.models import Vote
-import logging, re
+import logging, re, random
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
+
+def cluster_keywords_json(request):
+    qs = (
+        Bill.objects
+        .exclude(cluster_keyword__isnull=True)
+        .exclude(cluster_keyword__exact='')
+        .values('cluster', 'cluster_keyword')
+        .annotate(
+            num_bills=Count('id', distinct=True),
+            latest_passed_date=Max('vote__date')
+        )
+    )
+
+    qs_list = list(qs)
+
+    # 상위 100개 랜덤 샘플링
+    sorted_qs = sorted(qs_list, key=lambda x: x['num_bills'], reverse=True)
+    sample_size = 100
+    top = sorted_qs[:500]
+    sampled_qs = random.sample(top, min(len(top), sample_size))
+
+    result = []
+    for row in sampled_qs:
+        result.append({
+            'cluster_index': row['cluster'],
+            'keyword': row['cluster_keyword'],
+            'num_bills': row['num_bills'],
+            'latest_passed_date': row['latest_passed_date'].isoformat() if row['latest_passed_date'] else None,
+            'url': f"/history/cluster/{row['cluster']}/",
+        })
+
+    return JsonResponse(result, safe=False)
+
+# 렌더링
+def cluster_galaxy_view(request):
+    return render(request, 'home.html')
+
+def home_recommend(request):
+    pass
 
 def home(request):
     # 클러스터와 키워드 조회, 유효한 숫자 클러스터만
@@ -23,6 +63,7 @@ def home(request):
         logger.warning("No valid clusters found in database")
     return render(request, 'home.html', {'clusters': clusters})
 
+
 def aboutUs(request):
     return render(request, 'aboutUs.html')
 
@@ -38,6 +79,7 @@ def search(request):
         # 검색 해당 법안 고르기
         matching_bills = Bill.objects.filter(
             Q(title__icontains=query) |
+            Q(cleaned__icontains=query) |
             Q(summary__icontains=query) |
             Q(cluster_keyword__icontains=query)
         )
@@ -65,10 +107,10 @@ def search(request):
             cluster: ", ".join(sorted(keywords)) for cluster, keywords in cluster_to_keywords.items()
             }
 
-
         # 메인 쿼리
         results = Bill.objects.filter(
             Q(title__icontains=query) |
+            # Q(cleaned__icontains=query) |
             Q(summary__icontains=query) |
             Q(cluster_keyword__icontains=query),
             id__in=Subquery(
@@ -80,7 +122,26 @@ def search(request):
         ).order_by('-bill_number')
         total_results_count = results.count() # result 개수
 
+        # 클러스터별 빈도 계산
+        cluster_counter = Counter()
+        for bill in results:
+            if bill.cluster:
+                cluster_counter[bill.cluster] += 1
         
+        # most_common_cluster = None
+        # most_common_keywords_str = ''
+        # if cluster_counter:
+        #     most_common_cluster = cluster_counter.most_common(1)[0][0]
+        #     most_common_keywords_str = cluster_keywords_dict.get(most_common_cluster, "")
+
+        top_clusters = []
+        for cluster_id, _ in cluster_counter.most_common(2):  # 상위 2개 클러스터
+            keywords_str = cluster_keywords_dict.get(cluster_id, "")
+            if keywords_str:
+                keywords = [kw.strip() for kw in keywords_str.split(',') if kw.strip()]
+                top_clusters.append((cluster_id, keywords))
+        
+        # 라벨 매핑
         for bill in results:
             bill.label_count = label_counts.get(bill.label, '-')
             words = bill.title.split()
@@ -119,6 +180,8 @@ def search(request):
         'page_range': page_range,
         'total_results_count': total_results_count,
         'cluster_keywords_dict': cluster_keywords_dict,
-        # 'bill.word_count': bill.word_count,
+        # 'most_common_cluster': most_common_cluster,
+        # 'most_common_keywords_str': most_common_keywords_str,
+        'top_clusters': top_clusters,
     }
     return render(request, 'search.html', context)

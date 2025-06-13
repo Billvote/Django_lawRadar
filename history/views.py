@@ -1,12 +1,7 @@
-# history/views.py
-
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from billview.models import Bill
 from django.db.models import Max
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie
-from django.utils.decorators import method_decorator  # 추가
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,9 +20,6 @@ def index(request):
         logger.warning("No valid clusters found")
     return render(request, 'cluster_list.html', {'clusters': clusters})
 
-
-@method_decorator(cache_page(60 * 15), name='dispatch')
-@method_decorator(vary_on_cookie, name='dispatch')
 class BillHistoryListView(ListView):
     model = Bill
     template_name = 'history_list.html'
@@ -36,7 +28,14 @@ class BillHistoryListView(ListView):
 
     def get_queryset(self):
         keyword = self.request.GET.get('keyword')
+        cluster = self.request.GET.get('cluster')
         queryset = Bill.objects.all()
+        if cluster:
+            try:
+                queryset = queryset.filter(cluster=int(cluster))
+                logger.info(f"Filtering bills by cluster: {cluster}")
+            except ValueError:
+                logger.error(f"Invalid cluster: {cluster}")
         if keyword:
             logger.info(f"Filtering bills by keyword: {keyword}")
             queryset = queryset.filter(cluster_keyword__contains=keyword)
@@ -49,13 +48,46 @@ class BillHistoryListView(ListView):
                 bill = queryset.filter(
                     label=item['label'],
                     bill_number=item['max_bill_number']
-                ).values('id').first()
+                ).first()
                 if bill:
-                    bill_ids.append(bill['id'])
+                    bill_ids.append(bill.id)
         queryset = queryset.filter(id__in=bill_ids).order_by('-bill_number')
         logger.info(f"Queryset count: {queryset.count()}")
         return queryset
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('keyword', '')
+        context['total_results_count'] = self.get_queryset().count()
+        # top_clusters 추가
+        clusters = Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct()[:5]
+        context['top_clusters'] = [
+            (c['cluster'], [kw.strip() for kw in c['cluster_keyword'].split(',') if kw.strip()] if c['cluster_keyword'] else [])
+            for c in clusters
+        ]
+        # page_obj와 page_range 명시적 추가 (10개씩 연속 표시)
+        context['page_obj'] = context.get('page_obj')
+        context['page_range'] = []
+        if context['page_obj']:
+            paginator = context['page_obj'].paginator
+            current = context['page_obj'].number
+            total = paginator.num_pages
+            # 현재 페이지를 중심으로 앞뒤 5개씩, 총 10개 페이지 번호 표시
+            start = max(current - 5, 1)
+            end = min(start + 9, total)
+            # 끝에서 10개가 안 채워지면 앞에서 채움
+            start = max(end - 9, 1)
+            context['page_range'] = range(start, end + 1)
+        # cluster_keywords_dict 추가
+        cluster_keywords_dict = {}
+        for c in Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct():
+            if c['cluster'] and isinstance(c['cluster'], int):
+                cluster_keywords_dict[c['cluster']] = c['cluster_keyword'] or ''
+        context['cluster_keywords_dict'] = cluster_keywords_dict
+        logger.info(f"Cluster keywords dict: {cluster_keywords_dict}")
+        logger.info(f"Top clusters: {context['top_clusters']}")
+        logger.info(f"Page obj: {context['page_obj']}")
+        return context
 
 class BillHistoryDetailView(DetailView):
     model = Bill
@@ -75,11 +107,22 @@ class BillHistoryDetailView(DetailView):
         else:
             related_bills = []
             logger.warning(f"No valid label for bill pk={self.object.pk}, label={self.object.label}")
+        
         context['related_bills'] = related_bills
         context['list_page'] = self.request.GET.get('page', '1')
+        
+        # cluster_keywords_dict 추가 (BillHistoryListView와 동일한 로직)
+        cluster_keywords_dict = {}
+        for c in Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct():
+            if c['cluster'] and isinstance(c['cluster'], int):
+                cluster_keywords_dict[c['cluster']] = c['cluster_keyword'] or ''
+        context['cluster_keywords_dict'] = cluster_keywords_dict
+        
         logger.info(f"Related bills: {[(b.pk, b.title, b.bill_number, b.label) for b in related_bills]}")
+        logger.info(f"Current bill cluster: {self.object.cluster}")
+        logger.info(f"Cluster keywords dict: {cluster_keywords_dict}")
+        
         return context
-
 
 def cluster_index(request, cluster_number):
     try:

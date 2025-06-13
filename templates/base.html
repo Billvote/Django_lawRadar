@@ -11,7 +11,6 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- ApexCharts CDN -->
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
   <style>
     body {
       font-family: 'Roboto', sans-serif;
@@ -44,37 +43,36 @@
     
     /* 해시태그 스타일 */
     .hashtag {
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: inline-block;
-      border-radius: 9999px;
-      padding: 0.25rem 0.5rem;
-      font-weight: 500;
-      font-size: 0.875rem;
-      color: #4b5563;
-      background-color: #e5e7eb;
-    }
-    .highlighted {
-      background-color: #38bdf8 !important;
-      color: white !important;
-      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.5);
-      transform: scale(1.1);
-    }
-
-    /* 커스텀 폰트 */
-    @font-face {
-      font-family: 'ClimateCrisisKR-1979';
-      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/ClimateCrisisKR-1979.woff2') format('woff2');
-      font-weight: 900;
-      font-style: normal;
-    }
-    @font-face {
-      font-family: 'Giants-Inline';
-      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/Giants-Inline.woff2') format('woff2');
-      font-weight: normal;
-      font-style: normal;
-    }
-    .home-font {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #4b5563; /* 기본 회색 */
+    background-color: #e5e7eb; /* 기본 연한 회색 */
+  }
+  /* JS에서 마우스 오버 시 이 클래스 붙일 거임 */
+  .highlighted {
+    background-color: #38bdf8 !important; /* 하늘색 */
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.5);
+    transform: scale(1.1);
+  }
+  @font-face {
+    font-family: 'ClimateCrisisKR-1979';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/ClimateCrisisKR-1979.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Giants-Inline';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/Giants-Inline.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+  }
+  .home-font {
       font-family: 'ClimateCrisisKR-1979';
     }
 
