@@ -62,24 +62,44 @@ def import_parties(csv_path):
 
 # ---------- 3. District ----------
 def import_districts(csv_path):
+
     df = pd.read_csv(csv_path)
     created, skipped = 0, 0
 
     for _, row in df.iterrows():
-        code = row['SGG_Code']
+        sido_sgg = row['SIDO_SGG']
         defaults = {
-            'SIDO_SGG': row['SIDO_SGG'],
+            'age': row['age'],
             'SIDO': row['SIDO'],
             'SGG': row['SGG'],
             'SIGUNGU': row['SIGUNGU'],
         }
-        obj, created_flag = District.objects.update_or_create(SGG_Code=code, defaults=defaults)
+        # SIDO_SGG 기준으로 update_or_create
+        obj, created_flag = District.objects.update_or_create(SIDO_SGG=sido_sgg, defaults=defaults)
         if created_flag:
             created += 1
         else:
             skipped += 1
 
     print(f"[DISTRICT] 신규 {created}개, 업데이트 {skipped}개")
+
+# -----------------지역구-의원 매칭 실패 데이터 확인 -------------------
+
+def check_missing_sido_sgg(csv_path):
+    df = pd.read_csv(csv_path)
+
+    # CSV에서 SIDO_SGG 값 추출 및 정리
+    csv_sido_sgg_set = set(df['SIDO_SGG'].dropna().map(str.strip))
+
+    # District 테이블에서 등록된 SIDO_SGG 목록
+    db_sido_sgg_set = set(District.objects.values_list('SIDO_SGG', flat=True))
+
+    # 차집합 → 매칭 실패한 값
+    unmatched = csv_sido_sgg_set - db_sido_sgg_set
+
+    print(f"\n❗ 매칭 실패한 지역구 (SIDO_SGG): {len(unmatched)}개")
+    for sido_sgg in sorted(unmatched):
+        print(f"- {sido_sgg}")
 
 # ---------- 4. Member ----------
 def import_members(csv_path):
@@ -88,11 +108,22 @@ def import_members(csv_path):
     party_dict = {p.party: p for p in Party.objects.all()}
     district_dict = {d.SIDO_SGG: d for d in District.objects.all()}
 
-    created, skipped = 0, 0
+    created, updated, skipped = 0, 0, 0
+
+    def safe_str(value):
+        if pd.isna(value) or value is None:
+            return ''
+        return str(value).strip()
 
     for _, row in df.iterrows():
         age_number = int(row['age'])
         member_id = safe_str(row['member_id'])
+
+        # district 처리
+        sido_sgg_raw = safe_str(row.get('SIDO_SGG'))
+        district = None
+        if sido_sgg_raw and sido_sgg_raw != "<비례대표>":
+            district = district_dict.get(sido_sgg_raw)
 
         defaults = {
             'name': safe_str(row['name']),
@@ -109,15 +140,18 @@ def import_members(csv_path):
             continue
 
         obj, created_flag = Member.objects.update_or_create(
-            age=age, member_id=member_id,
+            age=age,
+            member_id=member_id,
             defaults=defaults
         )
         if created_flag:
             created += 1
         else:
-            skipped += 1
+            updated += 1
 
-    print(f"[MEMBER] 신규 {created}명, 업데이트 {skipped}명")
+            
+
+    print(f"[MEMBER] 신규 {created}명, 업데이트 {updated}명, 스킵 {skipped}명")
 
 # ---------- 5. Bill ----------
 def import_bills(csv_path):
@@ -232,6 +266,7 @@ def run_all():
     import_ages(csv_path / f'age.csv')
     import_parties(csv_path / f'party.csv')
     import_districts(csv_path / f'district.csv')
+    check_missing_sido_sgg(csv_path / f'member.csv')
     import_members(csv_path / f'member.csv')
     import_bills(csv_path / f'bill(3).csv')
     import_votes(csv_path / f'vote.csv')

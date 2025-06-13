@@ -21,12 +21,15 @@
     <!-- 메인: 트리맵 -->
     <main id="mainContent" class="flex-[1_1_0%] flex flex-col overflow-hidden p-4 bg-gray-50">
       <div class="border-b flex flex-col items-center md:flex-row md:justify-between gap-2 mb-2">
-        <h1 class="text-2xl font-bold text-center">
-          🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
-        </h1>
-        <h2 class="text-base text-gray-600 text-center mt-1 font-normal">
+        <div>
+          <h1 class="text-2xl font-bold text-center">
+            🙋‍♂️🙋‍♀️우리 지역구 의원이 궁금해? 🗳️👀
+          </h1>
+          <h2 class="text-base text-gray-600 text-center mt-1 font-normal">
           이 페이지에서는 우리 지역구 의원의 클러스터별 표결 정보, 주요 성향을 확인해볼 수 있습니다
         </h2>
+        </div>
+        
         <div id="breadcrumb" class="text-sm text-gray-500"></div>
         <!-- 뒤로가기버튼 -->
         <button id="backButton"
@@ -253,14 +256,10 @@ function renderSummary(data) {
         .attr("class", "district-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4");
 
       node.children.forEach(d => {
-        const isSelected = selectedMemberName && d.data.member_name === selectedMemberName; // 선택된 카드인지 여부
+        const isSelected = selectedMemberName && d.data.member_name === selectedMemberName;
+
         const card = container.append("div")
-          .attr("class", `
-            rounded-xl p-5 shadow-md hover:shadow-xl
-            transition-all duration-300 cursor-pointer flex flex-row items-center gap-3
-            bg-white ${isSelected ? "opacity-100" : "opacity-80"}
-          `)
-          .style("border", `4px solid ${d.data.color || "#ccc"}`)
+          .attr("class", `district-card${isSelected ? " selected" : ""}`)
           .on("click", async () => {
             const memberName = d.data.member_name;
             if (!memberName) {
@@ -268,9 +267,7 @@ function renderSummary(data) {
               return;
             }
             try {
-              const res = await fetch(
-                `/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`
-              );
+              const res = await fetch(`/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`);
               if (!res.ok) throw new Error("API 호출 실패");
               const summary = await res.json();
               const summaryHtml = renderSummary(summary);
@@ -281,31 +278,32 @@ function renderSummary(data) {
             }
           });
 
-        //의원사진
+        // 의원 사진
         card.append("img")
           .attr("src", d.data.image_url || "https://via.placeholder.com/100")
-          .attr("alt", d.data.member_name || "의원 사진 없음")
-          .attr("class", "w-24 h-24 rounded-full object-cover border mb-3 shadow");
+          .attr("alt", d.data.member_name || "의원 사진 없음");
 
-        // 상단 지역구 이름
-        card.append("div")
-          .attr("class", "text-xl font-semibold text-gray-800 mb-2")
+        // 카드 컨텐츠 영역
+        const content = card.append("div").attr("class", "district-card-content");
+
+        // 지역구 이름
+        content.append("div")
+          .attr("class", "district-card-name")
           .text(d.data.name);
 
-        // 중간 의원 이름
-        card.append("div")
-          .attr("class", "text-base font-medium text-blue-700")
+        // 의원 이름
+        content.append("div")
+          .attr("class", "district-card-member")
           .text(d.data.member_name || "의원 정보 없음");
 
-        // 하단 소속 정당 
-        const details = [];
-        if (d.data.party) details.push(d.data.party);
-        if (details.length > 0) {
-          card.append("div")
-            .attr("class", "text-sm text-gray-500 mt-1")
-            .text(details.join(" · "));
+        // 소속 정당 (있으면)
+        if (d.data.party) {
+          content.append("div")
+            .attr("class", "district-card-party")
+            .text(d.data.party);
         }
       });
+
 
       return;  // 여기서 종료, 아래 트리맵 렌더링은 실행하지 않음
     }
