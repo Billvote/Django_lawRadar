@@ -6,10 +6,19 @@ from billview.models import Bill
 from geovote.models import Vote
 import logging, re, random
 from django.http import JsonResponse
+from django.core.cache import cache
+from django.db.models.functions import Random
 
 logger = logging.getLogger(__name__)
 
+# 노드 json 데이터
 def cluster_keywords_json(request):
+    # 1) 캐시에서 데이터 꺼내기 (키는 'cluster_keywords_data')
+    cached = cache.get('cluster_keywords_data')
+    if cached:
+        return JsonResponse(cached, safe=False)
+    
+    # 캐시에 없으면 DB에서 쿼리 수행
     qs = (
         Bill.objects
         .exclude(cluster_keyword__isnull=True)
@@ -19,16 +28,18 @@ def cluster_keywords_json(request):
             num_bills=Count('id', distinct=True),
             latest_passed_date=Max('vote__date')
         )
+        .filter(num_bills__gt=1)
+        .order_by(Random())
     )
 
-    qs_list = list(qs)
+    qs_list = list(qs[:500])
 
     # 상위 100개 랜덤 샘플링
-    sorted_qs = sorted(qs_list, key=lambda x: x['num_bills'], reverse=True)
     sample_size = 100
-    top = sorted_qs[:500]
-    sampled_qs = random.sample(top, min(len(top), sample_size))
+    sorted_qs = sorted(qs_list, key=lambda x: x['num_bills'], reverse=True)
+    sampled_qs = random.sample(qs_list, min(len(qs_list), sample_size))
 
+    # json 직렬화
     result = []
     for row in sampled_qs:
         result.append({
@@ -39,14 +50,14 @@ def cluster_keywords_json(request):
             'url': f"/history/cluster/{row['cluster']}/",
         })
 
+    # 5) 캐시에 저장 (10분 = 600초)
+    cache.set('cluster_keywords_data', result, 60 * 10)
+
     return JsonResponse(result, safe=False)
 
-# 렌더링
+# 노드 렌더링
 def cluster_galaxy_view(request):
     return render(request, 'home.html')
-
-def home_recommend(request):
-    pass
 
 def home(request):
     # 클러스터와 키워드 조회, 유효한 숫자 클러스터만
@@ -127,19 +138,37 @@ def search(request):
         for bill in results:
             if bill.cluster:
                 cluster_counter[bill.cluster] += 1
-        
-        # most_common_cluster = None
-        # most_common_keywords_str = ''
-        # if cluster_counter:
-        #     most_common_cluster = cluster_counter.most_common(1)[0][0]
-        #     most_common_keywords_str = cluster_keywords_dict.get(most_common_cluster, "")
+        color_palette = [
+            "#F7CAC9", "#A8DADC", "#FFE5B4", "#BFD8B8", "#D6CDEA",
+            "#F3E9D2", "#C5DDE8", "#F9E2AE", "#E2CFC3", "#B0A8B9",
+            "#FADADD", "#E0BBE4", "#FFECB3", "#D4E157", "#AED9E0",
+            "#FCD5CE", "#D1C4E9", "#FFF9C4", "#F8BBD0", "#C8E6C9",
+            "#EFD3D7", "#CDEDF6", "#FFF5BA", "#D5AAFF", "#FFE1E1",
+            "#D0F0C0", "#F0D9FF", "#FEEBCB", "#E8EAF6", "#F2D7EE",
+            "#D3E4CD", "#F6DFEB", "#C2ECEF", "#FFDFD3"
+            ]
+
+        random.shuffle(color_palette)  # 랜덤 섞기
+
+        # 클러스터 ID 리스트
+        cluster_ids = list({bill.cluster for bill in results})  # 의안에서 클러스터 id 수집
+
+        # 클러스터별 색상 매핑
+        cluster_color_map = {}
+        for i, cid in enumerate(cluster_ids):
+            cluster_color_map[cid] = color_palette[i % len(color_palette)]
 
         top_clusters = []
-        for cluster_id, _ in cluster_counter.most_common(2):  # 상위 2개 클러스터
+        for i, (cluster_id, _) in enumerate(cluster_counter.most_common(2)):  # 상위 2개 클러스터
             keywords_str = cluster_keywords_dict.get(cluster_id, "")
             if keywords_str:
                 keywords = [kw.strip() for kw in keywords_str.split(',') if kw.strip()]
-                top_clusters.append((cluster_id, keywords))
+                color = color_palette[i % len(color_palette)]
+                top_clusters.append({
+                    'cluster_id': cluster_id,
+                    'keywords': keywords,
+                    'color': color,
+                    })
         
         # 라벨 매핑
         for bill in results:
@@ -156,7 +185,19 @@ def search(request):
         # label_count 기준으로 results 정렬 (내림차순)
         results = sorted(results, key=lambda b: label_counts.get(b.label, 0), reverse=True)
 
-        # 페이지네이션
+
+        # 클러스터별 색상 지정
+        # color_palette = [
+        #     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+        #     "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+        #     "#bcbd22", "#17becf"
+        #     ]
+        # cluster_ids = [cluster_id for cluster_id, _ in top_clusters]
+        # cluster_colors = {}
+        # for i, cid in enumerate(cluster_ids):
+        #     cluster_colors[cid] = color_palette[i % len(color_palette)]
+
+        # 페이지네이션----
         paginator = Paginator(results, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
@@ -180,8 +221,9 @@ def search(request):
         'page_range': page_range,
         'total_results_count': total_results_count,
         'cluster_keywords_dict': cluster_keywords_dict,
-        # 'most_common_cluster': most_common_cluster,
-        # 'most_common_keywords_str': most_common_keywords_str,
+
         'top_clusters': top_clusters,
+        # 'cluster_colors': cluster_colors,
+        'cluster_color_map': cluster_color_map,
     }
     return render(request, 'search.html', context)

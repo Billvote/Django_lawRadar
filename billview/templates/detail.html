@@ -35,16 +35,14 @@
           <div>
             <dt class="text-lg font-semibold text-gray-900">원문 보기</dt>
             <dd class="mt-1 text-gray-700 text-base leading-relaxed">
-              <!-- 의안정보시스템 url -->
+              <a href="{{ bill.url }}" class="text-blue-500 however text-gray-500">국회 의안정보시스템 바로 가기</a>
             </dd>
           </div>
         </dl>
       </div>
 
       <div class="grid grid-cols-2 grid-rows-2 gap-6">
-        <!-- 이미지나 관련 정보 넣는 공간으로 활용 가능 -->
-        <!-- 예시 -->
-        <img src="{{ bill.image_url }}" alt="관련 이미지" class="w-full h-full object-cover rounded-lg" />
+=       <img src="{{ bill.image_url }}" alt="관련 이미지" class="w-full h-full object-cover rounded-lg" />
       </div>
 
     </div>
@@ -88,7 +86,7 @@ const voteMap = {
   "반대": 1,
   "불참": 0
 };
-const numericVotes = votes.map(v => voteMap[v]);
+const numericVotes = voteResult.map(v => voteMap[v]);
 
 const colorMap = {
   '찬성': 0,
@@ -113,26 +111,33 @@ for(let row=0; row < rawData.length; row++) {
   }
 }
 
-const series = [{
-  name: '투표결과',
-  data: numericVotes
-}];
+const series = parties.map((party, rowIndex) => {
+  return {
+    name: party,
+    data: members.map((member, colIndex) => {
+      const vote = rawData[rowIndex] || [];
+      return {
+       name: party,
+    data: members.map((member, colIndex) => {
+      const vote = row[colIndex] || '불참'; // undefined일 경우 '불참' 처리
+      return {
+        x: member,
+        y: voteMap[vote] ?? 0
+      };
+    })
+  };
+})};
 
 var options = {
   chart: {
     type: 'heatmap',
-    height: 400
+    height: 600
   },
   series: series,
   xaxis: {
     type: 'category',
     categories: members,
     title: { text: '국회의원' }
-  },
-  yaxis: {
-    type: 'category',
-    categories: parties,
-    title: { text: '정당' }
   },
   plotOptions: {
   heatmap: {

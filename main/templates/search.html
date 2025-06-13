@@ -10,17 +10,15 @@
       <p class="text-gray-600 mb-6">😥다른 키워드로 검색해보세요</p>
     {% endif %}
     <div class="flex flex-wrap gap-2">
-      {% if top_clusters %}
-        {% for cluster_id, keywords in top_clusters %}
-          {% for kw in keywords %}
-          <a href="{% url 'history:cluster_index' cluster_id %}" class="inline-block mb-2">
+      {% for cluster in top_clusters %}
+        {% for kw in cluster.keywords %}
+          <a href="{% url 'history:cluster_index' cluster.cluster_id %}" class="inline-block mb-2">
                 <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
                   #{{ kw }}
                 </span>
           </a>
-          {% endfor %}
         {% endfor %}
-      {% endif %}
+      {% endfor %}
     </div>
 </div>
 {% if page_obj %}
@@ -32,7 +30,7 @@
                 <th scope="col" class="px-6 py-3 w-[7%] text-center">의안 번호</th>
                 <th scope="col" class="px-6 py-3 w-[26%] text-center">의안명</th>
                 <th scope="col" class="px-6 py-3 w-[38%] text-center">키워드</th>
-                <th scope="col" class="px-6 py-3 w-[12%] text-center">최근 표결</th>
+                <th scope="col" class="px-6 py-3 w-[13%] text-center">최근 표결</th>
                 <th scope="col" class="px-6 py-3 text-center w-[7%] text-center">개정</th>
             </tr>
             <!-- <th>최근 표결 날짜</th> -->
@@ -52,9 +50,9 @@
                       {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
                         {% if keywords_str %}
                           {% with kw_list=keywords_str|split_by_comma %}
-                            {% for kw in kw_list|slice:":2" %}
+                            {% for kw in kw_list %}
                               <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
-                                <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color: white;" class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full">
                                   #{{ kw }}
                                 </span>
                               </a>
@@ -113,13 +111,17 @@
     const hashtags = document.querySelectorAll('.hashtag');
 
     hashtags.forEach(tag => {
+      // 원래 배경색, 글자색 저장
+      const originalBg = tag.style.backgroundColor;
+      const originalColor = tag.style.color;
+
       tag.addEventListener('mouseenter', () => {
-        tag.style.backgroundColor = '#38bdf8';
+        tag.style.backgroundColor = '#eeeeee';
         tag.style.color = 'white';
       });
       tag.addEventListener('mouseleave', () => {
-        tag.style.backgroundColor = '';
-        tag.style.color = '';
+        tag.style.backgroundColor = originalBg;
+        tag.style.color = originalColor;
       });
     });
   });
