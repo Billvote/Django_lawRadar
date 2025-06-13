@@ -11,7 +11,10 @@
     z-index: 0;
     width: 100%;
     height: 100vh;
-    pointer-events: none; /* 인터랙션 막기 */
+    pointer-events: none;
+  }
+  #galaxy circle {
+    pointer-events: auto;
   }
 
   /* 겹치는 콘텐츠 - 텍스트, 검색창 */
@@ -34,12 +37,23 @@
     pointer-events: none;
     z-index: 20;
   }
+  @keyframes twinkle {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+  }
+
+  circle.twinkle {
+    animation: twinkle 2s infinite ease-in-out;
+  }
+  circle {
+  shape-rendering: geometricPrecision;
+  }
 </style>
 
 <!-- 갤럭시 -->
 <svg id="galaxy">
   <defs>
-    <filter id="glow">
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
@@ -51,18 +65,19 @@
 <div id="tooltip" class="home-tooltip"></div>
 
 <!-- 제목 및 설명 -->
-<div class="home-overlay px-4">
-  <h1 class="home-font text-5xl font-extrabold mb-6">지금 우리 '국회'는?</h1>
-  <p class="text-md text-gray-600 mb-10">
+<div id="home-content" class="home-overlay px-6 max-w-3xl mx-auto relative z-10 text-center text-gray-800" style="backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.75); border-radius: 12px; padding: 3rem 2rem; opacity: 0; transition: opacity 1s ease;">
+  <h1 class="home-font text-5xl font-extrabold mb-8">지금 우리 '국회'는?</h1>
+  <p class="text-lg leading-relaxed text-gray-600 mb-8">
     국회의 표결은 우리의 삶과 직결됩니다.
     <br>궁금한 법안, 내 지역구 의원, 그들의 선택까지
     <br>—한눈에 확인하세요.
   </p>
+  <p class="text-md mb-12 opacity-75">노드를 클릭하면 다양한 의안 클러스터를 확인할 수 있습니다</p>
 
   <!-- 검색창 -->
   <section>
-    <form method="GET" action="{% url 'search' %}">
-      <input type="text" name="q" placeholder="검색어를 입력해주세요" class="text-xl font-semibold">
+    <form method="GET" action="{% url 'search' %}" class="flex justify-center gap-3 max-w-xl mx-auto">
+      <input type="text" name="q" placeholder="검색어를 입력해주세요" class="flex-grow text-lg font-semibold rounded-md border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition">
       <button type="submit" class="text-xl font-semibold rounded p-1 text-cyan-500">검색</button>
     </form>
   </section>
@@ -126,7 +141,7 @@
 
 {% block script %}
 <script>
-  // d3 galaxy
+  // d3 노드 효과
     const width = window.innerWidth;
     const height = 1000;
     const svg = d3.select("#galaxy")
@@ -136,22 +151,31 @@
     const tooltip = d3.select("#tooltip");
 
     d3.json("/api/cluster_keywords/").then(data => {
+      
       const simulation = d3.forceSimulation(data)
         .force("charge", d3.forceManyBody().strength(-50))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.num_bills) * 4 + 10))
         .on("tick", ticked);
-        console.log("노드 개수:", data.length);
 
       const node = svg.selectAll("circle")
         .data(data)
         .enter().append("circle")
-        .attr("r", d => Math.sqrt(d.num_bills) * 4)
+        .attr("r", d => Math.sqrt(d.num_bills) * 3)
+        
+        // 노드 색상
+        // .attr("fill", d => colorScale(d.num_bills))
         .attr("fill", d => d3.interpolateCool(Math.random()))
+        
         .attr("filter", "url(#glow)")  // ✨ glow 필터 추가
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1)
+        
+        // 테두리
+        .attr("stroke", "none")
+        .attr("stroke-width", 0)
+        
+        .attr("twinkle", true)
         .on("mouseover", function(event, d) {
+          console.log("마우스 오버", d);
           tooltip.style("display", "block")
                  .html(`<strong>#${d.keyword}</strong><br>법안 ${d.num_bills}건`)
                  .style("left", (event.pageX + 10) + "px")
@@ -165,8 +189,20 @@
           tooltip.style("display", "none");
         })
         .on("click", function(event, d) {
+          console.log("클릭된 데이터:", d);
           window.location.href = d.url;  // ✅ URL로 이동
         });
+
+        // 노드 배경 애니메이션 끝나면 -> 타이틀 등장 애니메이션
+    node.transition()
+      .duration(1500)
+      .attr("r", d => Math.sqrt(d.num_bills) * 3)
+      .attr("opacity", 1)
+      .on("end", (d, i, nodes) => {
+        if (i === nodes.length - 1) {
+          d3.select("#home-content").style("opacity", 1);
+        }
+      });
 
       function ticked() {
         node.attr("cx", d => d.x)

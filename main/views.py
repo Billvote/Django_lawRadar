@@ -26,7 +26,7 @@ def cluster_keywords_json(request):
     # 상위 100개 랜덤 샘플링
     sorted_qs = sorted(qs_list, key=lambda x: x['num_bills'], reverse=True)
     sample_size = 100
-    top = sorted_qs[:200]
+    top = sorted_qs[:500]
     sampled_qs = random.sample(top, min(len(top), sample_size))
 
     result = []
