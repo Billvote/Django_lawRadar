@@ -122,6 +122,7 @@ def import_members(csv_path):
 # ---------- 5. Bill ----------
 def import_bills(csv_path):
     df = pd.read_csv(csv_path)
+    df.columns = df.columns.str.strip()
     age_dict = {a.number: a for a in Age.objects.all()}
     created, skipped = 0, 0
 
@@ -139,10 +140,12 @@ def import_bills(csv_path):
             defaults = {
                 'title': safe_str(row['title']),
                 'age': age,
+                'cleaned': safe_str(row.get('cleaned')) or None,
                 'summary': safe_str(row.get('summary')) or None,
                 'cluster': int(row['cluster']),
                 'cluster_keyword': safe_str(row.get('cluster_keyword')),
                 'label': int(float(row['label'])) if not pd.isna(row.get('label')) else None,
+                'url': safe_str(row.get('url')) or None,
             }
 
             obj, created_flag = Bill.objects.update_or_create(
@@ -230,12 +233,12 @@ def run_all():
 
     csv_path = settings.BASE_DIR / 'geovote' / 'data'
     
-    # import_ages(csv_path / f'age.csv')
-    # import_parties(csv_path / f'party.csv')
-    # import_districts(csv_path / f'district.csv')
-    # import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'urls.csv')
-    # import_votes(csv_path / f'vote.csv')
+    import_ages(csv_path / f'age.csv')
+    import_parties(csv_path / f'party.csv')
+    import_districts(csv_path / f'district.csv')
+    import_members(csv_path / f'member.csv')
+    import_bills(csv_path / f'bill(4).csv')
+    import_votes(csv_path / f'vote.csv')
 
     print(f"✅ 데이터 임포트 완료")
 
