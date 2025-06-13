@@ -1,15 +1,62 @@
 {% extends "base.html" %}
 {% load static %}
 {% block body %}
+<!-- 배경 설정 -->
+<style>
+  /* 전체 영역에 SVG 배경 고정 */
+  #galaxy {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100vh;
+    pointer-events: none; /* 인터랙션 막기 */
+  }
+
+  /* 겹치는 콘텐츠 - 텍스트, 검색창 */
+  .home-overlay {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding-top: 10vh;
+    color: #111827; /* text-gray-900 */
+  }
+
+  .home-tooltip {
+    position: absolute;
+    display: none;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 20;
+  }
+</style>
+
+<!-- 갤럭시 -->
+<svg id="galaxy">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
+<div id="tooltip" class="home-tooltip"></div>
+
 <!-- 제목 및 설명 -->
-<div class="max-w-4xl mx-auto text-center py-16 px-4 sm:px-6 lg:px-8">
-  <h1 class="home-font text-5xl font-extrabold text-gray-900 mb-6">지금 우리 '국회'는?</h1>
+<div class="home-overlay px-4">
+  <h1 class="home-font text-5xl font-extrabold mb-6">지금 우리 '국회'는?</h1>
   <p class="text-md text-gray-600 mb-10">
     국회의 표결은 우리의 삶과 직결됩니다.
-    <br>
-    궁금한 법안, 내 지역구 의원, 그들의 선택까지
-    <br>
-    —한눈에 확인하세요.
+    <br>궁금한 법안, 내 지역구 의원, 그들의 선택까지
+    <br>—한눈에 확인하세요.
   </p>
 
   <!-- 검색창 -->
@@ -23,7 +70,7 @@
 
 
 <!-- 클러스터 검색 -->
-<section class="mb-10">
+<!-- <section class="mb-10">
   <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
   {% if clusters %}
     <div class="flex justify-center">
@@ -47,7 +94,7 @@
     white-space: normal; /* 긴 텍스트 줄바꿈 */
     max-width: 100%; /* 드롭다운 폭 제한 */
   }
-</style>
+</style> -->
 
 
 
@@ -75,4 +122,57 @@
   </section> {% endcomment %}
 
   
+{% endblock %}
+
+{% block script %}
+<script>
+  // d3 galaxy
+    const width = window.innerWidth;
+    const height = 1000;
+    const svg = d3.select("#galaxy")
+                  .attr("width", width)
+                  .attr("height", height);
+
+    const tooltip = d3.select("#tooltip");
+
+    d3.json("/api/cluster_keywords/").then(data => {
+      const simulation = d3.forceSimulation(data)
+        .force("charge", d3.forceManyBody().strength(-50))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.num_bills) * 4 + 10))
+        .on("tick", ticked);
+        console.log("노드 개수:", data.length);
+
+      const node = svg.selectAll("circle")
+        .data(data)
+        .enter().append("circle")
+        .attr("r", d => Math.sqrt(d.num_bills) * 4)
+        .attr("fill", d => d3.interpolateCool(Math.random()))
+        .attr("filter", "url(#glow)")  // ✨ glow 필터 추가
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 1)
+        .on("mouseover", function(event, d) {
+          tooltip.style("display", "block")
+                 .html(`<strong>#${d.keyword}</strong><br>법안 ${d.num_bills}건`)
+                 .style("left", (event.pageX + 10) + "px")
+                 .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mousemove", function(event) {
+          tooltip.style("left", (event.pageX + 10) + "px")
+                 .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("display", "none");
+        })
+        .on("click", function(event, d) {
+          window.location.href = d.url;  // ✅ URL로 이동
+        });
+
+      function ticked() {
+        node.attr("cx", d => d.x)
+            .attr("cy", d => d.y);
+      }
+    });
+
+</script>
 {% endblock %}
