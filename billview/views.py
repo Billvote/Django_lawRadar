@@ -62,21 +62,6 @@ def detail_bill(request, id):
     # member 순서대로 결과 리스트 생성
     results = [vote_map.get(member, '불참') for member in members]
 
-    # 10행 30열 크기로 자르기 (필요하면 멤버 수에 맞게 조정)
-    # row_length = 30
-    # heatmap_data = []
-    # for i in range(0, len(results), row_length):
-    #     heatmap_data.append(results[i:i+row_length])
-
-    # members = []
-    # results = []
-
-
-    # for vote in votes:
-    #     member_name = f"{vote.member.name} ({vote.member.party})"  # 혹은 .party.party
-    #     members.append(member_name)
-    #     results.append(vote.result)
-
     if bill.label:
         revision_count = Bill.objects.filter(label=bill.label).count()
     else:
@@ -101,34 +86,8 @@ def detail_bill(request, id):
         'heatmap_data': json.dumps(heatmap_data, ensure_ascii=False),
         'members': json.dumps(members, ensure_ascii=False),
         'parties': json.dumps(parties, ensure_ascii=False)
-        # 'bill_title': json.dumps(bill.title, ensure_ascii=False),  # x축 하나
     }
-    # heatmap = get_vote_heatmap_data()
-    
-    # bill_age = bill.age # Bill의 age 값을 가져옴
-
-    # party_stats = Vote.objects.filter(
-    #     bill=bill,
-    #     member__age=bill_age
-    # ).annotate(
-    #     party_party=F('member__party__party')
-    # ).values(
-    #     'party_party'
-    # ).annotate(
-    #     agree=Count('id', filter=Q(result='찬성')),
-    #     oppose=Count('id', filter=Q(result='반대')),
-    #     abstain=Count('id', filter=Q(result='기권')),
-    # )
-
-    # context = {
-    #     'bill': bill,
-    #     'votes': votes,
-    #     'party_stats': party_stats,
-
-    #     'heatmap_data': json.dumps(heatmap['heatmap_data']),
-    #     'heatmap_members': json.dumps(heatmap['members']),
-    #     'heatmap_bills': json.dumps(heatmap['bills']),
-    # }
+   
     return render(request, 'detail.html', context)
 
 def index_bill(request):
