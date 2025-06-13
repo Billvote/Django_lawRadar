@@ -107,9 +107,21 @@ class BillHistoryDetailView(DetailView):
         else:
             related_bills = []
             logger.warning(f"No valid label for bill pk={self.object.pk}, label={self.object.label}")
+        
         context['related_bills'] = related_bills
         context['list_page'] = self.request.GET.get('page', '1')
+        
+        # cluster_keywords_dict 추가 (BillHistoryListView와 동일한 로직)
+        cluster_keywords_dict = {}
+        for c in Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct():
+            if c['cluster'] and isinstance(c['cluster'], int):
+                cluster_keywords_dict[c['cluster']] = c['cluster_keyword'] or ''
+        context['cluster_keywords_dict'] = cluster_keywords_dict
+        
         logger.info(f"Related bills: {[(b.pk, b.title, b.bill_number, b.label) for b in related_bills]}")
+        logger.info(f"Current bill cluster: {self.object.cluster}")
+        logger.info(f"Cluster keywords dict: {cluster_keywords_dict}")
+        
         return context
 
 def cluster_index(request, cluster_number):

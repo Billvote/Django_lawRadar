@@ -57,7 +57,7 @@
                       {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
                         {% if keywords_str %}
                           {% with kw_list=keywords_str|split_by_comma %}
-                            {% for kw in kw_list|slice:":2" %}
+                            {% for kw in kw_list|slice:":4" %}
                               <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
                                 <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
                                   #{{ kw }}

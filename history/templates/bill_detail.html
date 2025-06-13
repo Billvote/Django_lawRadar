@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block body %}
+{% load custom_filters %}
 <div class="bg-white min-h-screen">
   <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
     <!-- 헤더 -->
@@ -13,6 +14,23 @@
           style="white-space:nowrap;overflow:visible;text-overflow:unset;width:auto;max-width:none;">
         {{ bill.title }}
       </h1>
+      
+      <!-- 클러스터 키워드 해시태그 -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
+          {% if keywords_str %}
+            {% with kw_list=keywords_str|split_by_comma %}
+              {% for kw in kw_list|slice:":10" %}
+                <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block">
+                  <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                    #{{ kw }}
+                  </span>
+                </a>
+              {% endfor %}
+            {% endwith %}
+          {% endif %}
+        {% endwith %}
+      </div>
     </div>
 
     <!-- 타임라인 -->
@@ -63,5 +81,33 @@ h1.text-3xl {
   max-width: none !important;
   display: block;
 }
+/* 해시태그 스타일 */
+.hashtag {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.hashtag:hover {
+  background-color: #38bdf8 !important;
+  color: white !important;
+  transform: scale(1.05);
+}
 </style>
+{% endblock %}
+
+{% block script %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const hashtags = document.querySelectorAll('.hashtag');
+    hashtags.forEach(tag => {
+      tag.addEventListener('mouseenter', () => {
+        tag.style.backgroundColor = '#38bdf8';
+        tag.style.color = 'white';
+      });
+      tag.addEventListener('mouseleave', () => {
+        tag.style.backgroundColor = '';
+        tag.style.color = '';
+      });
+    });
+  });
+</script>
 {% endblock %}
