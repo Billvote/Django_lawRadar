@@ -18,30 +18,39 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls. static import static
 from django.conf import settings
-from geovote import views as geovote_views
-from billview import views as bill_views
-from main import views as main_views
+from billview import views as bill_v
+from main import views as main_v
+from geovote import views as geovote_v
 from dashboard import views as dashboard_v
+from history import views as history_v
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', main_views.home, name='home'),
+    
+    # home
+    path('', main_v.home, name='home'),
+    # about us
+    path('/aboutUs/', main_v.aboutUs, name='about'),
+    # search
+    path('/search/', main_v.search, name='search'),
+    path("galaxy/", main_v.cluster_galaxy_view, name="cluster_galaxy"),
+    path("api/cluster_keywords/", main_v.cluster_keywords_json, name="cluster_keywords_json"),
 
     # billview
-    path('billview/', bill_views.index_bill, name='index'),
-    path('billview/<int:id>/', bill_views.detail_bill, name='detail'),
+    path('billview/', bill_v.index_bill, name='index'),
+    path('billview/<int:id>/', bill_v.detail_bill, name='detail'),
 
-    # geovote
-    # path('map/', geovote_views.map_view, name='map'),
-    path('geovote/', geovote_views.geovote_main, name='geovote'),
-
-    # path('api/districts/', geovote_views.district_geojson, name='district_geojson'),
-    # path('map22/', geovote_views.map22, name='map22'), # 테스트용
-
-    path('treemap/', geovote_views.treemap_view, name='treemap'),
-    path('api/region_tree_data/', geovote_views.region_tree_data, name='region_tree_data'),
+    # tree map
+    path('treemap/', geovote_v.treemap_view, name='treemap'),
+    path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
+    path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
     
     # dashboard
-    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard')
+    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
+
+    # history
+    path('history/', include('history.urls')),
+
+
 ]

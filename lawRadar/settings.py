@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+# import environ
 # from django.contrib.gis import gdal
 
 # GDAL 라이브러리 경로 설정
@@ -18,6 +19,13 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 환경변수 로드
+# env = environ.Env()
+# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# API 키 가져오기
+# ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
 
 
 # Quick-start development settings - unsuitable for production
@@ -46,6 +54,7 @@ INSTALLED_APPS = [
     'geovote',
     'main',
     'dashboard',
+    'history',
 ]
 
 MIDDLEWARE = [
@@ -111,9 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
@@ -129,3 +138,30 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 프로젝트/settings.py 맨 아래에 추가
+def patch_broken_pipe_error():
+    import sys
+    from socketserver import BaseServer
+    from wsgiref import handlers
+
+    handle_error = BaseServer.handle_error
+    log_exception = handlers.BaseHandler.log_exception
+
+    def is_broken_pipe_error():
+        type_, err, tb = sys.exc_info()
+        return repr(err) == "error(32, 'Broken pipe')"
+
+    def my_handle_error(self, request, client_address):
+        if not is_broken_pipe_error():
+            handle_error(self, request, client_address)
+
+    def my_log_exception(self, exc_info):
+        if not is_broken_pipe_error():
+            log_exception(self, exc_info)
+
+    # 핵심: 메서드 재할당 방식 수정
+    BaseServer.handle_error = my_handle_error
+    handlers.BaseHandler.log_exception = my_log_exception
+
+patch_broken_pipe_error()

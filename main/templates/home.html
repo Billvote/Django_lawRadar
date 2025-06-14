@@ -1,38 +1,240 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block title %}홈{% endblock %}
-
 {% block body %}
-<div class="max-w-4xl mx-auto text-center py-16 px-4 sm:px-6 lg:px-8">
-  <h1 class="text-4xl font-extrabold text-gray-900 mb-6">환영합니다!</h1>
-  <p class="text-lg text-gray-600 mb-10">
-    이 사이트는 법안 정보와 투표 정보를 확인할 수 있는 플랫폼입니다.
+<!-- 배경 설정 -->
+<style>
+  /* 전체 영역에 SVG 배경 고정 */
+  #galaxy {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100vh;
+    pointer-events: none;
+  }
+  #galaxy circle {
+    pointer-events: auto;
+  }
+
+  /* 겹치는 콘텐츠 - 텍스트, 검색창 */
+  .home-overlay {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding-top: 10vh;
+    color: #111827; /* text-gray-900 */
+  }
+
+  .home-tooltip {
+    position: absolute;
+    display: none;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 20;
+  }
+  @keyframes twinkle {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+  }
+
+  circle.twinkle {
+    animation: twinkle 2s infinite ease-in-out;
+  }
+  circle {
+  shape-rendering: geometricPrecision;
+  }
+</style>
+
+<!-- 갤럭시 -->
+<svg id="galaxy">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
+<div id="tooltip" class="home-tooltip"></div>
+
+<!-- 제목 및 설명 -->
+<div id="home-content" class="home-overlay px-6 max-w-3xl mx-auto relative z-10 text-center text-gray-800" style="backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.75); border-radius: 12px; padding: 3rem 2rem; opacity: 0; transition: opacity 1s ease;">
+  <h1 class="text-5xl font-extrabold mb-8">지금 우리 '국회'는?</h1>
+  <p class="text-lg leading-relaxed mb-8">
+    국회의 표결은 우리의 삶과 직결됩니다
+    <br>궁금한 법안, 내 지역구 의원, 그들의 선택까지
+    <br>한눈에 확인하세요
+  </p>
+  <p class="text-sm mb-12 opacity-75 text-gray-900">
+    점 위에 마우스를 가까이 대보세요
+    <br>점을 클릭하면 다양한 법안 주제를 확인할 수 있습니다
   </p>
 
-  <!-- 이미지와 클릭 가능한 맵 영역 -->
-  <div class="mb-8 flex justify-center">
-    <img
-      src="{% static 'images/Vote2.svg.png' %}"
-      usemap="#symbolmap"
-      alt="심볼"
-      class="max-w-full h-auto"
-      style="width: 500px;"
-    />
-    <map name="symbolmap">
-      <!-- 이미지 내 원형 클릭 영역 -->
-      <area shape="circle" coords="280,780,40" href="{% url 'index' %}" alt="BillView">
-    </map>
-  </div>
-
-  <!-- 버튼 링크 -->
-  <div class="flex justify-center space-x-4">
-    <a href="{% url 'index' %}" class="inline-block px-6 py-3 bg-blue-400 text-white font-semibold rounded-full shadow hover:bg-indigo-700 transition">
-      BillView 이동
-    </a>
-    <a href="{% url 'geovote' %}" class="inline-block px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow hover:bg-green-700 transition">
-      GeoVote 이동
-    </a>
-  </div>
+  <!-- 검색창 -->
+  <section>
+    <form method="GET" action="{% url 'search' %}" class="flex justify-center gap-3 max-w-xl mx-auto">
+      <input type="text" name="q" placeholder="키워드를 입력해주세요" class="flex-grow text-lg font-semibold rounded-md border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition">
+      <button type="submit" class="text-xl font-semibold rounded p-1 text-cyan-500">검색</button>
+    </form>
+  </section>
 </div>
+
+
+<!-- 클러스터 검색 -->
+<!-- <section class="mb-10">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
+  {% if clusters %}
+    <div class="flex justify-center">
+      <select onchange="window.location.href=this.value" class="border rounded p-2 bg-white text-gray-900 focus:ring-2 focus:ring-cyan-500 w-96 max-w-full">
+        <option value="">키워드 선택</option>
+        {% for cluster in clusters %}
+          {% if cluster.cluster %}
+            <option value="{% url 'history:cluster_index' cluster.cluster %}">{{ cluster.keyword }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+  {% else %}
+    <div class="text-center py-10">
+      <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
+    </div>
+  {% endif %}
+</section>
+<style>
+  select option {
+    white-space: normal; /* 긴 텍스트 줄바꿈 */
+    max-width: 100%; /* 드롭다운 폭 제한 */
+  }
+</style> -->
+
+
+
+
+  {% comment %} <!-- 클러스터 목록 -->
+  <section class="mb-10">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {% for cluster in clusters %}
+        <a href="{% url 'history:cluster_index' cluster %}" class="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 hover:border-cyan-500">
+          <div class="flex items-center space-x-3">
+            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10m-7 7h7"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900">키워드 번호 {{ cluster }}</h3>
+          </div>
+          <p class="mt-2 text-sm text-gray-500">관련 법안 탐색하기</p>
+        </a>
+      {% empty %}
+        <div class="col-span-full text-center py-10">
+          <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section> {% endcomment %}
+
+  
+{% endblock %}
+
+{% block script %}
+<script>
+  // d3 노드 효과
+    const width = window.innerWidth;
+    const height = 1000;
+    const svg = d3.select("#galaxy")
+                  .attr("width", width)
+                  .attr("height", height);
+
+    const tooltip = d3.select("#tooltip");
+
+    d3.json("/api/cluster_keywords/").then(data => {
+       // jitter force 함수 정의
+      // function jitterForce(strength = 0.6) {
+      //   return function(alpha) {
+      //     data.forEach(d => {
+      //       d.vx += (Math.random() - 0.5) * strength * alpha;
+      //       d.vy += (Math.random() - 0.5) * strength * alpha;
+      //     })};
+      //   };
+
+      const simulation = d3.forceSimulation(data)
+        .force("charge", d3.forceManyBody().strength(-50))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.num_bills) * 4 + 10))
+        // .force("jitter", jitterForce(0.6)) // jitter force 추가
+        // .alphaDecay(0.008) // 시뮬레이션 안 멈추게 조절
+        .on("tick", ticked)
+        // .alphaTarget(0.05);
+
+      const node = svg.selectAll("circle")
+        .data(data)
+        .enter().append("circle")
+        .attr("r", d => Math.sqrt(d.num_bills) * 3)
+        
+        // 노드 색상
+        // .attr("fill", d => colorScale(d.num_bills))
+        .attr("fill", d => d3.interpolateCool(Math.random()))
+        
+        .attr("filter", "url(#glow)")  // ✨ glow 필터 추가
+        
+        // 테두리
+        .attr("stroke", "none")
+        .attr("stroke-width", 0)
+        
+        .attr("twinkle", true)
+        .on("mouseover", function(event, d) {
+
+          d._r = Math.sqrt(d.num_bills) * 3; // 반지름 저장
+
+          console.log("마우스 오버", d);
+          tooltip.style("display", "block")
+                 .html(`<strong>#${d.keyword}</strong><br>법안 ${d.num_bills}건`)
+                 .style("left", (event.pageX + 10) + "px")
+                 .style("top", (event.pageY - 20) + "px");
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("r", d._r * 1.5);
+        })
+        .on("mousemove", function(event) {
+          tooltip.style("left", (event.pageX + 10) + "px")
+                 .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function(event, d) {
+          tooltip.style("display", "none");
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("r", d._r); // 원래 반지름으로 복원
+        })
+        .on("click", function(event, d) {
+          console.log("클릭된 데이터:", d);
+          window.location.href = d.url;  // ✅ URL로 이동
+        })
+        ;
+
+        // 노드 배경 애니메이션 끝나면 -> 타이틀 등장 애니메이션
+    node.transition()
+      .duration(1500)
+      .attr("r", d => Math.sqrt(d.num_bills) * 4.3)
+      .attr("opacity", 1)
+      .on("end", (d, i, nodes) => {
+        if (i === nodes.length - 1) {
+          d3.select("#home-content").style("opacity", 1);
+        }
+      });
+
+      function ticked() {
+        node.attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+      }
+    });
+
+</script>
 {% endblock %}

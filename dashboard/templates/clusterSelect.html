@@ -1,0 +1,13 @@
+<p>결과를 확인하고 싶은 주제를 선택해주세요🙌​</p>
+<label for="clusterSelect" class="block font-semibold mb-2"></label>
+<select id="clusterSelect" class="w-full border rounded border-gray-300 rounded-md px-3 py-2">
+    {% for cluster in cluster_vote_data %}
+    <option value="{{ cluster.cluster_num }}">{{ cluster.cluster_keywords }}</option>
+    {% endfor %}
+</select>
+
+    {{ cluster_vote_data|json_script:"cluster-vote-data" }}
+    {{ cluster_categories|json_script:"cluster-categories" }}
+    {{ cluster_party_names|json_script:"cluster-party-names" }}
+    {{ cluster_party_colors|json_script:"cluster-party-colors" }}
+<br>

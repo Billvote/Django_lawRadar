@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body %}
+<!-- 클러스터 키워드 페이지 -->
+<section class="mb-10">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+    클러스터 {{ cluster_number }} 키워드
+  </h2>
+  {% if error %}
+    <div class="text-center py-10">
+      <p class="text-red-500 text-lg">{{ error }}</p>
+    </div>
+  {% elif keywords %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {% for keyword in keywords %}
+        <a href="{% url 'history:history_list' %}?keyword={{ keyword|urlencode }}"
+           class="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 hover:border-cyan-500 cursor-pointer">
+          <div class="flex items-center space-x-3">
+            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10m-7 7h7"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900">{{ keyword }}</h3>
+          </div>
+          <p class="mt-2 text-sm text-gray-500"></p>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-10">
+      <p class="text-gray-500 text-lg">키워드가 없습니다.</p>
+    </div>
+  {% endif %}
+</section>
+
+<!-- 카드 뉴스 -->
+
+{% endblock %}

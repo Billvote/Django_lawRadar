@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # 대수
 class Age(models.Model):
     number = models.IntegerField(unique=True)
@@ -14,44 +15,30 @@ class Party(models.Model):
     def __str__(self):
         return self.party
 
-# 지역구
-from django.db import models
-
+# 지역구 (정식 모델)
 class District(models.Model):
     age = models.IntegerField()
-    SGG_Code = models.CharField(max_length=100, unique=True)
-    SIDO_SGG = models.CharField(max_length=100, unique=True)
+    SIDO_SGG = models.CharField(max_length=100)
     SIDO = models.CharField(max_length=100)
     SGG = models.CharField(max_length=100)
-    boundary = models.JSONField()  # Django 3.1 이상에서 사용 가능
+    SIGUNGU = models.CharField(max_length=30, blank=True, null=True)
+
 
     def __str__(self):
         return self.SIDO_SGG
 
-# # 위원회
-# class Committee(models.Model):
-#     age = models.IntegerField()Add commentMore actions
-#     committees = models.CharField(max_length=100)  # 위원회 이름
-#     def __str__(self):
-#         return self.name
-
-# 의원 
+# 의원
 class Member(models.Model):
-    age = models.IntegerField()
-    name = models.CharField(max_length=100)  # 의원명
-    party = models.ForeignKey(Party, on_delete=models.CASCADE)  # 정당
-    district = models.ForeignKey(District, on_delete=models.CASCADE)  # 지역구
+    age = models.ForeignKey(Age, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    party = models.ForeignKey(Party, on_delete=models.CASCADE)
+    district = models.ForeignKey(District, on_delete=models.CASCADE, null=True, blank=True)
     member_id = models.CharField(max_length=50)
-    gender = models.CharField(max_length=10)  # 성별
-
-    # class Meta:
-    #     managed = False
-    #     db_table = 'geovote_member'
+    gender = models.CharField(max_length=10)
+    image_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
-        district_name = self.district.name if self.district else "비례대표"
-        return f'{self.name} ({self.party.name}, {self.district.name})'
-
+        return f"{self.name} ({self.party}, {self.district or '비례대표'})"
         
 # 표결
 class Vote(models.Model):
@@ -61,4 +48,4 @@ class Vote(models.Model):
     result = models.CharField(max_length=10)  # 찬성/반대/기권 등
     date = models.DateField() # 의결 날짜
     def __str__(self):
-        return f'{self.member.name} voted {self.vote_result} on {self.bill.name}'
+        return f'{self.member.name} voted {self.result} on {self.bill.title}'

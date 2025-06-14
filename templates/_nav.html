@@ -1,94 +1,63 @@
+<!-- navbar -->
 <div class="min-h-full">
-  <nav class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">
+  <nav class="bg-transparent" style="position: relative; z-index: 10;">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between">
         <!-- 왼쪽: Home + 메뉴 -->
         <div class="flex items-center space-x-10">
           <div class="shrink-0">
-            <a href="{% url 'home' %}" class="text-white font-semibold">Home</a>
+            <a href="{% url 'home' %}" class="text-gray-500 font-semibold">Home</a>
           </div>
-          <div class="hidden md:block">
+          <div class="">
             <div class="flex items-baseline space-x-4">
-              <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-white">Dashboard</a>
-              <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
-              <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
-              <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 hover:text-white">Reports</a>
-              <!-- 검색 창 -->
-              <form action="#" method="get" class="flex items-center space-x-2">
-                <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
-            </form>
+              <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/dashboard/' %}active{% endif %}">Dashboard</a>
+              <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
+              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == 'history/' %}active{% endif %}">History</a>
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
+              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/aboutUs/' %}active{% endif %}">About us</a>
             </div>
           </div>
         </div>
+        <!-- 검색 창 -->
+        <!-- <form action="#" method="get" class="flex items-center space-x-2 ml-auto">
+          <input type="text" name="q" placeholder="검색..." class="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none">검색</button>
+        </form>
+        
         <div class="hidden md:block">
-          <div class="ml-4 flex items-center md:ml-6">
-             
-              <!--
-                Dropdown menu, show/hide based on menu state.
-
-                Entering: "transition ease-out duration-100"
-                  From: "transform opacity-0 scale-95"
-                  To: "transform opacity-100 scale-100"
-                Leaving: "transition ease-in duration-75"
-                  From: "transform opacity-100 scale-100"
-                  To: "transform opacity-0 scale-95"
-              -->
-
-              <!-- 2. 드롭다운 버튼 + 메뉴 -->
-                <div class="relative ml-3" x-data="{ open: false }">
-
-                <!-- 드롭다운 메뉴 -->
-                <div
-                    x-show="open"
-                    @click.outside="open = false"
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-75"
-                    x-transition:leave-start="transform opacity-100 scale-100"
-                    x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none"
-                    role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button">
-                    
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Your Profile</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Settings</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Sign out</a>
-                </div>
-                </div>
+          <div class="ml-4 flex items-center md:ml-6"> -->
+        
 
             </div>
           </div>
         </div>
-        <div class="-mr-2 flex md:hidden">
-          <!-- Mobile menu button -->
-          <button type="button" class="relative inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden" aria-controls="mobile-menu" aria-expanded="false">
-            <span class="absolute -inset-0.5"></span>
-            <span class="sr-only">Open main menu</span>
-            <!-- Menu open: "hidden", Menu closed: "block" -->
-            <svg class="block size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-            <!-- Menu open: "block", Menu closed: "hidden" -->
-            <svg class="hidden size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- Mobile menu, show/hide based on menu state. -->
-    <div class="md:hidden" id="mobile-menu">
-      <div class="space-y-1 px-2 pt-2 pb-3 sm:px-3">
-        <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-        <a href="{% url 'home' %}" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">Dashboard</a>
-        <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
-        <a href="{% url 'geovote' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/geovote/' %}active{% endif %}">GeoVote</a>
-        <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
-        <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Reports</a>
-      </div>
-    </div>
-  </nav>
-</div>
+<!-- tabs style/script -->
+<style>
+  .tab {
+    @apply py-2 px-4 text-gray-600 hover:text-black font-medium transition-colors duration-200 border-b-2 border-transparent;
+  }
+  .active-tab {
+    @apply text-black border-black;
+  }
+</style>
+
+<script>
+  const tabs = document.querySelectorAll(".tab");
+  const content = document.getElementById("tab-content");
+
+  const contents = {
+    "홈": "홈 페이지 내용입니다.",
+    "서비스": "우리가 제공하는 서비스입니다.",
+    "포트폴리오": "작업 포트폴리오를 확인해보세요.",
+    "연락처": "문의는 여기를 통해 주세요.",
+  };
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active-tab"));
+      tab.classList.add("active-tab");
+      content.textContent = contents[tab.textContent.trim()];
+    });
+  });
+</script>

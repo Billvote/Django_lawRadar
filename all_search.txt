@@ -1,0 +1,5 @@
+history\urls.py:# 디버깅: BillHistoryListView 확인
+history\urls.py:print(f"BillHistoryListView type: {type(history.views.BillHistoryListView)}")
+history\urls.py:print(f"BillHistoryListView module: {history.views.BillHistoryListView.__module__}")
+history\urls.py:    path('', history.views.BillHistoryListView.as_view(), name='history_list'),
+history\views.py:class BillHistoryListView(ListView):
