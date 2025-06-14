@@ -12,6 +12,7 @@ class Bill(models.Model):
     cluster_keyword = models.TextField(blank=True, null=True, default='')
     label = models.IntegerField(null=True, blank=True)
     url = models.TextField(blank=True, null=True, unique=True)
+    card_news = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.title

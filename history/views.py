@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from billview.models import Bill
+from geovote.models import Vote
 from django.db.models import Max
 import logging
 
@@ -108,7 +109,16 @@ class BillHistoryDetailView(DetailView):
             related_bills = []
             logger.warning(f"No valid label for bill pk={self.object.pk}, label={self.object.label}")
         
-        context['related_bills'] = related_bills
+        # 관련 법안 + 투표 날짜 리스트 구성
+        related_bills_with_votes = []
+        for bill in related_bills:
+            vote = Vote.objects.filter(bill=bill).order_by('date').first()  # 또는 get() 가능
+            related_bills_with_votes.append({
+                'bill': bill,
+                'vote_date': vote.date if vote else None
+            })
+
+        context['related_bills'] = related_bills_with_votes
         context['list_page'] = self.request.GET.get('page', '1')
         
         # cluster_keywords_dict 추가 (BillHistoryListView와 동일한 로직)

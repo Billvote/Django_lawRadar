@@ -52,7 +52,7 @@
                           {% with kw_list=keywords_str|split_by_comma %}
                             {% for kw in kw_list %}
                               <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
-                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color: white;" class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full">
+                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }};" class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full text-white hover:text-gray-800 transition-colors duration-300">
                                   #{{ kw }}
                                 </span>
                               </a>
@@ -64,7 +64,7 @@
                 </td>
                 
                 <td class="px-6 py-4 text-gray-800">
-                  {{ bill.last_vote_date|default:"-" }}
+                  {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
                 </td>
                 <td class="px-6 py-4 text-center">{{ bill.label_count }}건</td>
             </tr>

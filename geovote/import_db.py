@@ -149,8 +149,6 @@ def import_members(csv_path):
         else:
             updated += 1
 
-            
-
     print(f"[MEMBER] 신규 {created}명, 업데이트 {updated}명, 스킵 {skipped}명")
 
 # ---------- 5. Bill ----------
@@ -180,6 +178,7 @@ def import_bills(csv_path):
                 'cluster_keyword': safe_str(row.get('cluster_keyword')),
                 'label': int(float(row['label'])) if not pd.isna(row.get('label')) else None,
                 'url': safe_str(row.get('url')) or None,
+                'card_news': safe_str(row.get('card_news')) or None,
             }
 
             obj, created_flag = Bill.objects.update_or_create(
@@ -272,7 +271,7 @@ def run_all():
     import_districts(csv_path / f'district.csv')
     check_missing_sido_sgg(csv_path / f'member.csv')
     import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'bill(4).csv')
+    import_bills(csv_path / f'card_news.csv')
     import_votes(csv_path / f'vote.csv')
 
     print(f"✅ 데이터 임포트 완료")

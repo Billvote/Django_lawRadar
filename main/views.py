@@ -32,7 +32,7 @@ def cluster_keywords_json(request):
         .order_by(Random())
     )
 
-    qs_list = list(qs[:500])
+    qs_list = list(qs[:300])
 
     # 상위 100개 랜덤 샘플링
     sample_size = 100
