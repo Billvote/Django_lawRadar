@@ -21,7 +21,6 @@ from django.conf import settings
 from geovote import views as geovote_views
 from billview import views as bill_views
 from main import views as main_views
-from geovote import views as geovote_views
 from dashboard import views as dashboard_v
 
 
