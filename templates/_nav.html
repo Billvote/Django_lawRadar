@@ -11,7 +11,7 @@
           <div class="">
             <div class="flex items-baseline space-x-4">
               <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/dashboard/' %}active{% endif %}">Dashboard</a>
-              <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">Bills</a>
+              <!-- <a href="{% url 'index' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">Bills</a> -->
               <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == 'history/' %}active{% endif %}">History</a>
               <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
               <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/aboutUs/' %}active{% endif %}">About us</a>

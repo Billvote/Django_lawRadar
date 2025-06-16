@@ -178,7 +178,7 @@ def import_bills(csv_path):
                 'cluster_keyword': safe_str(row.get('cluster_keyword')),
                 'label': int(float(row['label'])) if not pd.isna(row.get('label')) else None,
                 'url': safe_str(row.get('url')) or None,
-                'card_news': safe_str(row.get('card_news')) or None,
+                'card_news_content': safe_str(row.get('card_news_content')) or None,
             }
 
             obj, created_flag = Bill.objects.update_or_create(
