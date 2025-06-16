@@ -52,7 +52,7 @@
                           {% with kw_list=keywords_str|split_by_comma %}
                             {% for kw in kw_list %}
                               <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
-                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }};" class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full text-white hover:text-gray-800 transition-colors duration-300">
+                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }};" class="hashtag text-white hover:text-black inline-block text-sm font-medium px-3 py-1 rounded-full hover:bg-gray-200 hover:text-gray-600">
                                   #{{ kw }}
                                 </span>
                               </a>
@@ -113,15 +113,16 @@
     hashtags.forEach(tag => {
       // 원래 배경색, 글자색 저장
       const originalBg = tag.style.backgroundColor;
-      const originalColor = tag.style.color;
+      const originalColor = window.getComputedStyle(tag).color;
 
       tag.addEventListener('mouseenter', () => {
         tag.style.backgroundColor = '#eeeeee';
-        tag.style.color = 'white';
+        tag.style.setProperty('color', '#4B5563', 'important');
       });
       tag.addEventListener('mouseleave', () => {
         tag.style.backgroundColor = originalBg;
         tag.style.color = originalColor;
+        tag.style.setProperty('color', originalColor, 'important');
       });
     });
   });
