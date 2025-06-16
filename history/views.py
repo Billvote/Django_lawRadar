@@ -1,164 +1,211 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
+from django.core.cache import cache
+from django.db import connection
+from django.db.models import (
+    Count, Max, OuterRef, Subquery, F, Value, CharField
+)
 from billview.models import Bill
 from geovote.models import Vote
-from django.db.models import Max
 import logging
 
 logger = logging.getLogger(__name__)
 
+
+# ───────────────────────────────────────── index (클러스터 목록) ──
 def index(request):
-    clusters = Bill.objects.filter(
-        cluster__isnull=False,
-        cluster__gt=0
-    ).values('cluster', 'cluster_keyword').distinct().order_by('cluster')
-    clusters = [
-        {'cluster': c['cluster'], 'keyword': c['cluster_keyword'] or '키워드 없음'}
-        for c in clusters if isinstance(c['cluster'], int) and c['cluster'] > 0
-    ]
-    logger.info(f"Clusters: {clusters}")
-    if not clusters:
-        logger.warning("No valid clusters found")
+    """
+    “클러스터 번호/키워드 목록” 첫 화면
+    1시간 캐시 (변경이 거의 없기 때문)
+    """
+    clusters = cache.get('cluster_list')
+    if clusters is None:
+        clusters_qs = (Bill.objects
+                       .filter(cluster__isnull=False, cluster__gt=0)
+                       .values('cluster', 'cluster_keyword')
+                       .distinct()
+                       .order_by('cluster'))
+        clusters = [
+            {
+                'cluster': c['cluster'],
+                'keyword': c['cluster_keyword'] or '키워드 없음'
+            }
+            for c in clusters_qs if isinstance(c['cluster'], int) and c['cluster'] > 0
+        ]
+        cache.set('cluster_list', clusters, 60 * 60)
+
     return render(request, 'cluster_list.html', {'clusters': clusters})
 
-class BillHistoryListView(ListView):
-    model = Bill
-    template_name = 'history_list.html'
-    context_object_name = 'bills'
-    paginate_by = 10
 
+# ──────────────────────────────── BillHistoryListView (목록) ──────
+class BillHistoryListView(ListView):
+    """
+    1. label 별 ‘최신 의안’만 추려서 출력
+    2. label 별 관련 의안 수를 한 번에 annotate
+    3. keyword / cluster GET 파라미터로 필터
+    4. 결과·클러스터 정보를 Redis/Memcached 캐시 (5분)
+    """
+    model               = Bill
+    template_name       = 'history_list.html'
+    context_object_name = 'bills'
+    paginate_by         = 20                           # 한 페이지 20건
+    _qs_cache_time      = 60 * 5                      # 5 분
+    _dict_cache_time    = 60 * 60                    # 1 시간
+
+    # ────────────── 내부 헬퍼 : 클러스터→키워드 dict, Top5 ──────────
+    def _cluster_dict(self):
+        data = cache.get('cluster_keywords_dict')
+        if data is None:
+            data = dict(
+                Bill.objects
+                    .filter(cluster__isnull=False, cluster__gt=0)
+                    .values_list('cluster', 'cluster_keyword')
+                    .distinct()
+            )
+            cache.set('cluster_keywords_dict', data, self._dict_cache_time)
+        return data
+
+    def _top_clusters(self):
+        data = cache.get('top_clusters')
+        if data is None:
+            tmp = (Bill.objects
+                     .filter(cluster__isnull=False, cluster__gt=0)
+                     .values('cluster', 'cluster_keyword')
+                     .annotate(cnt=Count('id'))
+                     .order_by('-cnt')[:5])
+            data = [
+                (
+                    c['cluster'],
+                    [kw.strip() for kw in (c['cluster_keyword'] or '').split(',')
+                     if kw.strip()]
+                )
+                for c in tmp
+            ]
+            cache.set('top_clusters', data, self._dict_cache_time)
+        return data
+
+    # ─────────────────────────────────── 실제 QuerySet 생성 ────────
     def get_queryset(self):
-        keyword = self.request.GET.get('keyword')
-        cluster = self.request.GET.get('cluster')
-        queryset = Bill.objects.all()
+        keyword = self.request.GET.get('keyword', '').strip()
+        cluster = self.request.GET.get('cluster', '').strip()
+
+        cache_key = f"bill_qs:{keyword}:{cluster}"
+        if qs_cached := cache.get(cache_key):
+            return qs_cached
+
+        qs = (Bill.objects
+                .only('id', 'title', 'bill_id', 'bill_number',
+                      'age', 'cluster', 'cluster_keyword',
+                      'label')
+        )
+
+        # 필터
         if cluster:
             try:
-                queryset = queryset.filter(cluster=int(cluster))
-                logger.info(f"Filtering bills by cluster: {cluster}")
+                qs = qs.filter(cluster=int(cluster))
             except ValueError:
-                logger.error(f"Invalid cluster: {cluster}")
+                logger.warning("잘못된 cluster 파라미터: %s", cluster)
         if keyword:
-            logger.info(f"Filtering bills by keyword: {keyword}")
-            queryset = queryset.filter(cluster_keyword__contains=keyword)
-        latest_bills = queryset.values('label').annotate(
-            max_bill_number=Max('bill_number')
-        ).values('label', 'max_bill_number')
-        bill_ids = []
-        for item in latest_bills:
-            if item['label'] is not None and item['max_bill_number']:
-                bill = queryset.filter(
-                    label=item['label'],
-                    bill_number=item['max_bill_number']
-                ).first()
-                if bill:
-                    bill_ids.append(bill.id)
-        queryset = queryset.filter(id__in=bill_ids).order_by('-bill_number')
-        logger.info(f"Queryset count: {queryset.count()}")
-        return queryset
+            qs = qs.filter(cluster_keyword__icontains=keyword)
 
+        # ────── label별 가장 최신 bill_number ──────
+        if connection.vendor == 'postgresql':
+            # DISTINCT ON 활용 (가장 빠름)
+            qs = qs.order_by('label', '-bill_number').distinct('label')
+        else:
+            # DB 독립 서브쿼리
+            latest_subq = (Bill.objects
+                           .filter(label=OuterRef('label'))
+                           .order_by('-bill_number')
+                           .values('bill_number')[:1])
+            qs = qs.annotate(latest=Subquery(latest_subq))\
+                   .filter(bill_number=F('latest'))
+
+        # ────── label별 전체 갯수 annotate (related_count) ──────
+        count_subq = (Bill.objects
+                      .filter(label=OuterRef('label'))
+                      .values('label')
+                      .annotate(c=Count('id'))
+                      .values('c')[:1])
+        qs = qs.annotate(related_count=Subquery(count_subq))
+
+        qs = qs.order_by('-bill_number')
+        cache.set(cache_key, qs, self._qs_cache_time)
+        return qs
+
+    # ─────────────────────────────── context 추가 ────────────────
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get('keyword', '')
-        context['total_results_count'] = self.get_queryset().count()
-        # top_clusters 추가
-        clusters = Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct()[:5]
-        context['top_clusters'] = [
-            (c['cluster'], [kw.strip() for kw in c['cluster_keyword'].split(',') if kw.strip()] if c['cluster_keyword'] else [])
-            for c in clusters
-        ]
-        # page_obj와 page_range 명시적 추가 (10개씩 연속 표시)
-        context['page_obj'] = context.get('page_obj')
-        context['page_range'] = []
-        if context['page_obj']:
-            paginator = context['page_obj'].paginator
-            current = context['page_obj'].number
-            total = paginator.num_pages
-            # 현재 페이지를 중심으로 앞뒤 5개씩, 총 10개 페이지 번호 표시
-            start = max(current - 5, 1)
-            end = min(start + 9, total)
-            # 끝에서 10개가 안 채워지면 앞에서 채움
-            start = max(end - 9, 1)
-            context['page_range'] = range(start, end + 1)
-        # cluster_keywords_dict 추가
-        cluster_keywords_dict = {}
-        for c in Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct():
-            if c['cluster'] and isinstance(c['cluster'], int):
-                cluster_keywords_dict[c['cluster']] = c['cluster_keyword'] or ''
-        context['cluster_keywords_dict'] = cluster_keywords_dict
-        logger.info(f"Cluster keywords dict: {cluster_keywords_dict}")
-        logger.info(f"Top clusters: {context['top_clusters']}")
-        logger.info(f"Page obj: {context['page_obj']}")
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx['query']  = self.request.GET.get('keyword', '').strip()
+        ctx['total_results_count'] = self.object_list.count()
 
+        # 페이지 범위(−5 … +5)
+        page_obj = ctx.get('page_obj')
+        if page_obj:
+            start = max(page_obj.number - 5, 1)
+            end   = min(start + 9, page_obj.paginator.num_pages)
+            ctx['page_range'] = range(start, end + 1)
+
+        ctx['cluster_keywords_dict'] = self._cluster_dict()
+        ctx['top_clusters']          = self._top_clusters()
+        return ctx
+
+
+# ─────────────────────────────── Detail 뷰 ────────────────────────
 class BillHistoryDetailView(DetailView):
-    model = Bill
-    template_name = 'bill_detail.html'
+    model               = Bill
+    template_name       = 'bill_detail.html'
     context_object_name = 'bill'
 
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        logger.info(f"Retrieved bill: pk={obj.pk}, bill_id={obj.bill_id}, title={obj.title}, bill_number={obj.bill_number}, summary={obj.summary}, cluster={obj.cluster}, label={obj.label}")
-        return obj
-
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         label = self.object.label
-        if label is not None:
-            related_bills = Bill.objects.filter(label=label).order_by('-bill_number')[:10]
-        else:
-            related_bills = []
-            logger.warning(f"No valid label for bill pk={self.object.pk}, label={self.object.label}")
-        
-        # 관련 법안 + 투표 날짜 리스트 구성
-        related_bills_with_votes = []
-        for bill in related_bills:
-            vote = Vote.objects.filter(bill=bill).order_by('date').first()  # 또는 get() 가능
-            related_bills_with_votes.append({
-                'bill': bill,
-                'vote_date': vote.date if vote else None
-            })
 
-        context['related_bills'] = related_bills_with_votes
-        context['list_page'] = self.request.GET.get('page', '1')
-        
-        # cluster_keywords_dict 추가 (BillHistoryListView와 동일한 로직)
-        cluster_keywords_dict = {}
-        for c in Bill.objects.filter(cluster__isnull=False, cluster__gt=0).values('cluster', 'cluster_keyword').distinct():
-            if c['cluster'] and isinstance(c['cluster'], int):
-                cluster_keywords_dict[c['cluster']] = c['cluster_keyword'] or ''
-        context['cluster_keywords_dict'] = cluster_keywords_dict
-        
-        logger.info(f"Related bills: {[(b.pk, b.title, b.bill_number, b.label) for b in related_bills]}")
-        logger.info(f"Current bill cluster: {self.object.cluster}")
-        logger.info(f"Cluster keywords dict: {cluster_keywords_dict}")
-        
-        return context
+        if not label:
+            ctx['related_bills'] = []
+            return ctx
 
+        # Vote 첫 날짜 한 번에 annotate
+        vote_date_sq = (Vote.objects
+                          .filter(bill=OuterRef('pk'))
+                          .order_by('date')
+                          .values('date')[:1])
+
+        related_qs = (Bill.objects
+                        .filter(label=label)
+                        .annotate(vote_date=Subquery(vote_date_sq))
+                        .only('id', 'title', 'bill_number', 'label')
+                        .order_by('-bill_number')[:10])
+
+        ctx['related_bills'] = related_qs
+        ctx['list_page']     = self.request.GET.get('page', '1')
+        # 재활용 (캐시)
+        ctx['cluster_keywords_dict'] = BillHistoryListView()._cluster_dict()
+        return ctx
+
+
+# ──────────────────────── 클러스터 상세 index (hashtag 페이지) ─────
+from django.views.decorators.cache import cache_page
+
+@cache_page(60 * 5)                       # 5분 캐시
 def cluster_index(request, cluster_number):
     try:
         cluster_number = int(cluster_number)
-        bills = Bill.objects.filter(cluster=cluster_number)
-        cluster_bill_count = bills.count()
-        logger.info(f"Cluster {cluster_number} bills count: {cluster_bill_count}")
-        keywords = set()
-        for bill in bills:
-            if bill.cluster_keyword:
-                logger.debug(f"Bill {bill.pk} cluster_keyword: {bill.cluster_keyword}")
-                for keyword in bill.cluster_keyword.split(','):
-                    kw = keyword.strip()
-                    if kw:
-                        keywords.add(kw)
-        logger.info(f"Cluster {cluster_number} keywords: {keywords}")
-        return render(request, 'cluster_index.html', {
-            'cluster_number': cluster_number,
-            'keywords': sorted(keywords),
-            'cluster_bill_count': cluster_bill_count
-        })
     except ValueError:
-        logger.error(f"Invalid cluster_number: {cluster_number}")
         return render(request, 'cluster_index.html', {
             'cluster_number': cluster_number,
             'keywords': [],
             'cluster_bill_count': 0,
             'error': '유효하지 않은 클러스터 번호입니다.'
         })
+
+    bills = Bill.objects.filter(cluster=cluster_number).only('cluster_keyword')
+    keyword_set = {kw.strip()
+                   for kw_str in bills.values_list('cluster_keyword', flat=True)
+                   for kw in kw_str.split(',') if kw.strip()}
+
+    return render(request, 'cluster_index.html', {
+        'cluster_number'    : cluster_number,
+        'keywords'          : sorted(keyword_set),
+        'cluster_bill_count': bills.count()
+    })
