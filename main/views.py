@@ -138,15 +138,26 @@ def search(request):
         for bill in results:
             if bill.cluster:
                 cluster_counter[bill.cluster] += 1
+
+        # 파스텔톤
+        # color_palette = [
+        #     "#F7CAC9", "#A8DADC", "#FFE5B4", "#BFD8B8", "#D6CDEA",
+        #     "#F3E9D2", "#C5DDE8", "#F9E2AE", "#E2CFC3", "#B0A8B9",
+        #     "#FADADD", "#E0BBE4", "#FFECB3", "#D4E157", "#AED9E0",
+        #     "#FCD5CE", "#D1C4E9", "#FFF9C4", "#F8BBD0", "#C8E6C9",
+        #     "#EFD3D7", "#CDEDF6", "#FFF5BA", "#D5AAFF", "#FFE1E1",
+        #     "#D0F0C0", "#F0D9FF", "#FEEBCB", "#E8EAF6", "#F2D7EE",
+        #     "#D3E4CD", "#F6DFEB", "#C2ECEF", "#FFDFD3"
+        #     ]
+
+        # treeMap 팔레트
         color_palette = [
-            "#F7CAC9", "#A8DADC", "#FFE5B4", "#BFD8B8", "#D6CDEA",
-            "#F3E9D2", "#C5DDE8", "#F9E2AE", "#E2CFC3", "#B0A8B9",
-            "#FADADD", "#E0BBE4", "#FFECB3", "#D4E157", "#AED9E0",
-            "#FCD5CE", "#D1C4E9", "#FFF9C4", "#F8BBD0", "#C8E6C9",
-            "#EFD3D7", "#CDEDF6", "#FFF5BA", "#D5AAFF", "#FFE1E1",
-            "#D0F0C0", "#F0D9FF", "#FEEBCB", "#E8EAF6", "#F2D7EE",
-            "#D3E4CD", "#F6DFEB", "#C2ECEF", "#FFDFD3"
+            '#bef264', '#67e8f9', '#f9a8d4', '#fde68a', '#fdba74',
+            '#6ee7b7', '#c3b4fc', '#fda4af',
+            # 추가
+            '#5eead4', '#34d399', '#f472b6', '#facc15', '#fb7185', '#818cf8', '#38bdf8'
             ]
+
 
         random.shuffle(color_palette)  # 랜덤 섞기
 
