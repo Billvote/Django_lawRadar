@@ -1,28 +1,31 @@
 {% extends "base.html" %}
-{% block body %}
 {% load custom_filters %}
+
+{% block body %}
 <div class="bg-white min-h-screen">
   <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-    <!-- 헤더 -->
+
+    <!-- ── 헤더 ───────────────────────────────────────────── -->
     <div class="mb-8 border-b pb-6">
       <div class="flex items-center space-x-4 mb-2">
         <span class="text-sm font-medium text-gray-900">{{ bill.age.number }}대</span>
         <span class="text-sm text-gray-900">의안번호: {{ bill.bill_number }}</span>
       </div>
-      <!-- 제목: 무조건 한줄, 말줄임표 없이 다 보임 -->
+
       <h1 class="text-3xl font-bold text-gray-900"
           style="white-space:nowrap;overflow:visible;text-overflow:unset;width:auto;max-width:none;">
         {{ bill.title }}
       </h1>
-      
-      <!-- 클러스터 키워드 해시태그 -->
+
+      <!-- 해시태그 -->
       <div class="mt-4 flex flex-wrap gap-2">
         {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
           {% if keywords_str %}
             {% with kw_list=keywords_str|split_by_comma %}
               {% for kw in kw_list|slice:":10" %}
                 <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block">
-                  <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+                  <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
+                        style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
                     #{{ kw }}
                   </span>
                 </a>
@@ -33,41 +36,37 @@
       </div>
     </div>
 
-    <!-- 타임라인 -->
+    <!-- ── 타임라인 ──────────────────────────────────────── -->
     <div class="relative">
-      <!-- 세로선 -->
       <div class="absolute left-8 top-0 h-full w-0.5 bg-gray-400 z-0"></div>
-      <div class="space-y-12" id="timeline-list">
+
+      <div class="space-y-12">
         {% for related in related_bills %}
-        <div id="timeline-{{ related.pk }}" class="relative pl-16 group">
+        <div id="timeline-{{ related.pk }}" class="relative pl-16 group timeline-card">
 
           <!-- 날짜 -->
-           <div class="absolute top-8 left-5 -translate-x-full pr-2 text-gray-500 font-mono w-30 text-right">
-            {% if related.vote_date %}
-              {{ related.vote_date|date:"Y-m-d" }}
-            {% else %}
-              날짜 없음
-            {% endif %}
+          <div class="timeline-date absolute top-8 left-5 -translate-x-full pr-2 text-gray-500 font-mono w-28 text-right">
+            {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
           </div>
 
-          <!-- 점 -->
-          <div class="absolute left-8 top-8 -ml-2 h-4 w-4 rounded-full border-4 border-white shadow-lg bg-gray-300 border-gray-100">
-          </div>
+          <!-- 세로선 점 -->
+          <div class="timeline-dot absolute left-8 top-8 -ml-2 h-4 w-4 rounded-full border-4 border-white shadow-lg border-gray-100"></div>
+
           <!-- 카드 -->
-          <div class="ml-8 p-6 bg-white border border-gray-200 rounded-xl shadow-md transition-shadow hover:shadow-lg w-full max-w-3xl">
+          <div class="timeline-card-inner ml-8 p-6 bg-white border border-gray-200 rounded-xl shadow-md w-full max-w-3xl">
             <div class="flex justify-between items-center">
-              <div class="text-base font-semibold text-gray-900 break-words cursor-default"
-                   style="word-break:break-all;">
-                {{ related.bill.summary|default:"(내용 없음)"|truncatewords:40 }}
+              <div class="text-base font-semibold text-gray-900 break-words">
+                {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
               </div>
             </div>
-            
+
             <div class="flex">
-            <div class="mt-2 flex items-center text-sm text-gray-700 break-all">
-              의안번호: {{ related.bill.bill_number }}
-            </div>
-              {% if related.bill.url %}
-              <a href="{{ related.bill.url }}" target="_blank" rel="noopener noreferrer" class="ml-auto inline-flex items-center px-3 py-1.5 text-sm font-medium text-cyan-500 rounded-md hover:scale-105 transform transition">
+              <div class="mt-2 flex items-center text-sm text-gray-700 break-all">
+                의안번호: {{ related.bill_number }}
+              </div>
+              {% if related.url %}
+              <a href="{{ related.url }}" target="_blank"
+                 class="ml-auto inline-flex items-center px-3 py-1.5 text-sm font-medium text-cyan-500 rounded-md hover:scale-105 transition-transform">
                 원문 보기
               </a>
               {% endif %}
@@ -79,53 +78,69 @@
     </div>
   </div>
 </div>
+
+<!-- ==========================  CSS  =============================== -->
 <style>
-/* 카드 안 글자가 넘치지 않도록 */
-.text-base, .text-sm {
-  word-break: break-word;
-  overflow-wrap: break-word;
+:root{
+  --neon: {{ cluster_color_map|get_item:bill.cluster }};
+  --neon-light: {{ cluster_color_map|get_item:bill.cluster }}99;
 }
-.group:hover .absolute.h-4.w-4 {
-  background-color: #81aaf0;
-  transform: scale(1.2);
-  transition: all 0.2s ease;
+
+/* 텍스트 & 해시태그 */
+.text-base,.text-sm{word-break:break-word;}
+h1.text-3xl{white-space:nowrap!important;}
+
+.hashtag{cursor:pointer;transition:.3s;}
+.hashtag:hover{background:#eee!important;color:#4B5563!important;transform:scale(1.05);}
+
+/* 점·카드·날짜 기본 */
+.timeline-dot{background:#9ca3af;transition:transform .25s,box-shadow .25s;}
+.timeline-card-inner{transition:box-shadow .25s;}
+.timeline-date{transition:color .25s,text-shadow .25s;}
+
+/* in-view */
+.timeline-card.in-view .timeline-dot{transform:scale(1.25);box-shadow:0 0 4px 2px rgba(0,0,0,.05);}
+.timeline-card.in-view .timeline-card-inner{box-shadow:0 4px 10px rgba(0,0,0,.05);}
+
+/* 애니메이션 */
+@keyframes neon-pulse{
+  0%,100%{box-shadow:0 0 6px 2px var(--neon),0 0 12px 4px var(--neon-light);}
+  50%    {box-shadow:0 0 2px 1px var(--neon),0 0 6px 2px var(--neon-light);}
 }
-/* 제목이 무조건 한줄로 다 보이게 */
-h1.text-3xl {
-  white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  width: auto !important;
-  max-width: none !important;
-  display: block;
+@keyframes neon-text-pulse{
+  0%,100%{text-shadow:0 0 8px var(--neon-light);}
+  50%    {text-shadow:0 0 3px var(--neon-light);}
 }
-/* 해시태그 스타일 */
-.hashtag {
-  cursor: pointer;
-  transition: all 0.3s ease;
+@keyframes card-glow{
+  0%,100%{box-shadow:0 0 10px 4px rgba(0,0,0,.08);}
+  50%    {box-shadow:0 0 4px 2px rgba(0,0,0,.04);}
 }
-.hashtag:hover {
-  background-color: #38bdf8 !important;
-  color: white !important;
-  transform: scale(1.05);
+
+/* Hover 분리 */
+.group:hover .timeline-dot{
+  background:var(--neon)!important;
+  transform:scale(1.45)!important;
+  animation:neon-pulse 1.2s ease-in-out infinite alternate!important;
+}
+.group:hover .timeline-date{
+  color:var(--neon)!important;
+  font-weight:600;
+  animation:neon-text-pulse 1.2s ease-in-out infinite alternate!important;
+}
+.timeline-card-inner:hover{
+  animation:card-glow 1.2s ease-in-out infinite alternate;
 }
 </style>
 {% endblock %}
 
 {% block script %}
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const hashtags = document.querySelectorAll('.hashtag');
-    hashtags.forEach(tag => {
-      tag.addEventListener('mouseenter', () => {
-        tag.style.backgroundColor = '#38bdf8';
-        tag.style.color = 'white';
-      });
-      tag.addEventListener('mouseleave', () => {
-        tag.style.backgroundColor = '';
-        tag.style.color = '';
-      });
-    });
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  const io = new IntersectionObserver(
+    entries => entries.forEach(e => e.target.classList.toggle('in-view', e.isIntersecting)),
+    { threshold:0.5 }
+  );
+  document.querySelectorAll('.timeline-card').forEach(card => io.observe(card));
+});
 </script>
 {% endblock %}
