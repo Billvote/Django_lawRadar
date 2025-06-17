@@ -23,11 +23,11 @@
       <div class="border-b flex flex-col items-center md:flex-row md:justify-between gap-2 mb-2">
         <div>
           <h2 class="text-base text-gray-600 text-center mt-1 font-normal">
-          이 페이지에서는 우리 지역구 의원의 클러스터별 표결 정보, 주요 성향을 확인해볼 수 있습니다
+          🔍내가 뽑은 의원의 투표 정보를 찾아보세요!
         </h2>
         </div>
         
-        <div id="breadcrumb" class="text-sm text-gray-500"></div>
+        <div id="breadcrumb" class="text-base text-gray-500"></div>
         <!-- 뒤로가기버튼 -->
         <span id="backButton"
               class="cursor-pointer text-2xl hover:text-pink-500 transition duration-300">
@@ -121,9 +121,9 @@ function renderSummary(data) {
     if (!info) return '';
 
     return `
-      <div class="mb-2 flex items-start ${info.color} font-semibold text-sm flex-col">
+      <div class="mb-4 flex items-start ${info.color} font-bold text-2xl mt-2">
         <div class="whitespace-nowrap">
-          <span class="mr-1">${info.icon}</span>
+          <span class="mr-2">${info.icon}</span>
           <span>${info.text}</span>
         </div>
       </div>
@@ -152,17 +152,19 @@ function renderSummary(data) {
 
     html += `
       <div class="card rounded-lg shadow-md bg-white p-4">
+        ${getClusterText(type, keywords)}
         <div class="flex flex-wrap gap-2 mb-4">
           ${keywords.map(k => `
-            <a href="{% url 'cardnews:card' cid %}">
-              <span class="inline-block bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-base font-semibold cursor-pointer hover:bg-indigo-200 transition">
+            <a href="/cardnews/cluster/${item.cluster_id}/">
+              <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-lg font-semibold cursor-pointer hover:bg-gray-200 transition">
                 ${k}
               </span>
             </a>
           `).join('')}
         </div>
-
-        ${getClusterText(type, keywords)}
+          <div class="text-base text-gray-600 mb-4">
+            📢 이 키워드의 법안이 궁금하다면? ☝️ Click!
+          </div>
         <hr class="my-2 border-gray-200">
         <div class="flex gap-4">
           <div class="flex-1 text-center">
@@ -252,7 +254,7 @@ function renderSummary(data) {
               if (!res.ok) throw new Error("API 호출 실패");
               const summary = await res.json();
               const summaryHtml = renderSummary(summary);
-              openPopup(memberName + " 의원 표결 요약", summaryHtml);
+              openPopup(memberName + " 의원은 이렇게 투표했네요 📝🗳️", summaryHtml);
             } catch (err) {
               console.error(err);
               alert("표결 정보를 가져오지 못했습니다.");
@@ -266,7 +268,7 @@ function renderSummary(data) {
           .attr("src", d.data.image_url || "https://via.placeholder.com/100")
           .attr("alt", d.data.member_name || "의원 사진 없음");
 
-        // 카드 컨텐츠 영역 생성 (이 부분 추가)
+        // 카드 컨텐츠 영역 생성
         const content = card.append("div")
           .attr("class", "district-card-content");
 
@@ -284,17 +286,23 @@ function renderSummary(data) {
           if (parts.length === 2) party = parts[1];
         }
 
-        let infoText = memberName ? memberName : "의원 정보 없음";
-        
+        // 의원 이름
+        content.append("div")
+          .attr("class", "district-card-info")
+          .text(memberName || "의원 정보 없음");
 
-
+        // 지역구
         content.append("div")
           .attr("class", "district-card-name")
           .text(districtName);
 
+
+        // 정당
         content.append("div")
-          .attr("class", "district-card-info")
-          .text(infoText);
+          .attr("class", "district-card-party")
+          .style("color", d.data.color || "#888")
+          .text(party || "정당 정보 없음");
+
 
       });
       return;  // 여기서 종료, 아래 트리맵 렌더링은 실행하지 않음

@@ -100,6 +100,7 @@ def member_vote_summary_api(request):
         max_clusters[vote_type] = {
             
             'cluster_keyword': cluster_keyword,
+            'cluster_id': bill.cluster if bill else None,
             'counts': counts,
             'ratios': ratios,
             'bill_count': bill_count,
