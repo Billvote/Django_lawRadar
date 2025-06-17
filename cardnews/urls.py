@@ -6,5 +6,5 @@ app_name = 'cardnews'
 
 urlpatterns = [
     path('', views.cardnews_home, name='home'),
-    path('cluster/<int:cluster_number>/', views.cluster_index, name='cluster'),
+    path('cluster/<int:cluster_number>/', views.cardnews_index, name='card'),
 ]

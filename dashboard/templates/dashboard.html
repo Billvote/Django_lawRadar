@@ -24,30 +24,34 @@
     </div>
 
 <!-- Stats Cards -->
-{% include 'Stats_cards.html' %}
+{% include '00_stats_cards.html' %}
+
+<!-- 팝업 -->
+{% include '_popup.html'%}
 
 <!-- Chart Section -->
 <div class="grid grid-cols-1 gap-6 mb-6">
   <!-- 정당별 법안 발의 수 -->
   <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">💬정당별 표결 현황</h2>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold">💬정당별 표결 현황</h2>
+      {% include '01_partyChart.html'%}
+    </div>
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
+    <!-- 권력 집중도 -->
+  <div class="flex justify-between items-center mt-6">
+    <h1 class="text-2xl font-bold">💪​국회 권력은 얼마나 집중돼 있을까?</h1>
+    {% include '03-1_hhi-button.html'%}
+  </div>
+  <div class="dashboard-section">
+  {% include '03_hhi.html' %}
+  </div>
   
   <!-- enp 프로그래스 바 -->
   <div class="dashboard-section mt-6">
-    <h1 class="text-2xl font-bold">유효한 정당</h1>
-    {% include 'enp.html' %}
-  </div>
-  
-  <!-- 권력 집중도 -->
-  <div class="flex justify-between items-center mt-6">
-    <h1 class="text-2xl font-bold">💪​국회 권력은 얼마나 집중돼 있을까?</h1>
-    <p class="text-sm text-gray-500">의석수 상위 2개 당 기준</p>
-  </div>
-  <div class="dashboard-section">
-  {% include 'hhi_cards.html' %}
+    {% include '02_enp.html' %}
   </div>
 
 
@@ -56,14 +60,31 @@
   </div>
 
   <!-- 정당/클러스터별 표결 현황 -->
-  <div class="grid grid-cols-5 gap-4 mt-6">
+  <div class="grid grid-cols-5 gap-4">
     <div class="col-span-5 bg-white p-4 rounded shadow">
-      {% include 'clusterSelect.html' %}
+      {% include '04_clusterSelect.html' %}
       <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
     </div>
   </div>
 
 </div>
+
+<!-- 정당별 특이 클러스터 차트 -->
+<h1>정당별 특이 클러스터</h1>
+<div class="grid grid-cols-5 gap-4">
+  <div class="col-span-5 bg-white p-4 rounded shadow">
+
+    <!-- 드롭박스 -->
+     <label for="stanceSelect" class="block font-semibold mb-2">찬성 / 반대 선택</label>
+<select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
+  <option value="support">찬성</option>
+  <option value="oppose">반대</option>
+</select>
+
+    <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block script %}
@@ -359,6 +380,132 @@ barWrapper.innerHTML = `
     container.appendChild(barWrapper);
   }
 });
+
+// 팝업------------
+  const popupModal = document.getElementById("popupModal");
+  const popupOverlay = document.getElementById("popupOverlay");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  const mainContent = document.querySelector(".flex-1.p-6");
+
+  // 팝업 열기
+  function openPopup(title, contentHtml) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = contentHtml;
+    popupModal.classList.remove("hidden");
+    mainContent.classList.add("opacity-70", "blur-sm"); // 메인 콘텐츠 흐림
+  }
+
+  // 팝업 닫기
+  function closePopup() {
+    popupModal.classList.add("hidden");
+    mainContent.classList.remove("opacity-70", "blur-sm");
+  }
+
+    // 버튼 이벤트 등록
+  closeModalBtn.addEventListener("click", closePopup);
+  popupOverlay.addEventListener("click", closePopup);
+
+document.querySelectorAll(".explain-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const title = btn.dataset.title;
+    const content = btn.dataset.content;
+    openPopup(title, content);
+  });
+});
+
+// 정당별 탑 클러스터 차트-------
+  // 뷰에서 넘긴 데이터 (예: support_top_cluster, oppose_top_cluster)
+  const supportTopCluster = {{ support_top_cluster|safe }};
+  const opposeTopCluster = {{ oppose_top_cluster|safe }};
+
+// 현재 선택 상태 초기값 'support'
+let currentStance = 'support';
+
+// ApexCharts 옵션 준비 함수
+function prepareChartOptions(data) {
+  return {
+    chart: {
+      type: 'bar',
+      height: 400,
+      stacked: true,
+      stackType: '100%',
+      toolbar: { show: false },
+      zoom: { enabled: false }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        barHeight: '50%',
+      },
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      width: 1,
+      colors: ['#fff']
+    },
+    xaxis: {
+      max: 100,
+      labels: {
+        formatter: val => val + '%'
+      }
+    },
+    yaxis: {
+      categories: data.map(d => d.party_name),
+      labels: {
+        style: { fontWeight: 'bold' }
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: val => val.toFixed(1) + '%'
+      }
+    },
+    legend: {
+      show: false
+    },
+    series: [{
+      name: currentStance === 'support' ? '찬성 비율' : '반대 비율',
+      data: data.map(d => d.ratio * 100), // 0~1 -> 0~100%
+    }],
+    fill: {
+      colors: ['#3696EB']
+    }
+  };
+}
+
+// 차트 인스턴스 변수
+let topClusterChart;
+
+// 초기 차트 그리기 함수
+function drawChart(data) {
+  const chartDiv = document.getElementById('topClusterChart');
+
+  if (topClusterChart) {
+    topClusterChart.destroy();
+  }
+
+  const options = prepareChartOptions(data);
+  topClusterChart = new ApexCharts(chartDiv, options);
+  topClusterChart.render();
+}
+
+// 페이지 로드 시 기본 찬성 데이터로 차트 그리기
+drawChart(supportTopCluster);
+
+// 드롭박스 이벤트 리스너: 선택 바뀌면 차트 갱신
+document.getElementById('stanceSelect').addEventListener('change', (e) => {
+  currentStance = e.target.value;
+  if (currentStance === 'support') {
+    drawChart(supportTopCluster);
+  } else {
+    drawChart(opposeTopCluster);
+  }
+});
+
 
 </script>
 {% endblock %}
