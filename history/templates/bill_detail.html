@@ -9,7 +9,7 @@
     <div class="mb-8 border-b pb-6">
       <div class="flex items-center space-x-4 mb-2">
         <span class="text-sm font-medium text-gray-900">{{ bill.age.number }}대</span>
-        <span class="text-sm text-gray-900">의안번호: {{ bill.bill_number }}</span>
+        <span class="text-sm text-gray-900">법안번호: {{ bill.bill_number }}</span>
       </div>
 
       <!-- 제목 -->
@@ -49,16 +49,12 @@
       <div class="space-y-12">
         {% for related in related_bills %}
         <div id="timeline-{{ related.pk }}" class="relative pl-16 group timeline-card">
-
-          <!-- 날짜 -->
           <div class="timeline-date absolute top-8 left-5 -translate-x-full pr-2 text-gray-500 font-mono w-28 text-right">
             {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
           </div>
 
-          <!-- 세로선 점 -->
           <div class="timeline-dot absolute left-8 top-8 -ml-2 h-4 w-4 rounded-full border-4 border-white shadow-lg border-gray-100"></div>
 
-          <!-- 카드 -->
           <div class="timeline-card-inner ml-8 p-6 bg-white border border-gray-200 rounded-xl shadow-md w-full max-w-3xl">
             <div class="flex justify-between items-center">
               <div class="text-base font-semibold text-gray-900 break-words">
@@ -68,7 +64,7 @@
 
             <div class="flex">
               <div class="mt-2 flex items-center text-sm text-gray-700 break-all">
-                의안번호: {{ related.bill_number }}
+                법안번호: {{ related.bill_number }}
               </div>
               {% if related.url %}
               <a href="{{ related.url }}" target="_blank"
@@ -96,10 +92,10 @@
 .text-base,
 .text-sm{word-break:break-word;}
 
-/* 기본 : 한 줄 고정 */
+/* 기본 : 한 줄 고정 + 왼쪽 정렬 */
 #bill-title{
   white-space:nowrap;
-  text-align:center;
+  text-align:left!important;   /* ← 중심 변경 부분 */
   overflow:visible;
   width:100%;
 }
@@ -108,7 +104,7 @@
 #bill-title.two-lines{
   white-space:normal;
   line-height:1.35;
-  max-height:2.7em;   /* 1.35 × 2줄 */
+  max-height:2.7em;
   overflow:hidden;
 }
 
@@ -155,16 +151,14 @@
 {% block script %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  /* 타임라인 카드 애니메이션 */
   const io = new IntersectionObserver(
     entries => entries.forEach(e => e.target.classList.toggle('in-view', e.isIntersecting)),
     { threshold:0.5 }
   );
   document.querySelectorAll('.timeline-card').forEach(card => io.observe(card));
 
-  /* 제목 길이 감지 → 두 줄 제한(버퍼 40px) */
   const title  = document.getElementById('bill-title');
-  const buffer = 200; // 허용 여유 폭
+  const buffer = 200;
   if (title.scrollWidth - title.clientWidth > buffer){
     title.classList.add('two-lines');
   }
