@@ -1,4 +1,14 @@
-from django.shortcuts import render
+"""
+history/views.py
+────────────────────────────────────────────────────────────────────────
+• index()              : 클러스터 전체 목록(사이드 페이지)
+• BillHistoryListView  : 의안 리스트 + 검색(keyword) + 클러스터 필터(cluster)
+• BillHistoryDetailView: 의안 상세
+• cluster_index()      : 해시태그 클릭 시 /?cluster=<id> 로 리다이렉트
+"""
+
+from django.shortcuts import render, redirect          # ← redirect 추가
+from django.urls import reverse                        # ← cluster_index용
 from django.views.generic import ListView, DetailView
 from django.core.cache import cache
 from django.db import connection
@@ -18,6 +28,10 @@ PALETTE = [
 
 # ═════════════ 클러스터 목록(사이드 페이지) ═════════════
 def index(request):
+    """
+    /history/cluster_list/ 같은 별도 메뉴가 있다면 사용하는 간단 목록 페이지
+    (urls.py 에서 index 뷰를 매핑하지 않았다면 생략 가능)
+    """
     clusters = cache.get('cluster_list')
     if clusters is None:
         qs = (Bill.objects
@@ -131,6 +145,10 @@ class BillHistoryListView(ListView):
             except ValueError:
                 logger.warning('invalid cluster param %s', cidstr)
         if kw:
+            # 제목·요약도 함께 검색하려면 아래 두 줄 추가
+            # qs = qs.filter(
+            #     Q(title__icontains=kw) | Q(summary__icontains=kw) | Q(cluster_keyword__icontains=kw)
+            # )
             qs = qs.filter(cluster_keyword__icontains=kw)
 
         # label별 최신안
@@ -165,6 +183,7 @@ class BillHistoryListView(ListView):
         ctx['selected_cluster'] = cidstr
         ctx['total_results_count'] = self.object_list.count()
 
+        # 페이지네이션 range 계산
         if page := ctx.get('page_obj'):
             s = max(page.number-5, 1)
             e = min(s+9, page.paginator.num_pages)
@@ -200,7 +219,7 @@ class BillHistoryListView(ListView):
         return ctx
 
 
-# ═════════════ 의안 상세 뷰 (변경 없음) ═════════════
+# ═════════════ 의안 상세 뷰 ═════════════
 class BillHistoryDetailView(DetailView):
     model               = Bill
     template_name       = 'bill_detail.html'
@@ -229,3 +248,13 @@ class BillHistoryDetailView(DetailView):
             'cluster_color_map'    : helper._color_map(),
         })
         return ctx
+
+
+# ═════════════ 클러스터 해시태그용 리다이렉트 ═════════════
+def cluster_index(request, cluster_number: int):
+    """
+    /history/cluster/<int:cluster_number>/
+    -> /history/?cluster=<cluster_number> 로 302 리다이렉트
+    """
+    url = f"{reverse('history:history_list')}?cluster={cluster_number}"
+    return redirect(url)

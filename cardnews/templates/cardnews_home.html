@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <!-- 해시태그 -->
+  <div class="flex flex-wrap gap-1 px-6">
+    {% for cid, kw in top_clusters %}
+      <a href="{% url 'cardnews:cluster' cid %}" class="inline-block mb-1">
+        <span class="hashtag inline-block bg-gray-200 text-gray-700
+                     text-base font-semibold px-4 py-2 rounded-full">
+          #{{ kw }}
+        </span>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}

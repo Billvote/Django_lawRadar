@@ -23,6 +23,7 @@ from main import views as main_v
 from geovote import views as geovote_v
 from dashboard import views as dashboard_v
 from history import views as history_v
+from cardnews import views as cardnews_v
 
 
 urlpatterns = [
@@ -31,9 +32,9 @@ urlpatterns = [
     # home
     path('', main_v.home, name='home'),
     # about us
-    path('/aboutUs/', main_v.aboutUs, name='about'),
+    path('aboutUs/', main_v.aboutUs, name='about'),
     # search
-    path('/search/', main_v.search, name='search'),
+    path('search/', main_v.search, name='search'),
     path("galaxy/", main_v.cluster_galaxy_view, name="cluster_galaxy"),
     path("api/cluster_keywords/", main_v.cluster_keywords_json, name="cluster_keywords_json"),
 
@@ -52,6 +53,9 @@ urlpatterns = [
 
     # history
     path('history/', include('history.urls')),
+
+    # card news
+    path('cardnews/', include('cardnews.urls')),
 
 
 ]
