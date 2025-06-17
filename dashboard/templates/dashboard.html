@@ -56,7 +56,7 @@
 
 
   <div class="flex justify-between items-center mt-6">
-    <h1 class="text-2xl font-bold">👀정당/주제별 표결 현황</h1>
+    <h1 class="text-2xl font-bold">👀정당/키워드별 표결 현황</h1>
   </div>
 
   <!-- 정당/클러스터별 표결 현황 -->
@@ -74,12 +74,18 @@
 <div class="grid grid-cols-5 gap-4">
   <div class="col-span-5 bg-white p-4 rounded shadow">
 
-    <!-- 드롭박스 -->
+    <!-- 찬반 드롭박스 -->
      <label for="stanceSelect" class="block font-semibold mb-2">찬성 / 반대 선택</label>
-<select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
-  <option value="support">찬성</option>
-  <option value="oppose">반대</option>
-</select>
+      <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
+        <option value="support">찬성</option>
+        <option value="oppose">반대</option>
+      </select>
+
+      <!-- 정당별 클러스터 선택 -->
+      <label for="topSelect" class="block font-semibold mb-2">정당별 클러스터 선택</label>
+      <select id="topSelect" class="border rounded px-3 py-2 mb-4">
+        <!-- JavaScript로 동적으로 채워짐 -->
+      </select>
 
     <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
   </div>
@@ -417,11 +423,38 @@ document.querySelectorAll(".explain-btn").forEach(btn => {
 
 // 정당별 탑 클러스터 차트-------
   // 뷰에서 넘긴 데이터 (예: support_top_cluster, oppose_top_cluster)
-  const supportTopCluster = {{ support_top_cluster|safe }};
-  const opposeTopCluster = {{ oppose_top_cluster|safe }};
+  const clusterData = {
+    support: {{ support_top_cluster|safe }},
+    oppose: {{ oppose_top_cluster|safe }}
+  };
+  
+  const stanceSelect = document.getElementById("stanceSelect");
+  const clusterSelect = document.getElementById("topSelect");
 
-// 현재 선택 상태 초기값 'support'
-let currentStance = 'support';
+  // 초기 상태
+  let currentStance = 'support';
+
+  // 옵션 채우기
+  function updateClusterOptions(stance) {
+    clusterSelect.innerHTML = "";
+
+    const clusters = clusterData[stance];
+    clusters.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.cluster_num;
+      option.textContent = `${item.party_name} - 클러스터 ${item.cluster_num} (${item.cluster_keyword})`;
+      clusterSelect.appendChild(option);
+    });
+  }
+
+  // 처음엔 '찬성' 기준으로 옵션 채우기
+  updateClusterOptions("support");
+
+  // 드롭박스 바뀔 때마다 클러스터 옵션도 바꾸기
+  stanceSelect.addEventListener("change", function () {
+    updateClusterOptions(this.value);
+  });
+
 
 // ApexCharts 옵션 준비 함수
 function prepareChartOptions(data) {
@@ -493,17 +526,15 @@ function drawChart(data) {
   topClusterChart.render();
 }
 
-// 페이지 로드 시 기본 찬성 데이터로 차트 그리기
-drawChart(supportTopCluster);
+// 초기 옵션 및 차트 세팅
+updateClusterOptions(currentStance);
+drawChart(clusterData[currentStance]);
 
-// 드롭박스 이벤트 리스너: 선택 바뀌면 차트 갱신
-document.getElementById('stanceSelect').addEventListener('change', (e) => {
+// 스탠스 선택 바뀔 때 처리
+stanceSelect.addEventListener('change', (e) => {
   currentStance = e.target.value;
-  if (currentStance === 'support') {
-    drawChart(supportTopCluster);
-  } else {
-    drawChart(opposeTopCluster);
-  }
+  updateClusterOptions(currentStance);
+  drawChart(clusterData[currentStance]);
 });
 
 

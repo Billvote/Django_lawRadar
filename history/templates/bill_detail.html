@@ -29,7 +29,7 @@
             {% if kw_str %}
               {% with kw_list=kw_str|split_by_comma %}
                 {% for kw in kw_list|slice:":10" %}
-                  <a href="{% url 'history:bill_detail' bill.cluster %}"
+                  <a href="{% url 'cardnews:card' bill.cluster %}"
                      class="hashtag inline-block"
                      style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
                     #{{ kw }}

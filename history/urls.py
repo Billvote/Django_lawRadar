@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     BillHistoryListView,     # 메인 목록 + 검색 + 페이지네이션
     BillHistoryDetailView,   # 의안 상세
-    cluster_index,           # 클러스터 해시태그 클릭용 리다이렉트
+    # cluster_index,           # 클러스터 해시태그 클릭용 리다이렉트
     autocomplete,            # ───────────── 자동완성 JSON 엔드포인트
 )
 
