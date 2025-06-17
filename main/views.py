@@ -48,7 +48,7 @@ def cluster_keywords_json(request):
             'keyword': row['cluster_keyword'],
             'num_bills': row['num_bills'],
             'latest_passed_date': row['latest_passed_date'].isoformat() if row['latest_passed_date'] else None,
-            'url': f"/history/cluster/{row['cluster']}/",
+            'url': f"/cardnews/cluster/{row['cluster']}/",
         })
 
     # 5) 캐시에 저장 (10분 = 600초)

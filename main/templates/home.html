@@ -86,59 +86,6 @@
   </section>
 </div>
 
-
-<!-- 클러스터 검색 -->
-<!-- <section class="mb-10">
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
-  {% if clusters %}
-    <div class="flex justify-center">
-      <select onchange="window.location.href=this.value" class="border rounded p-2 bg-white text-gray-900 focus:ring-2 focus:ring-cyan-500 w-96 max-w-full">
-        <option value="">키워드 선택</option>
-        {% for cluster in clusters %}
-          {% if cluster.cluster %}
-            <option value="{% url 'history:cluster_index' cluster.cluster %}">{{ cluster.keyword }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-    </div>
-  {% else %}
-    <div class="text-center py-10">
-      <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
-    </div>
-  {% endif %}
-</section>
-<style>
-  select option {
-    white-space: normal; /* 긴 텍스트 줄바꿈 */
-    max-width: 100%; /* 드롭다운 폭 제한 */
-  }
-</style> -->
-
-
-
-
-  {% comment %} <!-- 클러스터 목록 -->
-  <section class="mb-10">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {% for cluster in clusters %}
-        <a href="{% url 'history:cluster_index' cluster %}" class="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 hover:border-cyan-500">
-          <div class="flex items-center space-x-3">
-            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10m-7 7h7"></path>
-            </svg>
-            <h3 class="text-lg font-semibold text-gray-900">키워드 번호 {{ cluster }}</h3>
-          </div>
-          <p class="mt-2 text-sm text-gray-500">관련 법안 탐색하기</p>
-        </a>
-      {% empty %}
-        <div class="col-span-full text-center py-10">
-          <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
-        </div>
-      {% endfor %}
-    </div>
-  </section> {% endcomment %}
-
   
 {% endblock %}
 

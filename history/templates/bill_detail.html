@@ -12,27 +12,33 @@
         <span class="text-sm text-gray-900">의안번호: {{ bill.bill_number }}</span>
       </div>
 
-      <h1 class="text-3xl font-bold text-gray-900"
-          style="white-space:nowrap;overflow:visible;text-overflow:unset;width:auto;max-width:none;">
+      <!-- 제목 -->
+      <h1 id="bill-title" class="text-3xl font-bold text-gray-900">
         {{ bill.title }}
       </h1>
 
-      <!-- 해시태그 -->
-      <div class="mt-4 flex flex-wrap gap-2">
-        {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
-          {% if keywords_str %}
-            {% with kw_list=keywords_str|split_by_comma %}
-              {% for kw in kw_list|slice:":10" %}
-                <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block">
-                  <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
-                        style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+      <!-- 해시태그 + 개정횟수 -->
+      <div class="mt-4 flex items-center gap-2 flex-nowrap">
+        {% if bill.related_count %}
+          <span class="flex-shrink-0 text-sm font-medium text-black">
+            개정 {{ bill.related_count }}회
+          </span>
+        {% endif %}
+        <div class="ml-auto flex flex-wrap gap-2 max-w-full">
+          {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+            {% if kw_str %}
+              {% with kw_list=kw_str|split_by_comma %}
+                {% for kw in kw_list|slice:":10" %}
+                  <a href="{% url 'cardnews:card' bill.cluster %}"
+                     class="hashtag inline-block"
+                     style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
                     #{{ kw }}
-                  </span>
-                </a>
-              {% endfor %}
-            {% endwith %}
-          {% endif %}
-        {% endwith %}
+                  </a>
+                {% endfor %}
+              {% endwith %}
+            {% endif %}
+          {% endwith %}
+        </div>
       </div>
     </div>
 
@@ -86,23 +92,36 @@
   --neon-light: {{ cluster_color_map|get_item:bill.cluster }}99;
 }
 
-/* 텍스트 & 해시태그 */
-.text-base,.text-sm{word-break:break-word;}
-h1.text-3xl{white-space:nowrap!important;}
+/* 공통 텍스트 */
+.text-base,
+.text-sm{word-break:break-word;}
+
+/* 기본 : 한 줄 고정 */
+#bill-title{
+  white-space:nowrap;
+  text-align:center;
+  overflow:visible;
+  width:100%;
+}
+
+/* JS가 길다고 판단하면 two-lines 추가 → 최대 두 줄 */
+#bill-title.two-lines{
+  white-space:normal;
+  line-height:1.35;
+  max-height:2.7em;   /* 1.35 × 2줄 */
+  overflow:hidden;
+}
 
 .hashtag{cursor:pointer;transition:.3s;}
 .hashtag:hover{background:#eee!important;color:#4B5563!important;transform:scale(1.05);}
 
-/* 점·카드·날짜 기본 */
 .timeline-dot{background:#9ca3af;transition:transform .25s,box-shadow .25s;}
 .timeline-card-inner{transition:box-shadow .25s;}
 .timeline-date{transition:color .25s,text-shadow .25s;}
 
-/* in-view */
 .timeline-card.in-view .timeline-dot{transform:scale(1.25);box-shadow:0 0 4px 2px rgba(0,0,0,.05);}
 .timeline-card.in-view .timeline-card-inner{box-shadow:0 4px 10px rgba(0,0,0,.05);}
 
-/* 애니메이션 */
 @keyframes neon-pulse{
   0%,100%{box-shadow:0 0 6px 2px var(--neon),0 0 12px 4px var(--neon-light);}
   50%    {box-shadow:0 0 2px 1px var(--neon),0 0 6px 2px var(--neon-light);}
@@ -116,7 +135,6 @@ h1.text-3xl{white-space:nowrap!important;}
   50%    {box-shadow:0 0 4px 2px rgba(0,0,0,.04);}
 }
 
-/* Hover 분리 */
 .group:hover .timeline-dot{
   background:var(--neon)!important;
   transform:scale(1.45)!important;
@@ -131,16 +149,25 @@ h1.text-3xl{white-space:nowrap!important;}
   animation:card-glow 1.2s ease-in-out infinite alternate;
 }
 </style>
+
 {% endblock %}
 
 {% block script %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  /* 타임라인 카드 애니메이션 */
   const io = new IntersectionObserver(
     entries => entries.forEach(e => e.target.classList.toggle('in-view', e.isIntersecting)),
     { threshold:0.5 }
   );
   document.querySelectorAll('.timeline-card').forEach(card => io.observe(card));
+
+  /* 제목 길이 감지 → 두 줄 제한(버퍼 40px) */
+  const title  = document.getElementById('bill-title');
+  const buffer = 200; // 허용 여유 폭
+  if (title.scrollWidth - title.clientWidth > buffer){
+    title.classList.add('two-lines');
+  }
 });
 </script>
 {% endblock %}

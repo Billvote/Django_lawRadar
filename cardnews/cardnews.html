@@ -3,7 +3,7 @@
 {% block body %}
 <!-- 클러스터 키워드 페이지 -->
 <section class="mb-10 grid grid-cols-2 items-center mt-10">
-  <h1 class="col-span-1 text-4xl mb-4 font-bold">의안 카테고리 #{{ cluster_number }}</h1>
+  <h1 class="col-span-1 text-4xl mb-4 font-bold">#{{ cluster_number }}</h1>
 
   <div class="flex flex-wrap justify-end gap-2 mb-6">
     {% for keyword in keywords %}
@@ -16,7 +16,7 @@
     <p class="text-gray-600 mb-6">🚩​{{ cluster_bill_count }}개의 의안이 있습니다!</p>
   </div>
     <div class="flex flex-wrap justify-end">
-      <a href="{% url 'history:history_list' %}" class="mt-8 inline-block text-gray-600 text-lg">
+      <a href="/cardnews/" class="mt-8 inline-block text-gray-600 text-lg">
         🔎다른 주제 둘러보기
       </a>
     </div>
