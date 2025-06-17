@@ -1,5 +1,5 @@
 from django.db import models
-from geovote.models import Age, Party
+from geovote.models import Age, Party, Vote, Member
 
 # 대수별 통계
 class AgeStats(models.Model):
@@ -101,3 +101,23 @@ class PartyConcentration(models.Model):
 
     def __str__(self):
         return f"{self.age.number} {self.party.party} ({self.rank}위)"
+    
+
+# 의원 표결 정보 계산
+
+class VoteSummary(models.Model):
+    member_name = models.CharField(max_length=100)
+    cluster = models.CharField(max_length=100)
+    cluster_keyword = models.CharField(max_length=255, blank=True)
+    bill_count = models.IntegerField(default=0)
+
+    찬성 = models.IntegerField(default=0)
+    반대 = models.IntegerField(default=0)
+    기권 = models.IntegerField(default=0)
+    불참 = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('member_name', 'cluster')
+
+    def __str__(self):
+        return f"{self.member_name} - {self.cluster}"

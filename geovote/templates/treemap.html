@@ -126,9 +126,6 @@ function renderSummary(data) {
           <span class="mr-1">${info.icon}</span>
           <span>${info.text}</span>
         </div>
-        <div class="ml-6 mt-1 font-bold text-gray-800">
-          ${keywords.join(', ')}
-        </div>
       </div>
     `;
   }
@@ -281,7 +278,7 @@ function renderSummary(data) {
         }
 
         let infoText = memberName ? memberName : "의원 정보 없음";
-        if (party && memberName) infoText += ` - ${party}`;
+        
 
 
         content.append("div")

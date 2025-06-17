@@ -8,6 +8,7 @@ import logging, re, random
 from django.http import JsonResponse
 from django.core.cache import cache
 from django.db.models.functions import Random
+from .models import VoteSummary
 
 logger = logging.getLogger(__name__)
 
@@ -238,3 +239,63 @@ def search(request):
         'cluster_color_map': cluster_color_map,
     }
     return render(request, 'search.html', context)
+
+# 국회의원 표결 정보 데이터 연산
+
+def calculate_votesummary(member_name):
+    # 1. 해당 의원의 모든 투표 정보를 클러스터별로 집계
+    votes = Vote.objects.filter(member__name=member_name)\
+        .values('bill__cluster', 'result')\
+        .annotate(count=Count('id'))
+
+    # 2. 클러스터 목록 추출
+    clusters = set(v['bill__cluster'] for v in votes if v['bill__cluster'] is not None)
+
+    # 3. cluster -> keyword 매핑 사전 생성
+    cluster_keywords = {}
+    bill_keywords = (
+        Bill.objects
+        .filter(cluster__in=clusters)
+        .exclude(cluster_keyword__isnull=True)
+        .exclude(cluster_keyword__exact='')
+        .values('cluster', 'cluster_keyword')
+    )
+    for b in bill_keywords:
+        cluster = b['cluster']
+        keyword = b['cluster_keyword']
+        # 한 클러스터에 여러 키워드가 있을 수 있는데, 첫 번째만 사용 (가장 오래된/대표 키워드)
+        if cluster not in cluster_keywords and not keyword.isdigit():
+            cluster_keywords[cluster] = keyword
+    # 키워드 없는 클러스터 처리
+    for cluster in clusters:
+        if cluster not in cluster_keywords:
+            cluster_keywords[cluster] = "알 수 없음"
+
+    # 4. 클러스터별 전체 법안 개수 계산
+    cluster_bill_counts = {
+        c: Bill.objects.filter(cluster=c).count() for c in clusters
+    }
+
+    # 5. 클러스터별 투표 결과 집계
+    cluster_summary = {c: {'찬성': 0, '반대': 0, '기권': 0, '불참': 0} for c in clusters}
+    for vote in votes:
+        cluster = vote['bill__cluster']
+        result = vote['result']
+        if result not in cluster_summary[cluster]:
+            result = '기권'
+        cluster_summary[cluster][result] += vote['count']
+
+    # 6. 기존 VoteSummary 삭제 후 새로운 데이터 저장
+    VoteSummary.objects.filter(member_name=member_name).delete()
+    for cluster in clusters:
+        summary = cluster_summary[cluster]
+        VoteSummary.objects.create(
+            member_name=member_name,
+            cluster=cluster,
+            cluster_keyword=cluster_keywords.get(cluster, "알 수 없음"),
+            bill_count=cluster_bill_counts.get(cluster, 1),
+            찬성=summary['찬성'],
+            반대=summary['반대'],
+            기권=summary['기권'],
+            불참=summary['불참'],
+        )
