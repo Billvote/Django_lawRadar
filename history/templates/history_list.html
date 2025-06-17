@@ -7,12 +7,12 @@
 
   <!-- 제목 ----------------------------------------------------------->
   <h2 class="font-bold text-4xl mb-2 px-6">
-    {% if query %}"{{ query }}"{% else %}의안 그룹별 대표 의안 목록{% endif %}
+    {% if query %}"{{ query }}"{% else %}그룹별 대표 법안 목록{% endif %}
   </h2>
 
   {% if not selected_cluster and not query %}
     <p class="text-gray-600 mb-6 px-6">
-      ♯ {{ total_cluster_count }}개의 클러스터를 찾았습니다
+      # {{ total_cluster_count }}개의 법안별 대표 키워드가 존재합니다
     </p>
   {% endif %}
 
@@ -53,7 +53,7 @@
   {% if page_obj %}
     {% if total_results_count %}
       <p class="text-gray-600 mb-6 px-6">
-        👏 {{ total_results_count }}개의 의안을 찾았습니다
+        👏 {{ total_results_count }}개의 법안이 존재합니다
       </p>
     {% else %}
       <p class="text-gray-600 mb-6 px-6">
