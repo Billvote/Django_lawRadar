@@ -2,19 +2,10 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.core.cache import cache
-from django.db.models import Count
-from billview.models import Bill
-import random
-
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView
-from django.core.cache import cache
-from django.db import connection
-from django.db.models import (
-    Count, Max, OuterRef, Subquery, F, Value, CharField
-)
+from django.db.models import Count, Max
 from billview.models import Bill
 from geovote.models import Vote
+import random
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,29 +17,24 @@ PALETTE = [
     '#f472b6', '#facc15', '#fb7185', '#818cf8', '#38bdf8',
 ]
 
-_DICT_CACHE = 60 * 60           # 1 시간
-_QS_CACHE   = 60 * 5            # 5 분
-
-# ──────────────────────── 클러스터 상세 index (hashtag 페이지) ─────
-from django.views.decorators.cache import cache_page
-
-
+_DICT_CACHE = 60 * 60           # 1시간
+_QS_CACHE   = 60 * 5            # 5분
 
 # ─────────────────── helper ───────────────────
-def _cluster_kw_str():
+def _cluster_kw_str()  -> dict[int, str]:
     """cluster → '키워드,...' 문자열 dict"""
     d = cache.get('cluster_kw_str')
     if d is None:
         d = dict(
             Bill.objects
-                .filter(cluster__isnull=False, cluster__gt=0)
+                .filter(cluster__gt=0)
                 .values_list('cluster', 'cluster_keyword')
                 .distinct()
         )
         cache.set('cluster_kw_str', d, _DICT_CACHE)
     return d
 
-def _cluster_kw_set():
+def _cluster_kw_set() -> dict[int, set[str]]:
     """cluster → {keywords…} set dict"""
     d = cache.get('cluster_kw_set')
     if d is None:
@@ -57,13 +43,14 @@ def _cluster_kw_set():
         cache.set('cluster_kw_set', d, _DICT_CACHE)
     return d
 
-def _top_clusters(n=50):
+def _top_clusters(n=50) -> list[tuple[int, str]]:
     """상위 n개 클러스터 (id, 대표 1키워드) 목록"""
     key = f'top_clusters_{n}'
-    if lst := cache.get(key):
+    lst = cache.get(key)
+    if lst:
         return lst
     raw = (Bill.objects
-           .filter(cluster__isnull=False, cluster__gt=0)
+           .filter(cluster__gt=0)
            .values('cluster', 'cluster_keyword')
            .annotate(cnt=Count('id'))
            .order_by('-cnt')[:n])
@@ -74,13 +61,14 @@ def _top_clusters(n=50):
     cache.set(key, lst, _DICT_CACHE)
     return lst
 
-def _related_clusters(cid: int):
+def _related_clusters(cid: int) -> list[tuple[int, str]]:
     """선택 클러스터와 키워드가 겹치는 클러스터 50개"""
     kw_sets = _cluster_kw_set()
     sel = kw_sets.get(cid, set())
     if not sel:
         return []
     others = []
+    cluster_kw_dict = _cluster_kw_str()
     for c, s in kw_sets.items():
         if c == cid:
             continue
@@ -97,7 +85,7 @@ def _color_map():
     if cmap:
         return cmap
     ids = (Bill.objects
-           .filter(cluster__isnull=False, cluster__gt=0)
+           .filter(cluster__gt=0)
            .values_list('cluster', flat=True)
            .distinct())
     cmap = {cid: PALETTE[(cid-1) % len(PALETTE)] for cid in ids}
@@ -170,6 +158,17 @@ def card_index(request, cluster_number: int):
     url = f"{reverse('cardnews:home')}?cluster={cluster_number}"
     return redirect(url)
 
+# 컬러 매핑
+def _generate_label_color_map(labels: list[str]) -> dict[str, str]:
+    color_palette = [
+        '#34d399', '#f9a8d4', '#93c5fd', '#fdba74', '#c3b4fc',
+        '#bef264', '#fdbaaa', '#38bdf8', '#fcd34d', '#a5b4fc',
+        '#6ee7b7', '#fca5a5', '#67e8f9', '#fb7185', '#bbf7d0',
+        '#fde68a', '#818cf8', '#fda4af', '#86efac', '#facc15',
+        '#5eead4', '#f472b6', '#fbbf24'
+    ]
+    return {label: color_palette[i % len(color_palette)] for i, label in enumerate(labels)}
+
 # 카드 뉴스
 # @cache_page(60 * 5)                       # 5분 캐시
 def cardnews_index(request, cluster_number):
@@ -183,7 +182,7 @@ def cardnews_index(request, cluster_number):
             'error': '유효하지 않은 클러스터 번호입니다.'
         })
     
-    votes_qs = Vote.objects.only('date', 'bill_id')
+    # votes_qs = Vote.objects.only('date', 'bill_id')
     
     # bills = Bill.objects.filter(cluster=cluster_number).only(
     #     'pk', 'card_news_content', 'cluster_keyword'
@@ -196,8 +195,7 @@ def cardnews_index(request, cluster_number):
     keyword_set = set()
     for kw_str in bills.values_list('cluster_keyword', flat=True):
         if kw_str:
-            kws = [kw.strip() for kw in kw_str.split(',') if kw.strip()]
-            keyword_set.update(kws)
+            keyword_set.update(kw.strip() for kw in kw_str.split(',') if kw.strip())
     sorted_keywords = sorted(keyword_set)
 
     # 중복 없는 bill 만들기
@@ -208,34 +206,19 @@ def cardnews_index(request, cluster_number):
             unique_bills.append(bill)
             seen_contents.add(bill.card_news_content)
 
-    color_palette = [
-    '#34d399', '#f9a8d4', '#93c5fd', '#fdba74', '#c3b4fc',
-    '#bef264', '#fdbaaa', '#38bdf8', '#fcd34d', '#a5b4fc',
-    '#6ee7b7', '#fca5a5', '#67e8f9', '#fb7185', '#bbf7d0',
-    '#fde68a', '#818cf8', '#fda4af', '#86efac', '#facc15',
-    '#5eead4', '#f472b6', '#fbbf24'
-    ]
-
     # 중복 없는 라벨 목록 만들기
-    labels = set()
-    for bill in bills:
-        if bill.label:  # label이 None 아니면
-            labels.add(bill.label)
+    labels = sorted({bill.label for bill in bills if bill.label})
 
-    sorted_labels = sorted(labels)  # 정렬(optional)
-
-    label_color_map = {}
-    for i, label in enumerate(sorted_labels):
-        label_color_map[label] = color_palette[i % len(color_palette)]
+    label_color_map = _generate_label_color_map(labels)
 
     # 의안 개수
     cluster_bill_count = bills.count()
 
     context = {
         'cluster_number'    : cluster_number,
-        'keywords'          : sorted(keyword_set),
-        'cluster_bills': bills,
+        'keywords'          : sorted_keywords,
+        'cluster_bills': unique_bills,
         'label_color_map': label_color_map,
-        'cluster_bill_count': cluster_bill_count,
+        'cluster_bill_count': bills.count(),
     }
     return render(request, 'cluster_index.html', context)

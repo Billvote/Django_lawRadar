@@ -12,7 +12,7 @@
     <div class="flex flex-wrap gap-2">
       {% for cluster in top_clusters %}
         {% for kw in cluster.keywords %}
-          <a href="{% url 'history:cluster_index' cluster.cluster_id %}" class="inline-block mb-2">
+          <a href="{% url 'cardnews:card' cluster.cluster_id %}" class="inline-block mb-2">
                 <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
                   #{{ kw }}
                 </span>
@@ -51,7 +51,7 @@
                         {% if keywords_str %}
                           {% with kw_list=keywords_str|split_by_comma %}
                             {% for kw in kw_list %}
-                              <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
+                              <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block mb-1">
                                 <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }};" class="hashtag text-white hover:text-black inline-block text-sm font-medium px-3 py-1 rounded-full hover:bg-gray-200 hover:text-gray-600">
                                   #{{ kw }}
                                 </span>
