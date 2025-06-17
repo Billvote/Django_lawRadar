@@ -1,11 +1,10 @@
+# cardnews/urls.py
 from django.urls import path
-from .views import *
+from . import views
 
 app_name = 'cardnews'
 
-# 디버깅
-
 urlpatterns = [
-    path('', cardnews_home, name='cardnews-home'),
-
+    path('', views.cardnews_home, name='home'),
+    path('cluster/<int:cluster_number>/', views.cluster_index, name='cluster'),
 ]
