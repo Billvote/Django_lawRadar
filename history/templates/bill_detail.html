@@ -1,3 +1,4 @@
+{# history/templates/history_detail.html (예시 파일명) #}
 {% extends "base.html" %}
 {% load custom_filters %}
 
@@ -17,8 +18,8 @@
         {{ bill.title }}
       </h1>
 
-      <!-- 해시태그 -->
-      <div class="mt-4 flex flex-wrap gap-2">
+      <!-- 해시태그 + 개정횟수 ------------------------------------------>
+      <div class="mt-4 flex flex-wrap gap-2 items-center">
         {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
           {% if keywords_str %}
             {% with kw_list=keywords_str|split_by_comma %}
@@ -33,6 +34,14 @@
             {% endwith %}
           {% endif %}
         {% endwith %}
+
+        {# 💡 개정 횟수 표시 요소 추가 -------------------------------- #}
+        {% if bill.related_count %}
+          <span class="ml-auto text-sm text-gray-600 font-medium"
+          style="letter-spacing:-0.02em;">
+            개정 {{ bill.related_count }}회
+          </span>
+        {% endif %}
       </div>
     </div>
 
@@ -85,24 +94,19 @@
   --neon: {{ cluster_color_map|get_item:bill.cluster }};
   --neon-light: {{ cluster_color_map|get_item:bill.cluster }}99;
 }
-
-/* 텍스트 & 해시태그 */
 .text-base,.text-sm{word-break:break-word;}
 h1.text-3xl{white-space:nowrap!important;}
 
 .hashtag{cursor:pointer;transition:.3s;}
 .hashtag:hover{background:#eee!important;color:#4B5563!important;transform:scale(1.05);}
 
-/* 점·카드·날짜 기본 */
 .timeline-dot{background:#9ca3af;transition:transform .25s,box-shadow .25s;}
 .timeline-card-inner{transition:box-shadow .25s;}
 .timeline-date{transition:color .25s,text-shadow .25s;}
 
-/* in-view */
 .timeline-card.in-view .timeline-dot{transform:scale(1.25);box-shadow:0 0 4px 2px rgba(0,0,0,.05);}
 .timeline-card.in-view .timeline-card-inner{box-shadow:0 4px 10px rgba(0,0,0,.05);}
 
-/* 애니메이션 */
 @keyframes neon-pulse{
   0%,100%{box-shadow:0 0 6px 2px var(--neon),0 0 12px 4px var(--neon-light);}
   50%    {box-shadow:0 0 2px 1px var(--neon),0 0 6px 2px var(--neon-light);}
@@ -116,7 +120,6 @@ h1.text-3xl{white-space:nowrap!important;}
   50%    {box-shadow:0 0 4px 2px rgba(0,0,0,.04);}
 }
 
-/* Hover 분리 */
 .group:hover .timeline-dot{
   background:var(--neon)!important;
   transform:scale(1.45)!important;
