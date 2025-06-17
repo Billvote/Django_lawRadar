@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.safestring import mark_safe
-from django.db.models import Count, Min, Sum, Q, F, FloatField, ExpressionWrapper
+from django.db.models import Count, Min, Sum, Max, Q, F, FloatField, ExpressionWrapper
 from collections import Counter, defaultdict
 from geovote.models import Vote, Member, Party, Age
 from billview.models import Bill
@@ -291,7 +291,36 @@ def get_concentration_timeseries():
         'top2_seat_shares_series': top2_seat_shares_series,
     }
 
-# 특이 클러스터
+# 당별 찬/반 가장 많은 클러스터 무엇인지 차트
+def get_top_clusters_by_party_and_stance(age_num, stance='support'):
+    field_name = 'support_ratio' if stance == 'support' else 'oppose_ratio'
+
+    qs = PartyClusterStats.objects.filter(age__number=age_num)
+
+    # 각 정당별로 가장 높은 support_ratio 또는 oppose_ratio값 추출
+    top_ratios = (
+        qs.values('party')
+        .annotate(max_ratio=Max(field_name))
+    )
+
+    # 각 정당의 최고 ratio에 해당하는 클러스터들을 다시 가져오기
+    partys_top_cluster_result = []
+    for entry in top_ratios:
+        party_id = entry['party']
+        max_ratio = entry['max_ratio']
+
+        top_stat = qs.filter(party=party_id, **{field_name: max_ratio}).first()
+        if top_stat:
+            partys_top_cluster_result.append({
+                'party_name': top_stat.party.party,
+                'party_id': top_stat.party.id,
+                'cluster_num': top_stat.cluster_num,
+                'cluster_keyword': top_stat.cluster_keyword,
+                'ratio': max_ratio,
+                'stance': stance,
+            })
+    return partys_top_cluster_result
+
 
 # dashboard.html로 보내는 함수
 def dashboard(request, congress_num):
@@ -303,6 +332,9 @@ def dashboard(request, congress_num):
     cluster_vote_data = get_partyClusterStats_data(congress_num, top_n_clusters=10)
     party_concentration_data = get_partyConcentration_data(congress_num)
     timeseries_data = get_concentration_timeseries()
+    support_top_cluster = get_top_clusters_by_party_and_stance(congress_num, 'support')
+    oppose_top_cluster = get_top_clusters_by_party_and_stance(congress_num, 'oppose')
+
 
     # AgeStats 정보
     try:
@@ -369,6 +401,10 @@ def dashboard(request, congress_num):
         'timeseries_data_hhi': timeseries_data['hhi_values'],
         'timeseries_data_enp': timeseries_data['enp_values'],
         'timeseries_data_top2_ratio': timeseries_data['top2_seat_shares_series'],
+
+        # 정당별 탑 클러스터
+        'support_top_cluster': support_top_cluster,
+        'oppose_top_cluster': oppose_top_cluster,
     }
 
     return render(request, 'dashboard.html', context)
