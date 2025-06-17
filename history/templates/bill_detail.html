@@ -24,7 +24,7 @@
           {% if keywords_str %}
             {% with kw_list=keywords_str|split_by_comma %}
               {% for kw in kw_list|slice:":10" %}
-                <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block">
+                <a href="{% url 'history:bill_detail' bill.cluster %}" class="inline-block">
                   <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
                         style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
                     #{{ kw }}

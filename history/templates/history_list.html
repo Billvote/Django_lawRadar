@@ -16,20 +16,6 @@
     </p>
   {% endif %}
 
-  <!-- {# 해시태그 TOP 목록 (원하면 주석 해제) #}
-  {#
-  <div class="flex flex-wrap gap-1 px-6">
-    {% for cid, kw in top_clusters %}
-      <a href="{% url 'history:cluster_index' cid %}" class="inline-block mb-1">
-        <span class="hashtag inline-block bg-gray-200 text-gray-700
-                     text-base font-semibold px-4 py-2 rounded-full">
-          #{{ kw }}
-        </span>
-      </a>
-    {% endfor %}
-  </div>
-  #} -->
-
   <!-- 검색창 --------------------------------------------------------->
   <form action="{% url 'history:history_list' %}" method="get" class="px-6 mb-4">
     <label for="id_keyword" class="sr-only">검색어</label>
@@ -93,7 +79,7 @@
             {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
               {% if kw_str %}
                 {% for kw in kw_str|split_by_comma|slice:":4" %}
-                  <a href="{% url 'history:cluster_index' bill.cluster %}"
+                  <a href="{% url 'cardnews:card' bill.cluster %}"
                      class="inline-block mb-1">
                     <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
                           style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">

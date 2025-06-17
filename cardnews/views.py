@@ -162,7 +162,7 @@ def cardnews_home(request):
     return render(request, 'cardnews_home.html', ctx)
 
 # ─────────────────── 클러스터 해시태그용 리다이렉트 ───────────────────
-def cluster_index(request, cluster_number: int):
+def card_index(request, cluster_number: int):
     """
     /cardnews/cluster/<int:cluster_number>/ →
     /cardnews/?cluster=<cluster_number> 로 302 리다이렉트

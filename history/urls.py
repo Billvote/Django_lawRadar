@@ -18,7 +18,7 @@ urlpatterns = [
 
     # 클러스터   ─ /history/cluster/17/
     #             → cluster_index 가 /?cluster=17 로 리다이렉트
-    path("cluster/<int:cluster_number>/", cluster_index, name="cluster_index"),
+    # path("cluster/<int:cluster_number>/", cluster_index, name="cluster_index"),
 
     # 자동완성   ─ /history/autocomplete/?term=환경
     path("autocomplete/", autocomplete, name="autocomplete"),
