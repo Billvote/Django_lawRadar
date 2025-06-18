@@ -1,11 +1,11 @@
 """
-history/views/views_a.py
+history/views.py
 ─────────────────────────────────────────────────────────
 index()                : 클러스터 전체 목록(옵션)
 BillHistoryListView    : 의안 리스트 + 검색 + 클러스터 필터
 BillHistoryDetailView  : 의안 상세
 cluster_index()        : 해시태그 클릭 → /?cluster=<id> 로 리다이렉트
-autocomplete()         : jQuery-UI 자동완성 JSON 응답
+autocomplete()         : jQuery-UI / 커스텀 자동완성 JSON 응답
 """
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.generic import DetailView, ListView
+from django.views.decorators.http import require_GET
 
 from billview.models import Bill
-from geovote.models import Vote      # 회의록 표결정보
+from geovote.models import Vote                # 회의록 표결정보
+from search import search_service as ss        # ★ 공통 검색 로직
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +36,8 @@ PALETTE: List[str] = [
     "#6ee7b7", "#c3b4fc", "#fda4af", "#5eead4", "#34d399",
     "#f472b6", "#facc15", "#fb7185", "#818cf8", "#38bdf8",
 ]
-QS_CACHE_SEC   = 60 * 5     # 5 분
-DICT_CACHE_SEC = 60 * 60    # 1 시간
+QS_CACHE_SEC   = 60 * 5      # 5 분
+DICT_CACHE_SEC = 60 * 60     # 1 시간
 
 # ═════════════ 1. 클러스터 전체 목록 ═════════════
 def index(request):
@@ -101,7 +103,7 @@ class BillHistoryListView(ListView):
         cache.set("cluster_color_map", cmap, DICT_CACHE_SEC)
         return cmap
 
-    # ── cluster → Bill 개수 (v2: 캐시키 변경)
+    # ── cluster → Bill 개수
     def _cluster_bill_count(self):
         key = "cluster_bill_count_v2"
         d = cache.get(key)
@@ -159,7 +161,7 @@ class BillHistoryListView(ListView):
         kw     = self.request.GET.get("keyword", "").strip()
         cidstr = self.request.GET.get("cluster", "").strip()
 
-        cache_key = f"qs2:{kw}:{cidstr}"        # 검색 조건 반영
+        cache_key = f"qs2:{kw}:{cidstr}"
         if cached := cache.get(cache_key):
             return cached
 
@@ -176,7 +178,7 @@ class BillHistoryListView(ListView):
                 Q(title__icontains=kw) |
                 Q(cluster_keyword__icontains=kw) |
                 Q(summary__icontains=kw) |
-                Q(cleaned__icontains=kw)        # ★ cleaned 필드 검색 추가
+                Q(cleaned__icontains=kw)        # cleaned 필드 검색
             )
 
         # 최신 의안만 남기기
@@ -228,14 +230,14 @@ class BillHistoryListView(ListView):
             e = min(s + 9, page.paginator.num_pages)
             ctx["page_range"] = range(s, e + 1)
 
-        # ── 헤더 해시태그 결정
+        # ── 해시태그 영역
         if cidstr:
             try:
                 ctx["top_clusters"] = self._related_clusters(int(cidstr))
             except ValueError:
                 ctx["top_clusters"] = []
         elif kw:
-            counts = self._cluster_bill_count()
+            counts  = self._cluster_bill_count()
             matched = []
             for cid, kwstr in ctx["cluster_keywords_dict"].items():
                 if not isinstance(cid, int):
@@ -312,33 +314,21 @@ def cluster_index(request, cluster_number: int):
         f"{reverse('history:history_list')}?cluster={cluster_number}"
     )
 
-# ═════════════ 5. 자동완성 JSON ═════════════
+# ═════════════ 5. 자동완성 JSON (공통 모듈 사용) ═════════════
+@require_GET
 def autocomplete(request):
+    """
+    /history/autocomplete/?term=<검색어>
+    두 글자 이상 입력 시, 실제 결과 ≥ 1 건인 제목/키워드 최대 10개
+    """
     term = request.GET.get("term", "").strip()
-    if not term or len(term) < 2:
+    if len(term) < 2:
         return JsonResponse([], safe=False)
 
-    titles = (
-        Bill.objects
-            .filter(title__icontains=term)
-            .values_list("title", flat=True)[:5]
-    )
+    cache_key = f"hist-ac:{term.lower()}"
+    if (cached := cache.get(cache_key)):
+        return JsonResponse(cached, safe=False)
 
-    kw_rows = (
-        Bill.objects
-            .filter(cluster_keyword__icontains=term)
-            .values_list("cluster_keyword", flat=True)[:50]
-    )
-
-    kw_set: Set[str] = set()
-    for row in kw_rows:
-        for k in (row or "").split(","):
-            if term.lower() in k.lower():
-                kw_set.add(k.strip())
-            if len(kw_set) >= 10:
-                break
-        if len(kw_set) >= 10:
-            break
-
-    suggestions = list(dict.fromkeys(list(titles) + list(kw_set)))[:10]
+    suggestions = ss.autocomplete(term)            # ★ 공통 로직 호출
+    cache.set(cache_key, suggestions, 600)         # 10 분 캐시
     return JsonResponse(suggestions, safe=False)
