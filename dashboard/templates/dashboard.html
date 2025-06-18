@@ -429,109 +429,75 @@ document.querySelectorAll(".explain-btn").forEach(btn => {
 
 
 // 정당별 탑 클러스터 차트-------------------------------------
-  const stanceSelect = document.getElementById('stanceSelect');
-  const topSelect = document.getElementById('topSelect');
-  const chartDiv = document.querySelector("#topClusterChart");
+document.addEventListener("DOMContentLoaded", function () {
+  const stanceSelect = document.getElementById("stanceSelect");
+  const chartContainer = document.getElementById("topClusterChart");
+  console.log(ageNum)
 
-  // 서버에서 넘겨준 데이터 (템플릿에서 JSON 직렬화해서 받는다고 가정)
-  const clusterOptions = {{ cluster_options|safe }};  // [{value: "더불어민주당--oppose--1", text:"더불어민주당 - oppose - 클러스터 1 (키워드)"}]
-
-  const opposeCategories = {{ oppose_cluster_categories|safe }};
-  const opposeSeries = {{ oppose_cluster_series|safe }};
-  const opposeKeywords = {{ oppose_cluster_keywords|safe }};
-
-  const abstainCategories = {{ abstain_cluster_categories|safe }};
-  const abstainSeries = {{ abstain_cluster_series|safe }};
-  const abstainKeywords = {{ abstain_cluster_keywords|safe }};
-
-
-// ApexCharts 차트 기본 설정 및 초기 생성
-const chart = new ApexCharts(chartDiv, {
-  chart: {
-    type: 'bar',
-    height: 400,
-  },
-  series: [],
-  xaxis: {
-    categories: []
-  },
-  yaxis: {
-    max: 100,
-    title: { text: '비율 (%)' }
-  },
-  tooltip: {
-    y: {
-      formatter: (val, opts) => {
-        const idx = opts.dataPointIndex;
-        const category = chart.w.config.xaxis.categories[idx] || '';
-        return val + '% (' + category + ')';
-      }
-    }
-  },
-  legend: {
-    position: 'top'
-  },
-  colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#3F51B5'],
-});
-
-chart.render();
-
-
-// stance 선택 시 topSelect 옵션 필터링 및 재생성
-function updateTopSelectOptions(selectedStance) {
-  const filteredOptions = clusterOptions.filter(opt => opt.value.includes(`--${selectedStance}--`));
-  
-  topSelect.innerHTML = '';
-  filteredOptions.forEach(opt => {
-    const optionElem = document.createElement('option');
-    optionElem.value = opt.value;
-    optionElem.textContent = opt.text;
-    topSelect.appendChild(optionElem);
-  });
-
-  if (filteredOptions.length > 0) {
-    topSelect.value = filteredOptions[0].value;
-    updateChart();
-  } else {
-    chart.updateOptions({ series: [], xaxis: { categories: [] } });
-  }
-}
-
-// 선택된 topSelect 값 기준으로 차트 업데이트
-function updateChart() {
-  const selectedValue = topSelect.value;
-  const [party, stance, clusterNum] = selectedValue.split('--');
-
-  let categories = [];
-  let series = [];
-
-  if (stance === 'oppose') {
-    categories = opposeCategories;
-    series = opposeSeries;
-  } else if (stance === 'abstain') {
-    categories = abstainCategories;
-    series = abstainSeries;
+  if (!stanceSelect || !chartContainer) {
+    console.error("차트나 셀렉트 박스 DOM이 없습니다.");
+    return;
   }
 
-  chart.updateOptions({
-    series: series,
-    xaxis: {
-      categories: categories
-    }
+  stanceSelect.addEventListener("change", function () {
+    const selected = this.value;
+    if (!selected) return;
+
+    const [party, stance, clusterNum] = selected.split("--");
+    const ageNum = {{ congress_num }}; // 이건 템플릿 렌더링 됐는지 확인도 필요
+
+    fetch(`/api/cluster_chart?age_num=${ageNum}&cluster_num=${clusterNum}`)
+      .then(response => {
+        if (!response.ok) throw new Error("서버 응답 오류");
+        return response.json();
+      })
+      .then(data => {
+        if (chart) {
+          chart.updateOptions({
+            xaxis: { categories: data.categories },
+            series: data.series
+          });
+        } else {
+          chart = new ApexCharts(chartContainer, {
+            chart: {
+              type: 'bar',
+              stacked: true,
+              height: 400
+            },
+            title: {
+              text: `정당별 클러스터 ${clusterNum}의 투표 분포`,
+              align: 'left',
+              style: { fontSize: '16px' }
+            },
+            plotOptions: {
+              bar: {
+                horizontal: false,
+                borderRadius: 4
+              }
+            },
+            xaxis: {
+              categories: data.categories
+            },
+            yaxis: {
+              title: {
+                text: "비율 (%)"
+              },
+              max: 100
+            },
+            tooltip: {
+              y: {
+                formatter: val => `${val}%`
+              }
+            },
+            series: data.series
+          });
+          chart.render();
+        }
+      })
+      .catch(error => {
+        console.error("차트 데이터 불러오기 실패:", error);
+      });
   });
-
-}
-
-// 이벤트 리스너 등록
-stanceSelect.addEventListener('change', () => {
-  updateTopSelectOptions(stanceSelect.value);
 });
-topSelect.addEventListener('change', updateChart);
-
-// 초기 로드 시 기본 stance 옵션으로 드롭박스 세팅 및 차트 렌더링
-updateTopSelectOptions(stanceSelect.value);
-
-  chart.render();
-
 </script>
 {% endblock %}
