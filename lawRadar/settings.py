@@ -11,11 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from django.conf import settings
 # import environ
-# from django.contrib.gis import gdal
-
-# GDAL 라이브러리 경로 설정
-# GDAL_LIBRARY_PATH = "C:/Users/1-08/OneDrive/Desktop/DAMF2/Final_Django/venv/Lib/site-packages/osgeo/gdal.dll"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # API 키 가져오기
 # ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
 
+# 개발용 캐시 끄기
+if settings.DEBUG:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/

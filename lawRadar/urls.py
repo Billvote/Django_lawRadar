@@ -50,6 +50,7 @@ urlpatterns = [
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
+    path('api/top_clusters/', dashboard_v.top_clusters_api, name='top_cluster_api'),
 
     # history
     path('history/', include('history.urls')),

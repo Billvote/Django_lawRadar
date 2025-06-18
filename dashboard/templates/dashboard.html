@@ -66,27 +66,33 @@
       <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
     </div>
   </div>
-
 </div>
 
 <!-- 정당별 특이 클러스터 차트 -->
-<h1>정당별 특이 클러스터</h1>
+<h1 class="text-2xl font-bold">정당별 특이 클러스터</h1>
 <div class="grid grid-cols-5 gap-4">
   <div class="col-span-5 bg-white p-4 rounded shadow">
-
-    <!-- 찬반 드롭박스 -->
-     <label for="stanceSelect" class="block font-semibold mb-2">찬성 / 반대 선택</label>
-      <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
-        <option value="support">찬성</option>
-        <option value="oppose">반대</option>
-      </select>
+    <div class="flex flex-row gap-8 mb-4">
+      <!-- 찬반 드롭박스 -->
+      <div class="flex-1">
+         <label for="stanceSelect" class="block font-semibold mb-2">반대/기권 선택</label>
+          <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
+            <option value="oppose">반대</option>
+            <option value="abstain">기권</option>
+          </select>
+      </div>
 
       <!-- 정당별 클러스터 선택 -->
-      <label for="topSelect" class="block font-semibold mb-2">정당별 클러스터 선택</label>
-      <select id="topSelect" class="border rounded px-3 py-2 mb-4">
-        <!-- JavaScript로 동적으로 채워짐 -->
-      </select>
-
+      <div class="flex-1">
+        <label for="topSelect" class="block font-semibold mb-2">법안 선택</label>
+        <select id="topSelect" class="border rounded px-3 py-2 mb-4">
+          {% for option in cluster_options %}
+          <option value="{{ option.value }}">{{  option.text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div id="partyLegend" style="margin-bottom: 10px;"></div>
     <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
   </div>
 </div>
@@ -121,7 +127,7 @@
       }
     },
     dataLabels: {
-      enabled: true,
+      enabled: false,
       formatter: function (val) {
         return val > 0 ? val.toFixed(1) + '%' : '';
       },
@@ -421,122 +427,111 @@ document.querySelectorAll(".explain-btn").forEach(btn => {
   });
 });
 
-// 정당별 탑 클러스터 차트-------
-  // 뷰에서 넘긴 데이터 (예: support_top_cluster, oppose_top_cluster)
-  const clusterData = {
-    support: {{ support_top_cluster|safe }},
-    oppose: {{ oppose_top_cluster|safe }}
-  };
-  
-  const stanceSelect = document.getElementById("stanceSelect");
-  const clusterSelect = document.getElementById("topSelect");
 
-  // 초기 상태
-  let currentStance = 'support';
+// 정당별 탑 클러스터 차트-------------------------------------
+  const stanceSelect = document.getElementById('stanceSelect');
+  const topSelect = document.getElementById('topSelect');
+  const chartDiv = document.querySelector("#topClusterChart");
 
-  // 옵션 채우기
-  function updateClusterOptions(stance) {
-    clusterSelect.innerHTML = "";
+  // 서버에서 넘겨준 데이터 (템플릿에서 JSON 직렬화해서 받는다고 가정)
+  const clusterOptions = {{ cluster_options|safe }};  // [{value: "더불어민주당--oppose--1", text:"더불어민주당 - oppose - 클러스터 1 (키워드)"}]
 
-    const clusters = clusterData[stance];
-    clusters.forEach(item => {
-      const option = document.createElement("option");
-      option.value = item.cluster_num;
-      option.textContent = `${item.party_name} - 클러스터 ${item.cluster_num} (${item.cluster_keyword})`;
-      clusterSelect.appendChild(option);
-    });
-  }
+  const opposeCategories = {{ oppose_cluster_categories|safe }};
+  const opposeSeries = {{ oppose_cluster_series|safe }};
+  const opposeKeywords = {{ oppose_cluster_keywords|safe }};
 
-  // 처음엔 '찬성' 기준으로 옵션 채우기
-  updateClusterOptions("support");
-
-  // 드롭박스 바뀔 때마다 클러스터 옵션도 바꾸기
-  stanceSelect.addEventListener("change", function () {
-    updateClusterOptions(this.value);
-  });
+  const abstainCategories = {{ abstain_cluster_categories|safe }};
+  const abstainSeries = {{ abstain_cluster_series|safe }};
+  const abstainKeywords = {{ abstain_cluster_keywords|safe }};
 
 
-// ApexCharts 옵션 준비 함수
-function prepareChartOptions(data) {
-  return {
-    chart: {
-      type: 'bar',
-      height: 400,
-      stacked: true,
-      stackType: '100%',
-      toolbar: { show: false },
-      zoom: { enabled: false }
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        barHeight: '50%',
-      },
-    },
-    dataLabels: {
-      enabled: false
-    },
-    stroke: {
-      width: 1,
-      colors: ['#fff']
-    },
-    xaxis: {
-      max: 100,
-      labels: {
-        formatter: val => val + '%'
+// ApexCharts 차트 기본 설정 및 초기 생성
+const chart = new ApexCharts(chartDiv, {
+  chart: {
+    type: 'bar',
+    height: 400,
+  },
+  series: [],
+  xaxis: {
+    categories: []
+  },
+  yaxis: {
+    max: 100,
+    title: { text: '비율 (%)' }
+  },
+  tooltip: {
+    y: {
+      formatter: (val, opts) => {
+        const idx = opts.dataPointIndex;
+        const category = chart.w.config.xaxis.categories[idx] || '';
+        return val + '% (' + category + ')';
       }
-    },
-    yaxis: {
-      categories: data.map(d => d.party_name),
-      labels: {
-        style: { fontWeight: 'bold' }
-      }
-    },
-    tooltip: {
-      y: {
-        formatter: val => val.toFixed(1) + '%'
-      }
-    },
-    legend: {
-      show: false
-    },
-    series: [{
-      name: currentStance === 'support' ? '찬성 비율' : '반대 비율',
-      data: data.map(d => d.ratio * 100), // 0~1 -> 0~100%
-    }],
-    fill: {
-      colors: ['#3696EB']
     }
-  };
-}
-
-// 차트 인스턴스 변수
-let topClusterChart;
-
-// 초기 차트 그리기 함수
-function drawChart(data) {
-  const chartDiv = document.getElementById('topClusterChart');
-
-  if (topClusterChart) {
-    topClusterChart.destroy();
-  }
-
-  const options = prepareChartOptions(data);
-  topClusterChart = new ApexCharts(chartDiv, options);
-  topClusterChart.render();
-}
-
-// 초기 옵션 및 차트 세팅
-updateClusterOptions(currentStance);
-drawChart(clusterData[currentStance]);
-
-// 스탠스 선택 바뀔 때 처리
-stanceSelect.addEventListener('change', (e) => {
-  currentStance = e.target.value;
-  updateClusterOptions(currentStance);
-  drawChart(clusterData[currentStance]);
+  },
+  legend: {
+    position: 'top'
+  },
+  colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#3F51B5'],
 });
 
+chart.render();
+
+
+// stance 선택 시 topSelect 옵션 필터링 및 재생성
+function updateTopSelectOptions(selectedStance) {
+  const filteredOptions = clusterOptions.filter(opt => opt.value.includes(`--${selectedStance}--`));
+  
+  topSelect.innerHTML = '';
+  filteredOptions.forEach(opt => {
+    const optionElem = document.createElement('option');
+    optionElem.value = opt.value;
+    optionElem.textContent = opt.text;
+    topSelect.appendChild(optionElem);
+  });
+
+  if (filteredOptions.length > 0) {
+    topSelect.value = filteredOptions[0].value;
+    updateChart();
+  } else {
+    chart.updateOptions({ series: [], xaxis: { categories: [] } });
+  }
+}
+
+// 선택된 topSelect 값 기준으로 차트 업데이트
+function updateChart() {
+  const selectedValue = topSelect.value;
+  const [party, stance, clusterNum] = selectedValue.split('--');
+
+  let categories = [];
+  let series = [];
+
+  if (stance === 'oppose') {
+    categories = opposeCategories;
+    series = opposeSeries;
+  } else if (stance === 'abstain') {
+    categories = abstainCategories;
+    series = abstainSeries;
+  }
+
+  chart.updateOptions({
+    series: series,
+    xaxis: {
+      categories: categories
+    }
+  });
+
+}
+
+// 이벤트 리스너 등록
+stanceSelect.addEventListener('change', () => {
+  updateTopSelectOptions(stanceSelect.value);
+});
+topSelect.addEventListener('change', updateChart);
+
+// 초기 로드 시 기본 stance 옵션으로 드롭박스 세팅 및 차트 렌더링
+updateTopSelectOptions(stanceSelect.value);
+
+  chart.render();
 
 </script>
 {% endblock %}

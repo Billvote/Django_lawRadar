@@ -5,28 +5,22 @@
 {% block body %}
 <div class="max-w-6xl mx-auto space-y-6">
 
-  <!-- 제목 + 검색창을 한 줄에 배치 ----------------------------------->
-  <div class="flex items-center justify-between px-6 mb-4">
-    
-    <!-- 제목 --------------------------------------------------------->
-    <h2 class="font-bold text-4xl">
-      {% if query %}"{{ query }}"{% else %}그룹별 대표 법안 목록{% endif %}
-    </h2>
+  <!-- 제목 --------------------------------------------------------->
+  <h2 class="font-bold text-4xl px-6">
+    {% if query %}"{{ query }}"{% else %}그룹별 대표 법안 목록{% endif %}
+  </h2>
 
-    <!-- 검색창 ------------------------------------------------------->
+  <!-- 검색창 : 제목 바로 아래 오른쪽 -------------------------------->
+  <div class="flex justify-end px-6 mb-2">
     <form action="{% url 'history:history_list' %}" method="get" class="flex">
       <label for="id_keyword" class="sr-only">검색어</label>
-
       <input type="text" name="keyword" id="id_keyword"
-             value="{{ query }}"
-             placeholder="검색어를 입력하세요"
-             class="w-80 px-4 py-3 border border-gray-300 rounded-l-md
+             value="{{ query }}" placeholder="검색어를 입력하세요"
+             class="w-72 px-4 py-3 border border-gray-300 rounded-l-md
                     focus:outline-none focus:ring-2 focus:ring-cyan-500">
-
       {% if selected_cluster %}
         <input type="hidden" name="cluster" value="{{ selected_cluster }}">
       {% endif %}
-
       <button type="submit"
               class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-r-md">
         검색
@@ -34,23 +28,19 @@
     </form>
   </div>
 
-  {% if not selected_cluster and not query %}
-    <p class="text-gray-600 mb-6 px-6">
+  <!-- 두 통계 문구 한 줄 ------------------------------------------->
+  <div class="flex items-center gap-x-3 px-6 mb-6">
+    <p class="text-gray-600 whitespace-nowrap">
+      👏 {{ total_results_count }}개의 대표법안이 존재합니다
+    </p>
+    <p class="text-gray-600 whitespace-nowrap">
       # {{ total_cluster_count }}개의 법안별 대표 키워드가 존재합니다
     </p>
-  {% endif %}
+  </div>
 
-  <!-- 안내 문구 ----------------------------------------------------->
-  {% if page_obj %}
-    {% if total_results_count %}
-      <p class="text-gray-600 mb-6 px-6">
-        👏 {{ total_results_count }}개의 법안이 존재합니다
-      </p>
-    {% else %}
-      <p class="text-gray-600 mb-6 px-6">
-        😥 다른 키워드로 검색해보세요
-      </p>
-    {% endif %}
+  <!-- 검색 실패 안내 ----------------------------------------------->
+  {% if page_obj and not total_results_count %}
+    <p class="text-gray-600 mb-6 px-6">😥 다른 키워드로 검색해보세요</p>
   {% endif %}
 
   <!-- 결과 표 ------------------------------------------------------->
@@ -60,8 +50,8 @@
                  divide-y divide-gray-200 text-sm text-left">
       <thead class="bg-gray-100 text-gray-700 font-semibold">
         <tr>
-          <th class="px-6 py-3 w-[7%]  text-center">대수</th>
-          <th class="px-6 py-3 w-[7%]  text-center">의안번호</th>
+          <th class="px-6 py-3 w-[7%] text-center">대수</th>
+          <th class="px-6 py-3 w-[7%] text-center">의안번호</th>
           <th class="px-6 py-3 w-[26%] text-center">의안명</th>
           <th class="px-6 py-3 w-[38%] text-center">키워드</th>
           <th class="px-6 py-3 w-[12%] text-center">개정 횟수</th>
@@ -78,14 +68,11 @@
               {{ bill.title_custom|safe|default:bill.title }}
             </a>
           </td>
-
-          <!-- 내부 키워드 -->
           <td class="px-6 py-4">
             {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
               {% if kw_str %}
                 {% for kw in kw_str|split_by_comma|slice:":4" %}
-                  <a href="{% url 'cardnews:card' bill.cluster %}"
-                     class="inline-block mb-1">
+                  <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block mb-1">
                     <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
                           style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
                       #{{ kw }}
@@ -95,7 +82,6 @@
               {% endif %}
             {% endwith %}
           </td>
-
           <td class="px-6 py-4 text-center">{{ bill.related_count }}회</td>
         </tr>
         {% empty %}
@@ -108,13 +94,12 @@
       </tbody>
     </table>
 
-    <!-- 페이지네이션 -------------------------------------------------->
+    <!-- 페이지네이션 ------------------------------------------------>
     <div class="pagination flex justify-center space-x-2
                 bg-white border-t border-gray-200 p-4">
+
       {% if page_obj.has_previous %}
-        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}
-                 {% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}
-                 page={{ page_obj.previous_page_number }}"
+        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
            class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
       {% else %}
         <span class="px-3 py-1 text-gray-400">이전</span>
@@ -124,17 +109,13 @@
         {% if num == page_obj.number %}
           <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
         {% else %}
-          <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}
-                   {% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}
-                   page={{ num }}"
+          <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
              class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
         {% endif %}
       {% endfor %}
 
       {% if page_obj.has_next %}
-        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}
-                 {% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}
-                 page={{ page_obj.next_page_number }}"
+        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
            class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
       {% else %}
         <span class="px-3 py-1 text-gray-400">다음</span>
@@ -146,38 +127,36 @@
 {% endblock %}
 
 {% block script %}
-<!-- ── jQuery & jQuery-UI CDN ── -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-<link rel="stylesheet"
-      href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 <script>
-/* 해시태그 hover */
+/* 해시태그 hover ----------------------------------------------------*/
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.hashtag').forEach(tag => {
     const bg = tag.style.backgroundColor || '#e5e7eb';
-    const co = tag.style.color           || '#374151';
+    const co = tag.style.color || '#374151';
     tag.addEventListener('mouseenter', () => {
       tag.style.backgroundColor = '#eee';
-      tag.style.color           = '#4B5563';
+      tag.style.color = '#4B5563';
     });
     tag.addEventListener('mouseleave', () => {
       tag.style.backgroundColor = bg;
-      tag.style.color           = co;
+      tag.style.color = co;
     });
   });
 });
 
-/* Autocomplete */
+/* jQuery-UI Autocomplete -------------------------------------------*/
 $(function () {
   $("#id_keyword").autocomplete({
-    source   : "{% url 'history:autocomplete' %}",
+    source: "{% url 'history:autocomplete' %}",
     minLength: 1,
-    delay    : 150,
-    focus: function () { return false; },         // 입력값 유지
-    select: function (e, ui) {                    // 선택 시 값 입력
-      $(this).val(ui.item.value);
+    delay: 150,
+    focus: () => false,
+    select: (e, ui) => {
+      $("#id_keyword").val(ui.item.value);
       return false;
     }
   });
