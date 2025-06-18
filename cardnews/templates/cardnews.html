@@ -2,25 +2,29 @@
 {% load custom_filters %}
 {% block body %}
 <!-- 클러스터 키워드 페이지 -->
-<section class="mb-10 grid grid-cols-2 items-center mt-10">
-  <h1 class="col-span-1 text-4xl mb-4 font-bold">#{{ cluster_number }}</h1>
+<section class="mb-10 grid grid-cols-2 items-start mt-10">
+  <!-- 키워드 타이틀 -->
+  <div class="col-span-1">
+    <h1 class="text-4xl mb-4 font-bold flex flex-wrap gap-2 items-center">
+      📚 {% for keyword in keywords %}
+        <span class="inline-block bg-yellow-100 text-yellow-800 rounded-full px-3 py-1 text-lg font-semibold">
+          #{{ keyword }}
+        </span>
+      {% endfor %}
+    </h1>
 
-  <div class="flex flex-wrap justify-end gap-2 mb-6">
-    {% for keyword in keywords %}
-      <span class="inline-block bg-gray-100 text-gray-600 rounded-full px-3 py-1 text-lg font-semibold cursor-default">
-        #{{ keyword }}
-      </span>
-    {% endfor %}
+    <!-- 의안 수 설명 -->
+    <p class="text-gray-600 mb-2">📌 {{ cluster_bill_count }}개의 의안이 있습니다!</p>
   </div>
-  <div>
-    <p class="text-gray-600 mb-6">🚩​{{ cluster_bill_count }}개의 의안이 있습니다!</p>
+
+  <!-- 오른쪽 링크 -->
+  <div class="flex flex-wrap justify-end items-start">
+    <a href="/cardnews/" class="mt-4 inline-block text-gray-600 text-lg">
+      🔎 다른 주제 둘러보기
+    </a>
   </div>
-    <div class="flex flex-wrap justify-end">
-      <a href="/cardnews/" class="mt-8 inline-block text-gray-600 text-lg">
-        🔎다른 주제 둘러보기
-      </a>
-    </div>
 </section>
+
     
 <!-- 카드 뉴스 -->
 <div class="swiper mySwiper pb-20 relative">
@@ -31,8 +35,8 @@
            class="block w-[600px] rounded-lg shadow-md hover:shadow-xl border border-gray-200 hover:border-cyan-400 transition duration-300 p-4">
           
            <!-- 상단: 라벨별 배경색 다르게 -->
-          <div class="relative h-[280px] overflow-hidden flex items-center justify-center" style="background-color: {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }};">
-            <p class="card-news text-white text-2xl font-bold leading-relaxed whitespace-pre-line z-10 relative" style="font-size: clamp(1.7rem, 3.0vw, 1.9rem);">
+          <div class="relative h-[240px] overflow-hidden flex items-center justify-center" style="background-color: {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }};">
+            <p class="card-news text-white text-2xl font-bold leading-relaxed whitespace-pre-line z-10 relative" style="font-size: clamp(1.7rem, 2.5vw, 1.9rem);">
               {{ bill.card_news_content }}
             </p>
             <!-- 반투명 오버레이로 텍스트 가독성 높이기 (옵션) -->
@@ -40,8 +44,8 @@
           </div>
 
           <!-- 하단: 타이틀 영역 -->
-          <div class="rounded-b-2xl mt-2 border-t border-gray-200 flex items-center justify-center">
-            <div class="rounded-b-2xl mt-1 border-gray-200 flex flex-col">
+          <div class="rounded-b-2xl mt-3 border-t border-gray-200 flex items-center justify-center">
+            <div class="rounded-b-2xl mt-2 border-gray-200 flex flex-col">
               <h3 class="text-gray-800 font-semibold text-base text-center truncate">
                 {{ bill.title }}
               </h3>
