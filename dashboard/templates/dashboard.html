@@ -430,8 +430,10 @@ document.querySelectorAll(".explain-btn").forEach(btn => {
 
 // 정당별 탑 클러스터 차트-------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+  const ageNum = {{ congress_num|safe }};
   const stanceSelect = document.getElementById("stanceSelect");
   const chartContainer = document.getElementById("topClusterChart");
+
   console.log(ageNum)
 
   if (!stanceSelect || !chartContainer) {

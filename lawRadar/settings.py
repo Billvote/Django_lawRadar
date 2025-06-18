@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'dashboard',
     'history',
     'cardnews',
-    'django_extensions'
+    # 'django_extensions'
 ]
 
 MIDDLEWARE = [
