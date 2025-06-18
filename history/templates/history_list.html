@@ -3,7 +3,7 @@
 {% load custom_filters %}
 
 {% block body %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div class="max-w-6xl mx-auto space-y-2">
 
   <!-- 제목 --------------------------------------------------------->
   <h2 class="font-bold text-4xl px-6">
@@ -12,29 +12,29 @@
 
   <!-- 검색창 : 제목 바로 아래 오른쪽 -------------------------------->
   <div class="flex justify-end px-6 mb-2">
-    <form action="{% url 'history:history_list' %}" method="get" class="flex">
+    <form action="{% url 'history:history_list' %}" method="get" class="relative">
       <label for="id_keyword" class="sr-only">검색어</label>
       <input type="text" name="keyword" id="id_keyword"
              value="{{ query }}" placeholder="검색어를 입력하세요"
-             class="w-72 px-4 py-3 border border-gray-300 rounded-l-md
-                    focus:outline-none focus:ring-2 focus:ring-cyan-500">
+             class="w-72 px-4 py-3 border border-gray-300 rounded-md
+                    focus:outline-none focus:ring-2 focus:ring-cyan-400 transition">
       {% if selected_cluster %}
         <input type="hidden" name="cluster" value="{{ selected_cluster }}">
       {% endif %}
       <button type="submit"
-              class="px-4 py-2 bg-cyan-500 text-white font-semibold rounded-r-md">
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 font-semibold">
         검색
       </button>
     </form>
   </div>
 
   <!-- 두 통계 문구 한 줄 ------------------------------------------->
-  <div class="flex items-center gap-x-3 px-6 mb-6">
+  <div class="flex items-center gap-x-3 px-6 mb-1">
     <p class="text-gray-600 whitespace-nowrap">
-      👏 {{ total_results_count }}개의 대표법안이 존재합니다
+      <!-- 👏 {{ total_results_count }}개의 대표법안이 존재합니다 -->
     </p>
     <p class="text-gray-600 whitespace-nowrap">
-      # {{ total_cluster_count }}개의 법안별 대표 키워드가 존재합니다
+      <!-- # {{ total_cluster_count }}개의 법안별 대표 키워드가 존재합니다 -->
     </p>
   </div>
 
