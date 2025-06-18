@@ -506,24 +506,31 @@ function debounce(func, wait) {
 
 // DOM 준비 후 초기화 및 이벤트 리스너 등록
 document.addEventListener("DOMContentLoaded", () => {
-  const firstAgeBtn = document.querySelector('.age-btn');
-  if (firstAgeBtn) {
-    firstAgeBtn.classList.add("text-cyan-500");
-    const selectedAge = firstAgeBtn.dataset.age;
+  const ageButtons = document.querySelectorAll('.age-btn');
+  let defaultAgeBtn = null;
+
+  // "22대" 버튼 찾기
+  ageButtons.forEach(btn => {
+    if (btn.textContent.trim() === '22대') {
+      defaultAgeBtn = btn;
+    }
+  });
+
+  // 22대가 있으면 선택, 없으면 첫 번째 버튼 fallback
+  if (!defaultAgeBtn && ageButtons.length > 0) {
+    defaultAgeBtn = ageButtons[0];
+  }
+
+  if (defaultAgeBtn) {
+    defaultAgeBtn.classList.add("text-cyan-500");
+    const selectedAge = defaultAgeBtn.dataset.age;
     init(selectedAge);
   } else {
     console.error("초기화할 age 버튼이 없습니다!");
   }
 
+  // 리사이즈 이벤트에 디바운스 적용
   window.addEventListener('resize', debounce(resize, 200));
-  function debounce(func, wait) {
-  let timeout;
-  return () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(), wait);
-  };
-}
-
 });
 
 </script>
