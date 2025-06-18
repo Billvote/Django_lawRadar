@@ -1,0 +1,40 @@
+<div class="flex justify-between items-center">
+    <p class="p-2">결과를 확인하고 싶은 주제를 선택해주세요🙌​</p>
+    <button class="explain-btn ml-3 text-sm flex items-center gap-1"
+            data-title="정당별 핵심 법안 차트"
+            data-content='
+            <p><strong>표결 기준:</strong> 국회 본회의 표결 데이터 중 가결 법안에 대해 정당 소속 의원들이 어떻게 투표했는지 집계</p>
+            <ul class="list-disc pl-5 mt-2 text-sm">
+                <li>찬성, 반대, 기권, 불참 수 기준 정당별 누적합 백분율 계산</li>
+                <li>마우스를 대면 정당 내 표결 비율을 확인할 수 있습니다</li>
+            </ul>
+            <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+            '>
+        <i class="fi fi-rr-search"></i>
+    </button>
+</div>
+
+<div class="flex flex-row gap-8 mb-4">
+    <!-- 찬반 드롭박스 -->
+    <div class="flex-1">
+        <label for="stanceSelect" class="block font-semibold mb-2">표결 선택</label>
+        <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
+        <option value="oppose">반대</option>
+        <option value="abstain">기권</option>
+        </select>
+    </div>
+
+    <!-- 정당별 클러스터 선택 -->
+    <div class="flex-1">
+    <label for="topSelect" class="block font-semibold mb-2">법안 키워드 선택</label>
+    <select id="topSelect" class="border rounded px-3 py-2 mb-4">
+        {% for option in cluster_options %}
+        <option value="{{ option.value }}" data-stance="{{ option.stance }}">
+        {{  option.party }} {{ option.stance_display }} 多: {{option.keyword}}
+        </option>
+        {% endfor %}
+    </select>
+    </div>
+</div>
+<div id="partyLegend" style="margin-bottom: 10px;"></div>
+<div id="topClusterChart" style="height: 400px; width: 100%;"></div>

@@ -43,7 +43,6 @@
     <!-- 권력 집중도 -->
   <div class="flex justify-between items-center mt-6">
     <h1 class="text-2xl font-bold">💪​국회 권력은 얼마나 집중돼 있을까?</h1>
-    {% include '03-1_hhi-button.html'%}
   </div>
   <div class="dashboard-section">
   {% include '03_hhi.html' %}
@@ -51,6 +50,7 @@
   
   <!-- enp 프로그래스 바 -->
   <div class="dashboard-section mt-6">
+    <h1 class="text-2xl font-bold whitespace-nowrap">유효한 정당</h1>
     {% include '02_enp.html' %}
   </div>
 
@@ -69,31 +69,13 @@
 </div>
 
 <!-- 정당별 특이 클러스터 차트 -->
-<h1 class="text-2xl font-bold">정당별 특이 클러스터</h1>
-<div class="grid grid-cols-5 gap-4">
-  <div class="col-span-5 bg-white p-4 rounded shadow">
-    <div class="flex flex-row gap-8 mb-4">
-      <!-- 찬반 드롭박스 -->
-      <div class="flex-1">
-         <label for="stanceSelect" class="block font-semibold mb-2">반대/기권 선택</label>
-          <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
-            <option value="oppose">반대</option>
-            <option value="abstain">기권</option>
-          </select>
-      </div>
+<div class="flex justify-between items-center mt-8">
+  <h1 class="text-2xl font-bold">정당별 특이 클러스터</h1>
+</div>
 
-      <!-- 정당별 클러스터 선택 -->
-      <div class="flex-1">
-        <label for="topSelect" class="block font-semibold mb-2">법안 선택</label>
-        <select id="topSelect" class="border rounded px-3 py-2 mb-4">
-          {% for option in cluster_options %}
-          <option value="{{ option.value }}">{{  option.text }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-    <div id="partyLegend" style="margin-bottom: 10px;"></div>
-    <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
+<div class="grid grid-cols-5 gap-4 mt-4">
+  <div class="col-span-5 bg-white p-4 rounded shadow">
+      {% include '05_topClusterChart.html' %}
   </div>
 </div>
 
@@ -432,26 +414,68 @@ document.querySelectorAll(".explain-btn").forEach(btn => {
 document.addEventListener("DOMContentLoaded", function () {
   const ageNum = {{ congress_num|safe }};
   const stanceSelect = document.getElementById("stanceSelect");
+  const topSelect = document.getElementById("topSelect");
   const chartContainer = document.getElementById("topClusterChart");
+  let chart;
+  // console.log("topSelect.value:", topSelect.value);
 
-  console.log(ageNum)
-
-  if (!stanceSelect || !chartContainer) {
-    console.error("차트나 셀렉트 박스 DOM이 없습니다.");
+  if (!stanceSelect || !topSelect || !chartContainer) {
+    console.error("필수 DOM 요소가 없습니다.");
     return;
   }
+  // ✅ 1. 이 자리에 추가해줘 (fetchAndRenderChart 앞이면 좋아)
+  function filterTopSelectOptionsByStance() {
+    const selectedStance = stanceSelect.value;
 
-  stanceSelect.addEventListener("change", function () {
-    const selected = this.value;
-    if (!selected) return;
+    Array.from(topSelect.options).forEach(option => {
+      const stance = option.getAttribute("data-stance");
+      if (stance === selectedStance) {
+        option.style.display = "";
+      } else {
+        option.style.display = "none";
+      }
+    });
 
-    const [party, stance, clusterNum] = selected.split("--");
-    const ageNum = {{ congress_num }}; // 이건 템플릿 렌더링 됐는지 확인도 필요
+    // 필터된 첫 옵션으로 기본 선택 설정
+    const firstVisibleOption = Array.from(topSelect.options).find(
+      option => option.style.display !== "none"
+    );
+    if (firstVisibleOption) {
+      topSelect.value = firstVisibleOption.value;
+      // 강제로 change 이벤트 트리거 (그래야 fetchAndRenderChart가 호출됨)
+      const event = new Event('change');
+      topSelect.dispatchEvent(event);
+    }
+  }
 
-    fetch(`/api/cluster_chart?age_num=${ageNum}&cluster_num=${clusterNum}`)
-      .then(response => {
-        if (!response.ok) throw new Error("서버 응답 오류");
-        return response.json();
+
+function getSelectedParams() {
+    // stanceSelect 값은 "oppose" or "abstain" 형태, topSelect는 "party--stance--clusterNum" 형태라 가정
+    const stance = stanceSelect.value;
+    const selectedTop = topSelect.value;
+    const [party, topStance, clusterNum] = selectedTop.split("--");
+    console.log(selectedTop)
+    console.log(topSelect)
+
+    // 만약 topStance랑 stanceSelect가 같은 의미라면 조합이 필요할 수도 있음
+    // 여기서는 단순히 topSelect에 클러스터 번호만 중요하다고 가정
+    return { ageNum, clusterNum, stance, party };
+  }
+
+  function fetchAndRenderChart() {
+    const { ageNum, clusterNum, party, stance } = getSelectedParams();
+
+    if (!clusterNum) {
+      console.warn("clusterNum이 없습니다.");
+      return;
+    }
+
+    const url = `/api/cluster_chart?age_num=${ageNum}&cluster_num=${clusterNum}&party=${party}&stance=${stance}`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error("서버 응답 오류");
+        return res.json();
       })
       .then(data => {
         if (chart) {
@@ -466,11 +490,6 @@ document.addEventListener("DOMContentLoaded", function () {
               stacked: true,
               height: 400
             },
-            title: {
-              text: `정당별 클러스터 ${clusterNum}의 투표 분포`,
-              align: 'left',
-              style: { fontSize: '16px' }
-            },
             plotOptions: {
               bar: {
                 horizontal: false,
@@ -481,25 +500,37 @@ document.addEventListener("DOMContentLoaded", function () {
               categories: data.categories
             },
             yaxis: {
-              title: {
-                text: "비율 (%)"
-              },
+              title: { text: "비율 (%)" },
               max: 100
             },
             tooltip: {
-              y: {
-                formatter: val => `${val}%`
-              }
+              y: { formatter: val => `${val}%` }
             },
             series: data.series
           });
           chart.render();
         }
       })
-      .catch(error => {
-        console.error("차트 데이터 불러오기 실패:", error);
+      .catch(err => {
+        console.error("차트 데이터 불러오기 실패:", err);
       });
-  });
+  }
+
+  // 두 select가 바뀔 때마다 차트 다시 그림
+  stanceSelect.addEventListener("change", function () {
+  filterTopSelectOptionsByStance();  // 클러스터 옵션 필터링
+  // fetchAndRenderChart();             // 차트 다시 그림
 });
+  topSelect.addEventListener("change", fetchAndRenderChart);
+
+  // 페이지 로드 시 자동 렌더링 (두 select 첫 값으로)
+  // fetchAndRenderChart();
+
+  // ✅ 3. 페이지 첫 로딩 시: 옵션 필터링 먼저, 차트 렌더링 그 다음!
+  filterTopSelectOptionsByStance();   // ⭐⭐ 이거 반드시 먼저!
+  fetchAndRenderChart();              // 그 다음 차트 호출
+});
+
+
 </script>
 {% endblock %}

@@ -1,6 +1,34 @@
   <!-- 카드 UI -->
   <div class="grid grid-cols-3 grid-rows-2 gap-3 mb-4">
-    <div class="col-span-1 row-start-1 row-span-1 bg-white shadow rounded-xl p-3 h-full flex flex-col items-center justify-center">
+    <div class="col-span-1 row-start-1 row-span-1 bg-white shadow rounded-xl p-3 h-full flex flex-col items-center justify-center relative">
+      <button class="explain-btn text-sm absolute top-3 right-3"
+              data-title="상위 양당 점유율 지수"
+              data-content='
+                <p>국회 의석 점유율을 토대로, 국회가 특정 정당에 얼마나 집중되어 있는지 확인할 수 있습니다.</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                <li>
+                    <strong>공식</strong>
+                    <ul>
+                    <li>HHI = sum(정당별 의석 점유율²)</li>
+                    <li>정당별 의석 점유율 = 정당별 의원 수 / 전체 의석 수</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>해석 방법</strong>
+                    <ul>
+                        <li>HHI = 1: 단일 정당이 모든 의석을 차지 (극단적 일당 독점)</li>
+                        <li>HHI가 0.5 이상: 특정 정당 또는 몇몇 정당에 권력이 집중됨</li>
+                        <li>HHI가 0.25~0.5 사이: 중간 정도의 집중도 → 소수 정당이 경쟁하는 구조</li>
+                        <li>HHI가 0.25 이하: 다양한 정당이 경쟁하는 다당제 경향이 강함</li>
+                        <li>HHI가 낮을수록 정당 간 균형 있는 분포</li>
+                    </ul>
+                </li>
+                </ul>
+                <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+                '
+              >
+            <i class="fi fi-rr-search"></i>
+      </button>
       <h2 class="text-lg font-semibold mb-2">상위 양당 점유율</h2>
       <br>
       <p class="text-3xl font-bold" style="color: #00e396;">{{ party_concentration_top2_ratio }}%</p>
@@ -13,9 +41,36 @@
         {% endfor %}
       </ul>
     </div>
-
-    <div class="col-span-1 row-start-2 row-span-1 bg-white shadow rounded-xl p-3 h-full flex flex-col items-center justify-center">
-        <h2 class="text-lg font-semibold mb-2">권력 집중도 (HHI)</h2>
+    <div class="col-span-1 row-start-2 row-span-1 bg-white shadow rounded-xl p-3 h-full flex flex-col items-center justify-center relative">
+      <button class="explain-btn text-sm absolute top-3 right-3"
+              data-title="권력 집중도 지수(HHI)"
+              data-content='
+                <p>국회 의석 점유율을 토대로, 국회가 특정 정당에 얼마나 집중되어 있는지 확인할 수 있습니다.</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                <li>
+                    <strong>공식</strong>
+                    <ul>
+                    <li>HHI = sum(정당별 의석 점유율²)</li>
+                    <li>정당별 의석 점유율 = 정당별 의원 수 / 전체 의석 수</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>해석 방법</strong>
+                    <ul>
+                        <li>HHI = 1: 단일 정당이 모든 의석을 차지 (극단적 일당 독점)</li>
+                        <li>HHI가 0.5 이상: 특정 정당 또는 몇몇 정당에 권력이 집중됨</li>
+                        <li>HHI가 0.25~0.5 사이: 중간 정도의 집중도 → 소수 정당이 경쟁하는 구조</li>
+                        <li>HHI가 0.25 이하: 다양한 정당이 경쟁하는 다당제 경향이 강함</li>
+                        <li>HHI가 낮을수록 정당 간 균형 있는 분포</li>
+                    </ul>
+                </li>
+                </ul>
+                <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+                '
+              >
+            <i class="fi fi-rr-search"></i>
+      </button>
+      <h2 class="text-lg font-semibold mb-2">권력 집중도 (HHI)</h2>
         <br>
         <p class="text-3xl font-bold" style="color: #008ffb;">{{ party_concentration_hhi }}</p>
     </div>
