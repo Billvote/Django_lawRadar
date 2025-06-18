@@ -221,4 +221,4 @@ def cardnews_index(request, cluster_number):
         'label_color_map': label_color_map,
         'cluster_bill_count': bills.count(),
     }
-    return render(request, 'cluster_index.html', context)
+    return render(request, 'cardnews.html', context)
