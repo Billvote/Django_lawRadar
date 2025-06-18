@@ -272,7 +272,7 @@ def run_all():
     check_missing_sido_sgg(csv_path / f'member.csv')
     import_members(csv_path / f'member.csv')
     import_bills(csv_path / f'card_news.csv')
-    # import_votes(csv_path / f'vote.csv')
+    import_votes(csv_path / f'vote.csv')
 
     print(f"✅ 데이터 임포트 완료")
 
