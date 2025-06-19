@@ -1,14 +1,14 @@
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 ">
-    <div class="bg-white p-4 rounded shadow flex flex-col items-center justify-center">
-    <h2 class="text-gray-600">총 가결안</h2>
-    <p class="text-2xl font-bold">{{ total_bills }}</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white/90 p-6 backdrop-blur-sm rounded shadow flex flex-col items-center justify-center hover:scale-105 transition-all duration-300">
+        <h2 class="text-gray-600 text-lg mb-2">총 가결안</h2>
+        <p class="text-3xl font-bold">{{ total_bills }}</p>
     </div>
-    <div class="bg-white p-4 rounded shadow flex flex-col items-center justify-center">
-    <h2 class="text-gray-600">정당 개수</h2>
-    <p class="text-2xl font-bold">{{ total_parties }}</p>
+    <div class="bg-white p-4 rounded shadow flex flex-col items-center justify-center hover:scale-105 transition-all duration-300">
+        <h2 class="text-gray-600 text-lg mb-2">정당 개수</h2>
+        <p class="text-3xl font-bold">{{ total_parties }}</p>
     </div>
-    <div class="bg-white p-4 rounded shadow flex flex-col items-center justify-center">
-    <h2 class="text-gray-600">여성 의원 비율</h2>
-    <p class="text-2xl font-bold">{{ gender_ratio.female_percent }}%</p>
+    <div class="bg-white p-4 rounded shadow flex flex-col items-center justify-center hover:scale-105 transition-all duration-300">
+        <h2 class="text-gray-600 text-lg mb-2">여성 의원 비율</h2>
+        <p class="text-3xl font-bold">{{ gender_ratio.female_percent }}%</p>
     </div>
 </div>

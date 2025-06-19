@@ -1,37 +1,53 @@
+<!-- 개선된 bill_detail.html -->
 {% extends "base.html" %}
 {% load history_filters %}
 
 {% block body %}
-<div class="bg-white min-h-screen">
-  <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-
-    <!-- ── 헤더 ───────────────────────────────────────────── -->
-    <div class="mb-8 border-b pb-6">
-      <div class="flex items-center space-x-4 mb-2">
-        <!-- <span class="text-sm font-medium text-gray-900">{{ bill.age.number }}대</span> -->
-        <span class="text-sm text-gray-900">법안번호: {{ bill.bill_number }}</span>
+<!-- Hero Section with Gradient Background -->
+<div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 min-h-[40vh]">
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0">
+    <div class="absolute top-20 right-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-20 left-20 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+    <div class="absolute top-1/2 left-1/2 w-32 h-32 bg-cyan-500/20 rounded-full blur-xl animate-bounce"></div>
+  </div>
+  
+  <!-- Content -->
+  <div class="relative z-10 px-6 py-16">
+    <div class="max-w-4xl mx-auto">
+      <!-- Bill Number Badge -->
+      <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold text-white mb-6 border border-white/20">
+        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 014 11.5V5z" clip-rule="evenodd"/>
+        </svg>
+        법안번호: {{ bill.bill_number }}
       </div>
-
-      <!-- 제목 -->
-      <h1 id="bill-title" class="text-3xl font-bold text-gray-900">
+      
+      <!-- Bill Title -->
+      <h1 class="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
         {{ bill.title }}
       </h1>
-
-      <!-- 해시태그 + 개정횟수 -->
-      <div class="mt-4 flex items-center gap-2 flex-nowrap">
+      
+      <!-- Meta Information -->
+      <div class="flex flex-wrap items-center gap-4 mb-8">
         {% if bill.related_count %}
-          <span class="flex-shrink-0 text-sm font-medium text-black">
+          <div class="flex items-center px-3 py-2 bg-green-500/20 backdrop-blur-sm rounded-lg text-green-100 border border-green-500/30">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+            </svg>
             개정 {{ bill.related_count }}회
-          </span>
+          </div>
         {% endif %}
-        <div class="ml-auto flex flex-wrap gap-2 max-w-full">
+        
+        <!-- Keywords -->
+        <div class="flex flex-wrap gap-2">
           {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
             {% if kw_str %}
               {% with kw_list=kw_str|split_by_comma %}
-                {% for kw in kw_list|slice:":10" %}
+                {% for kw in kw_list|slice:":5" %}
                   <a href="{% url 'cardnews:card' bill.cluster %}"
-                     class="hashtag inline-block"
-                     style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                     class="px-3 py-1 bg-white/10 backdrop-blur-sm text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 border border-white/20 hover:scale-105">
                      #{{ kw }}
                   </a>
                 {% endfor %}
@@ -41,38 +57,90 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- ── 타임라인 ──────────────────────────────────────── -->
+<!-- Main Content -->
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-6xl mx-auto px-6 py-12">
+    
+    <!-- Timeline Section Header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-semibold text-blue-800 mb-4">
+        📋 법안 개정 이력
+      </div>
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        개정 과정 
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">타임라인</span>
+      </h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        해당 법안의 제정부터 현재까지의 모든 개정 과정을 시간순으로 확인하세요
+      </p>
+    </div>
+
+    <!-- Enhanced Timeline -->
     <div class="relative">
-      <div class="absolute left-8 top-0 h-full w-0.5 bg-gray-400 z-0"></div>
-
-      <div class="space-y-12">
+      <!-- Timeline Line -->
+      <div class="absolute left-8  top-0 h-full w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 transform md:-translate-x-1/2"></div>
+      
+      <div class="space-y-16">
         {% for related in related_bills %}
-        <div id="timeline-{{ related.pk }}" class="relative pl-16 group timeline-card">
-          <div
-            class="timeline-date absolute top-8 left-5 -translate-x-full pr-2 text-gray-500 font-mono whitespace-nowrap w-40 sm:w-48 text-right">
-            {{ related.age.number }}대&nbsp;|&nbsp;{{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
+        <div class="relative group timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+          <!-- Timeline Dot -->
+          <div class="absolute left-6  w-6 h-6 bg-white border-4 border-blue-500 rounded-full transform md:-translate-x-1 shadow-lg group-hover:scale-125 transition-all duration-300 z-10">
+            <div class="absolute inset-1 bg-blue-500 rounded-full group-hover:bg-purple-500 transition-colors duration-300"></div>
           </div>
-
-          <div class="timeline-dot absolute left-8 top-8 -ml-2 h-4 w-4 rounded-full border-4 border-white shadow-lg border-gray-100"></div>
-
-          <div class="timeline-card-inner ml-8 p-6 bg-white border border-gray-200 rounded-xl shadow-md w-full max-w-3xl">
-            <div class="flex justify-between items-center">
-              <div class="text-base font-semibold text-gray-900 break-words">
-                {{ related.summary|default:"(내용 없음)"|truncatewords:40 }}
-              </div>
+          
+          <!-- Timeline Content -->
+          <div class="ml-16 md:ml-16 {% cycle 'md:pr-1/2' 'md:pl-1/2 md:ml-1/2' %}">
+            <!-- Date Badge -->
+            <div class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-sm font-semibold mb-4 {% cycle 'md:float-left' 'md:float-left' %}">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+              </svg>
+              {{ related.age.number }}대 | {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
             </div>
-
-            <div class="flex">
-              <div class="mt-2 flex items-center text-sm text-gray-700 break-all">
-                법안번호: {{ related.bill_number }}
+            
+            <div class="clear-both"></div>
+            
+            <!-- Content Card -->
+            <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
+              <!-- Card Header -->
+              <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                      {{ related.summary|default:"(내용 없음)"|truncatewords:20 }}
+                    </h3>
+                    <p class="text-gray-600 font-medium">
+                      법안번호: {{ related.bill_number }}
+                    </p>
+                  </div>
+                  {% if related.url %}
+                  <a href="{{ related.url }}" target="_blank"
+                     class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 hover:scale-110">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                  </a>
+                  {% endif %}
+                </div>
               </div>
-              {% if related.url %}
-              <a href="{{ related.url }}" target="_blank"
-                 class="ml-auto inline-flex items-center px-3 py-1.5 text-sm font-medium text-cyan-500 rounded-md hover:scale-105 transition-transform">
-                 <i class="fi fi-rr-search"></i>
-              </a>
-              {% endif %}
+              
+              <!-- Card Footer -->
+              <div class="p-6">
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <!-- <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/> -->
+                    </svg>
+                    <!-- 상세 정보 보기 -->
+                  </div>
+                  <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -82,85 +150,93 @@
   </div>
 </div>
 
-<!-- ==========================  CSS  ================================ -->
+<!-- Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-50">
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+          class="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
+</div>
+
 <style>
-:root{
-  --neon: {{ cluster_color_map|get_item:bill.cluster }};
-  --neon-light: {{ cluster_color_map|get_item:bill.cluster }}99;
+/* Custom Variables */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --neon: {{ cluster_color_map|get_item:bill.cluster|default:'#3b82f6' }};
+  --neon-light: {{ cluster_color_map|get_item:bill.cluster|default:'#3b82f6' }}40;
 }
 
-/* 공통 텍스트 */
-.text-base,
-.text-sm{word-break:break-word;}
-
-/* 기본 : 한 줄 고정 + 왼쪽 정렬 */
-#bill-title{
-  white-space:nowrap;
-  text-align:left!important;
-  overflow:visible;
-  width:100%;
+/* Smooth Animations */
+html {
+  scroll-behavior: smooth;
 }
 
-/* JS가 길다고 판단하면 two-lines 추가 → 최대 두 줄 */
-#bill-title.two-lines{
-  white-space:normal;
-  line-height:1.35;
-  max-height:2.7em;
-  overflow:hidden;
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
 }
 
-.hashtag{cursor:pointer;transition:.3s;}
-.hashtag:hover{background:#eee!important;color:#4B5563!important;transform:scale(1.05);}
-
-.timeline-dot{background:#9ca3af;transition:transform .25s,box-shadow .25s;}
-.timeline-card-inner{transition:box-shadow .25s;}
-.timeline-date{transition:color .25s,text-shadow .25s;}
-
-.timeline-card.in-view .timeline-dot{transform:scale(1.25);box-shadow:0 0 4px 2px rgba(0,0,0,.05);}
-.timeline-card.in-view .timeline-card-inner{box-shadow:0 4px 10px rgba(0,0,0,.05);}
-
-@keyframes neon-pulse{
-  0%,100%{box-shadow:0 0 6px 2px var(--neon),0 0 12px 4px var(--neon-light);}
-  50%    {box-shadow:0 0 2px 1px var(--neon),0 0 6px 2px var(--neon-light);}
-}
-@keyframes neon-text-pulse{
-  0%,100%{text-shadow:0 0 8px var(--neon-light);}
-  50%    {text-shadow:0 0 3px var(--neon-light);}
-}
-@keyframes card-glow{
-  0%,100%{box-shadow:0 0 10px 4px rgba(0,0,0,.08);}
-  50%    {box-shadow:0 0 4px 2px rgba(0,0,0,.04);}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px var(--neon-light); }
+  50% { box-shadow: 0 0 40px var(--neon), 0 0 60px var(--neon-light); }
 }
 
-.group:hover .timeline-dot{
-  background:var(--neon)!important;
-  transform:scale(1.45)!important;
-  animation:neon-pulse 1.2s ease-in-out infinite alternate!important;
+.timeline-item:hover .bg-blue-500 {
+  animation: glow 2s ease-in-out infinite;
 }
-.group:hover .timeline-date{
-  color:var(--neon)!important;
-  font-weight:600;
-  animation:neon-text-pulse 1.2s ease-in-out infinite alternate!important;
+
+/* Glassmorphism Effects */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
 }
-.timeline-card-inner:hover{
-  animation:card-glow 1.2s ease-in-out infinite alternate;
+
+/* Enhanced Hover Effects */
+.timeline-item:hover {
+  transform: translateY(-5px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .timeline-item {
+    transform: none !important;
+  }
 }
 </style>
-{% endblock %}
 
-{% block script %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const io = new IntersectionObserver(
-    entries => entries.forEach(e => e.target.classList.toggle('in-view', e.isIntersecting)),
-    { threshold:0.5 }
-  );
-  document.querySelectorAll('.timeline-card').forEach(card => io.observe(card));
+document.addEventListener('DOMContentLoaded', function() {
+  // Intersection Observer for Timeline Animation
+  const observerOptions = {
+    threshold: 0.3,
+    rootMargin: '0px 0px -100px 0px'
+  };
 
-  const title  = document.getElementById('bill-title');
-  const buffer = 200;
-  if (title.scrollWidth - title.clientWidth > buffer){
-    title.classList.add('two-lines');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+
+  // Observe timeline items
+  document.querySelectorAll('.timeline-item').forEach((item, index) => {
+    item.style.opacity = '0';
+    item.style.transform = 'translateY(50px)';
+    item.style.transition = `opacity 0.8s ease ${index * 0.2}s, transform 0.8s ease ${index * 0.2}s`;
+    observer.observe(item);
+  });
+  
+  // Dynamic title sizing
+  const title = document.querySelector('h1');
+  if (title && title.scrollWidth > title.clientWidth) {
+    title.classList.add('text-3xl', 'md:text-4xl');
+    title.classList.remove('text-4xl', 'md:text-6xl');
   }
 });
 </script>
