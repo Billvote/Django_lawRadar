@@ -1,10 +1,10 @@
-<!-- 개선된 history_list.html -->
+{# history/templates/history_list.html — 카드 전체 클릭 시 상세 페이지로 이동 (해시태그 제외) #}
 {% extends "base.html" %}
 {% load history_filters %}
 
 {% block body %}
 <!-- Hero Section -->
-<div class="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 py-20">
+<!-- <div class="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 py-20"> -->
   <!-- Background Effects -->
   <div class="absolute inset-0">
     <div class="absolute top-10 right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
@@ -19,14 +19,14 @@
         📋 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">법안 목록</span>
       {% endif %}
     </h1>
-    <p class="text-xl md:text-2xl text-white/90 font-medium max-w-3xl mx-auto">
-      대한민국 국회에서 다루어진 주요 법안들을 한눈에 확인하고 상세 정보를 탐색하세요
+    <p class="text-xl md:text-2xl text-black/90 font-medium max-w-3xl mx-auto">
+      주요 법안들을 한눈에 확인하고 상세 정보를 탐색하세요
     </p>
   </div>
 </div>
 
 <!-- Main Content -->
-<div class="bg-gray-50 min-h-screen">
+<div class="bg-50 min-h-screen">
   <div class="max-w-7xl mx-auto px-6 py-12">
     
     <!-- Search and Filter Section -->
@@ -89,7 +89,8 @@
       <!-- Bill Cards Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {% for bill in page_obj.object_list %}
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 group">
+        <div class="bill-card bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 group cursor-pointer"
+             data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
           <!-- Card Header -->
           <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
             <div class="flex items-start justify-between mb-4">
@@ -138,12 +139,8 @@
             
             <!-- Card Footer -->
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-500">
-                상세 정보 확인
-              </div>
-              <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
+              <div class="text-sm text-gray-500"></div>
+              <!-- 아이콘 제거 또는 필요시 추가 -->
             </div>
           </div>
         </div>
@@ -194,47 +191,28 @@
 </div>
 
 <style>
-/* Line Clamp Utility */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.line-clamp-2{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
 }
-
-/* Enhanced Animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
 }
-
-.grid > div {
-  animation: fadeInUp 0.6s ease-out forwards;
+.grid>div{animation:fadeInUp 0.6s ease-out forwards;}
+.grid>div:nth-child(2){animation-delay:0.1s;}
+.grid>div:nth-child(3){animation-delay:0.2s;}
+.grid>div:nth-child(4){animation-delay:0.3s;}
+.grid>div:nth-child(5){animation-delay:0.4s;}
+.grid>div:nth-child(6){animation-delay:0.5s;}
+.hashtag:hover{
+  background:#e5e7eb !important;
+  color:#374151 !important;
+  transform:scale(1.05);
 }
-
-.grid > div:nth-child(2) { animation-delay: 0.1s; }
-.grid > div:nth-child(3) { animation-delay: 0.2s; }
-.grid > div:nth-child(4) { animation-delay: 0.3s; }
-.grid > div:nth-child(5) { animation-delay: 0.4s; }
-.grid > div:nth-child(6) { animation-delay: 0.5s; }
-
-/* Hover Effects */
-.hashtag:hover {
-  background: #e5e7eb !important;
-  color: #374151 !important;
-  transform: scale(1.05);
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
+html{scroll-behavior:smooth;}
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -242,60 +220,61 @@ html {
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Enhanced Autocomplete
+document.addEventListener('DOMContentLoaded',function(){
+  /* jQuery UI Autocomplete */
   $("#id_keyword").autocomplete({
-    source: "{% url 'history:autocomplete' %}",
-    minLength: 1,
-    delay: 200,
-    focus: () => false,
-    select: (e, ui) => {
+    source:"{% url 'history:autocomplete' %}",
+    minLength:1,
+    delay:200,
+    focus:()=>false,
+    select:(e,ui)=>{
       $("#id_keyword").val(ui.item.value);
       return false;
     },
-    open: function() {
+    open:function(){
       $('.ui-autocomplete').addClass('shadow-lg border-0 rounded-lg mt-2');
     }
   });
 
-  // Smooth card animations on scroll
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-  };
-
-  const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.transform = 'translateY(0)';
+  /* 카드 페이드인 */
+  const obsOpt={threshold:0.1,rootMargin:'0px 0px -50px 0px'};
+  const fadeObs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.style.opacity='1';
+        e.target.style.transform='translateY(0)';
       }
     });
-  }, observerOptions);
-
-  // Observe cards
-  document.querySelectorAll('.grid > div').forEach((card, index) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(30px)';
-    card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
-    observer.observe(card);
+  },obsOpt);
+  document.querySelectorAll('.grid > div').forEach((card,i)=>{
+    card.style.opacity='0';
+    card.style.transform='translateY(30px)';
+    card.style.transition=`opacity 0.6s ease ${i*0.1}s, transform 0.6s ease ${i*0.1}s`;
+    fadeObs.observe(card);
   });
 
-  // Enhanced hashtag interactions
-  document.querySelectorAll('.hashtag').forEach(tag => {
-    const originalBg = tag.style.backgroundColor;
-    const originalColor = tag.style.color;
-    
-    tag.addEventListener('mouseenter', () => {
-      tag.style.backgroundColor = '#f3f4f6';
-      tag.style.color = '#374151';
-      tag.style.transform = 'scale(1.05)';
+  /* 카드 전체 클릭 → 상세 페이지 (해시태그·내부 a 제외) */
+  document.querySelectorAll('.bill-card').forEach(card=>{
+    const url=card.dataset.href;
+    card.addEventListener('click',e=>{
+      if(e.target.closest('a')||e.target.closest('.hashtag')) return;
+      window.location.href=url;
     });
-    
-    tag.addEventListener('mouseleave', () => {
-      tag.style.backgroundColor = originalBg;
-      tag.style.color = originalColor;
-      tag.style.transform = 'scale(1)';
+  });
+
+  /* 해시태그 hover 효과 */
+  document.querySelectorAll('.hashtag').forEach(tag=>{
+    const bg=tag.style.backgroundColor;
+    const co=tag.style.color;
+    tag.addEventListener('mouseenter',()=>{
+      tag.style.backgroundColor='#f3f4f6';
+      tag.style.color='#374151';
+      tag.style.transform='scale(1.05)';
+    });
+    tag.addEventListener('mouseleave',()=>{
+      tag.style.backgroundColor=bg;
+      tag.style.color=co;
+      tag.style.transform='scale(1)';
     });
   });
 });

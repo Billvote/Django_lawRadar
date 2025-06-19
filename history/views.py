@@ -64,7 +64,7 @@ class BillHistoryListView(ListView):
     model               = Bill
     template_name       = "history_list.html"
     context_object_name = "bills"
-    paginate_by         = 10
+    paginate_by         = 9
 
     # ── 클러스터별 키워드 사전
     def _cluster_kw_str(self) -> Dict[int, str]:

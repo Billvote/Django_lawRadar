@@ -4,7 +4,7 @@
 
 {% block body %}
 <!-- Hero Section with Gradient Background -->
-<div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 min-h-[40vh]">
+<!-- <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 min-h-[40vh]"> -->
   <!-- Animated Background Elements -->
   <div class="absolute inset-0">
     <div class="absolute top-20 right-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
@@ -16,7 +16,7 @@
   <div class="relative z-10 px-6 py-16">
     <div class="max-w-4xl mx-auto">
       <!-- Bill Number Badge -->
-      <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold text-white mb-6 border border-white/20">
+      <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold text-black mb-6 border border-white/20">
         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
           <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 014 11.5V5z" clip-rule="evenodd"/>
@@ -25,14 +25,14 @@
       </div>
       
       <!-- Bill Title -->
-      <h1 class="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
+      <h1 class="text-4xl md:text-6xl font-black text-black mb-6 leading-tight">
         {{ bill.title }}
       </h1>
       
       <!-- Meta Information -->
       <div class="flex flex-wrap items-center gap-4 mb-8">
         {% if bill.related_count %}
-          <div class="flex items-center px-3 py-2 bg-green-500/20 backdrop-blur-sm rounded-lg text-green-100 border border-green-500/30">
+          <div class="flex items-center px-3 py-2 bg-green-500/20 backdrop-blur-sm rounded-lg text-black-100 border border-green-500/30">
             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
             </svg>
@@ -47,7 +47,7 @@
               {% with kw_list=kw_str|split_by_comma %}
                 {% for kw in kw_list|slice:":5" %}
                   <a href="{% url 'cardnews:card' bill.cluster %}"
-                     class="px-3 py-1 bg-white/10 backdrop-blur-sm text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 border border-white/20 hover:scale-105">
+                     class="px-3 py-1 bg-white/10 backdrop-blur-sm text-black rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 border border-white/20 hover:scale-105">
                      #{{ kw }}
                   </a>
                 {% endfor %}
@@ -61,22 +61,22 @@
 </div>
 
 <!-- Main Content -->
-<div class="bg-gray-50 min-h-screen">
+<!-- <div class="bg-gray-50 min-h-screen"> -->
   <div class="max-w-6xl mx-auto px-6 py-12">
     
     <!-- Timeline Section Header -->
-    <div class="text-center mb-16">
+    <!-- <div class="text-center mb-16">
       <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-semibold text-blue-800 mb-4">
         📋 법안 개정 이력
       </div>
       <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-        개정 과정 
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">타임라인</span>
-      </h2>
+        개정 타임라인 -->
+        <!-- <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-cyan-600">타임라인</span> -->
+      <!-- </h2>
       <p class="text-xl text-gray-600 max-w-2xl mx-auto">
         해당 법안의 제정부터 현재까지의 모든 개정 과정을 시간순으로 확인하세요
       </p>
-    </div>
+    </div> -->
 
     <!-- Enhanced Timeline -->
     <div class="relative">
@@ -110,32 +110,33 @@
                 <div class="flex items-start justify-between">
                   <div class="flex-1">
                     <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
-                      {{ related.summary|default:"(내용 없음)"|truncatewords:20 }}
+                      {{ related.summary|default:"(내용 없음)" }}
                     </h3>
-                    <p class="text-gray-600 font-medium">
-                      법안번호: {{ related.bill_number }}
-                    </p>
                   </div>
                   {% if related.url %}
-                  <a href="{{ related.url }}" target="_blank"
-                     class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 hover:scale-110">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                    </svg>
-                  </a>
-                  {% endif %}
-                </div>
+                  <!-- <a href="{{ related.url }}" target="_blank"
+                  class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 hover:scale-110"> -->
+                  <!-- <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/> -->
+                  </svg>
+                </a>
+                {% endif %}
               </div>
-              
-              <!-- Card Footer -->
-              <div class="p-6">
-                <div class="flex items-center justify-between text-sm text-gray-500">
-                  <div class="flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <!-- <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/> -->
-                    </svg>
+            </div>
+            
+            <!-- Card Footer -->
+            <div class="p-6">
+              <div class="flex items-center justify-between text-sm text-gray-500">
+                <div class="flex items-center">
+                  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <!-- <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/> -->
+                  </svg>
+                  <p class="text-gray-600 font-medium">
+                    법안번호: {{ related.bill_number }}
+                  </p>
                     <!-- 상세 정보 보기 -->
                   </div>
+                  <a href="{{ related.url }}" target="_blank" class="group">
                   <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                   </svg>
@@ -211,8 +212,8 @@ html {
 document.addEventListener('DOMContentLoaded', function() {
   // Intersection Observer for Timeline Animation
   const observerOptions = {
-    threshold: 0.3,
-    rootMargin: '0px 0px -100px 0px'
+    threshold: 0.5,
+    rootMargin: '0px 0px -50px 0px'
   };
 
   const observer = new IntersectionObserver(function(entries) {
@@ -228,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.timeline-item').forEach((item, index) => {
     item.style.opacity = '0';
     item.style.transform = 'translateY(50px)';
-    item.style.transition = `opacity 0.8s ease ${index * 0.2}s, transform 0.8s ease ${index * 0.2}s`;
+    item.style.transition = `opacity 0.8s ease ${index * 0.05}s, transform 0.4s ease ${index * 0.05}s`;
     observer.observe(item);
   });
   
