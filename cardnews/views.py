@@ -42,7 +42,7 @@ def _cluster_kw_set() -> dict[int, set[str]]:
         cache.set('cluster_kw_set', d, _DICT_CACHE)
     return d
 
-def _top_clusters(n=50) -> list[tuple[int, str]]:
+def _top_clusters(n=24) -> list[tuple[int, str]]:
     """상위 n개 클러스터 (id, 대표 1키워드) 목록"""
     key = f'top_clusters_{n}'
     lst = cache.get(key)
