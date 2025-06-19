@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block body %}
+
 <!-- 상단 네비게이션 바 -->
 <nav class="bg-white shadow-sm border-b flex items-center justify-between p-6">
   <div class="text-2xl font-bold text-gray-800">🙋‍♂️우리 지역구 의원이 궁금해?🙋‍♀️</div>
@@ -49,8 +50,8 @@
       </div>
     </div>
 
-
 {% endblock %}
+
 {% block script %}
 <script src="https://d3js.org/d3.v6.min.js"></script>
 
@@ -66,9 +67,7 @@
   const backModalBtn = document.getElementById("backModalBtn");
   const mainContent = document.getElementById("mainContent");
   
-
   let svg, currentNode, hierarchyRoot;
-
 
   function updateBreadcrumb(node) {
     let path = [];
@@ -119,7 +118,6 @@ function renderSummary(data) {
 
     const info = iconMap[type];
     if (!info) return '';
-
     return `
       <div class="mb-4 flex items-start ${info.color} font-bold text-2xl mt-2">
         <div class="whitespace-nowrap">
@@ -381,12 +379,12 @@ function renderSummary(data) {
   '밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군',
   '함양군','거창군','합천군','제주시','서귀포시','중구','동구','남구','세종시','동구','군위',
 ]);
-    function formatNameWithLineBreak(name) {
-      if (exceptions.has(name)) {
-        return name; // 예외 고유명사면 줄바꿈 없이 그대로
-      }
-      return name.replace(/(시|군|구)/g, "$1<br>");
+  function formatNameWithLineBreak(name) {
+    if (exceptions.has(name)) {
+      return name; // 예외 고유명사면 줄바꿈 없이 그대로
     }
+    return name.replace(/(시|군|구)/g, "$1<br>");
+  }
 
     nodes.append("rect")
       .transition().duration(300)

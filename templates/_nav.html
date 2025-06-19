@@ -12,7 +12,7 @@
           <div>
             <div class="flex items-baseline space-x-4">
               <!-- Home -->
-              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-lg font-medium text-gray-500 hover:text-cyan-400">Home</a>
+              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">Home</a>
               <!-- Dashboard -->
               <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/dashboard/' %}active{% endif %}">Dashboard</a>
               
@@ -21,7 +21,7 @@
 
               <!-- 로고 -->
               <a href="{% url 'home' %}">
-                <img src="{% static 'images/law_rader_logo.png' %}" alt="Law Rader 로고" class="h-14 align-middle">
+                <img src="{% static 'images/law_rader_logo2.png' %}" alt="Law Rader 로고" class="h-14 align-middle">
               </a>
 
               <!-- History -->

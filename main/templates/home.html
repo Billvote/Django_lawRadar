@@ -24,13 +24,38 @@
   </defs>
 </svg>
 <div id="tooltip" class="home-tooltip"></div>
-
 <!-- ── 콘텐츠 박스 ─────────────────────────────── -->
 <div id="home-content"
      class="home-overlay px-6 max-w-3xl mx-auto relative text-gray-800"
      style="backdrop-filter:blur(8px);background:rgba(255,255,255,.75);
             border-radius:12px;padding:3rem 2rem;opacity:0;transition:opacity 1s;">
-  <h1 class="text-5xl font-extrabold mb-8">지금 우리 '국회'는?</h1>
+
+  <div class="inline-flex items-end gap-3 mb-4" style="margin: 0 auto; width: max-content;">
+    <h1 class="text-5xl font-extrabold relative" style="left: 50px;">지금 우리 '국회'는?</h1>
+    <button class="explain-btn text-sm flex items-center gap-1"
+            style="margin-left: 50px;"
+            data-title="🍅홈 화면의 기능을 소개합니다!"
+            data-content='
+            <ul class="list-disc pl-5 mt-2 text-sm space-y-3">
+              <li>
+                궁금한 키워드가 있다면 <span class="font-semibold text-blue-600">직접 검색</span>해보세요!<br>
+                <span class="text-gray-500 text-xs">
+                  예: "기후변화", "청년", "부동산" 등의 키워드를 입력해보세요.
+                </span>
+              </li>
+              <li>
+                키워드를 모르겠다면 <span class="font-semibold text-blue-600">점</span>들을 클릭해보세요!<br>
+                <span class="text-gray-500 text-xs">
+                  점 크기는 법안 수에 비례하며, 클릭하면 카드뉴스로 이동합니다.
+                </span>
+              </li>
+            </ul>
+
+            '>
+      <i class="fi fi-rr-info text-lg text-blue-600 hover:text-blue-800 transform transition-transform duration-200 hover:scale-125"></i>
+    </button>
+  </div>
+
   <p class="text-lg leading-relaxed mb-8">
     국회의 표결은 우리의 삶과 직결됩니다<br>
     각 정당은 어떤 법안에 찬성하고, 지역구 국회의원들은 어떤 주제에 집중하고 있을까요?<br>
@@ -115,6 +140,58 @@ d3.json("/api/cluster_keywords/").then(data => {
     node.attr("cx", d => d.x).attr("cy", d => d.y);
   }
 });
+</script>
+
+<!-- 팝업(모달) 영역 ------------------------------------------------------------------------------>
+ <div id="popupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div id="popupOverlay" class="absolute inset-0 bg-black opacity-50"></div>
+  <div class="relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 z-10">
+    <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
+    <div id="modalContent" class="text-gray-700">모달 콘텐츠</div>
+    <div class="mt-6 text-right">
+      <button id="closeModalBtn" class="absolute top-4 right-4 z-10 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
+      &times;
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const popupModal = document.getElementById("popupModal");
+  const popupOverlay = document.getElementById("popupOverlay");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  const mainContent = document.getElementById("home-content");
+
+
+// 팝업 열기
+  function openPopup(title, contentHtml) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = contentHtml;
+    popupModal.classList.remove("hidden");
+    mainContent.classList.add("opacity-70", "blur-sm");
+  }
+
+  // 팝업 닫기
+  function closePopup() {
+    popupModal.classList.add("hidden");
+    mainContent.classList.remove("opacity-70", "blur-sm");
+  }
+
+  // 닫기/오버레이 클릭 시 팝업 닫기
+  closeModalBtn.addEventListener("click", closePopup);
+  popupOverlay.addEventListener("click", closePopup);
+
+  // explain-btn 클릭 시 팝업 열기 이벤트 연결
+  document.querySelectorAll(".explain-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const title = btn.dataset.title;
+    const content = btn.dataset.content;
+    openPopup(title, content);
+  });
+});
+  
 </script>
 
 <!-- ── 커스텀 자동완성 스크립트 ──────────────────── -->
