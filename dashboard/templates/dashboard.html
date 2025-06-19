@@ -20,7 +20,7 @@
   <div class="flex-1 p-6">
     <!-- Topbar -->
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">입법 현황</h1>
+      <h1 class="text-2xl font-bold">☑️입법 현황</h1>
     </div>
 
 <!-- Stats Cards -->
@@ -50,13 +50,13 @@
   
   <!-- enp 프로그래스 바 -->
   <div class="dashboard-section mt-6">
-    <h1 class="text-2xl font-bold whitespace-nowrap">유효한 정당</h1>
+    <h1 class="text-2xl font-bold whitespace-nowrap">🤔실질적으로 영향력 있는 정당은?</h1>
     {% include '02_enp.html' %}
   </div>
 
 
   <div class="flex justify-between items-center mt-6">
-    <h1 class="text-2xl font-bold">👀정당/키워드별 표결 현황</h1>
+    <h1 class="text-2xl font-bold">👀최다 키워드별 표결</h1>
   </div>
 
   <!-- 정당/클러스터별 표결 현황 -->
@@ -69,8 +69,8 @@
 </div>
 
 <!-- 정당별 특이 클러스터 차트 -->
-<div class="flex justify-between items-center mt-8">
-  <h1 class="text-2xl font-bold">정당별 특이 클러스터</h1>
+<div class="flex justify-between items-center mt-10">
+  <h1 class="text-2xl font-bold">🔥정당별 집중 키워드</h1>
 </div>
 
 <div class="grid grid-cols-5 gap-4 mt-4">
@@ -109,7 +109,7 @@
       }
     },
     dataLabels: {
-      enabled: false,
+      enabled: true,
       formatter: function (val) {
         return val > 0 ? val.toFixed(1) + '%' : '';
       },
@@ -531,6 +531,19 @@ function getSelectedParams() {
   fetchAndRenderChart();              // 그 다음 차트 호출
 });
 
+// 카드 뉴스로 이동하기----------------------------------------
+document.addEventListener("DOMContentLoaded", function () {
+  const selectEl = document.getElementById("topSelect");
+  const btn = document.getElementById("goToCardnewsBtn");
+
+  btn.addEventListener("click", function () {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    const url = selected.dataset.url;
+    if (url) {
+      window.open(url, "_blank"); // 새 탭으로 열기 (원하면 _self로 수정)
+    }
+  });
+});
 
 </script>
 {% endblock %}

@@ -293,7 +293,7 @@ def get_concentration_timeseries():
         'top2_seat_shares_series': top2_seat_shares_series,
     }
 
-
+# 정당별 특이 클러스트 차트 옵션 데이터 생성
 def get_cluster_options(age_num, stance_filter=None):
     age = get_object_or_404(Age, number=age_num)
 
@@ -323,26 +323,28 @@ def get_cluster_options(age_num, stance_filter=None):
             keyword_display = ck.keyword_json
         cluster_keyword_map[ck.cluster_num] = keyword_display
 
-    # 전체 stats를 먼저 불러와서 상위 7개 정당만 추출
-    # all_stats = PartyClusterStats.objects.filter(age=age).order_by('party')
-    # unique_parties = list(dict.fromkeys(stat.party.party for stat in all_stats))
-    # top_parties = unique_parties[:7]
-    
-    # # 정당별, stance별 top N 클러스터 담을 dict
-    # party_stance_clusters = defaultdict(lambda: defaultdict(list))
+    # 상위 8개 정당명 집합
+    top_parties = (
+        PartyClusterStats.objects
+        .filter(age=age)
+        .values('party__party')
+        .annotate(member_count=Count('id'))
+        .order_by('-member_count')[:8]
+    )
+    top_party_names = {p['party__party'] for p in top_parties}
 
-    # 정당별, stance별로 가장 높은 하나의 클러스터만 선택
-    party_stance_clusters = defaultdict(dict)
-    # visited = set()
-
-    # stats = PartyClusterStats.objects.filter(age=age).order_by('party')
-    # 개선
+    # stats 쿼리셋 필터링
     stats = PartyClusterStats.objects.filter(age=age).select_related('party').only(
         'cluster_num', 'oppose_ratio', 'abstain_ratio', 'party', 'party__party',
         )
 
+    # 정당별, stance별로 가장 높은 하나의 클러스터만 선택
+    party_stance_clusters = defaultdict(dict)
+
     for stat in stats:
         party_name = stat.party.party
+        if party_name not in top_party_names:
+            continue
         for stance in stances:
             field_name = field_map[stance]
             ratio = getattr(stat, field_name)
@@ -353,13 +355,6 @@ def get_cluster_options(age_num, stance_filter=None):
                     'cluster_num': stat.cluster_num,
                     'ratio': ratio
                 }
-            # key = (stat.party.party, stance)
-            # if key not in visited:
-            #     visited.add(key)
-            #     party_stance_clusters[stat.party.party][stance] = {
-            #         'cluster_num': stat.cluster_num,
-            #         'ratio': ratio
-            #     }
 
     # 옵션 생성
     options = []
@@ -371,6 +366,9 @@ def get_cluster_options(age_num, stance_filter=None):
             text = f"{party} - {stance_display_map[stance]} - 클러스터 {cluster_num} ({keyword})"
             # 옵션 value는 나중에 파싱하기 좋게
             value = f"{party}--{stance}--{cluster_num}"
+            # 카드뉴스 URL
+            cardnews_url = f"/cardnews/cluster/{cluster_num}/"
+
             options.append({
                 'value': value,
                 'text': text,
@@ -379,10 +377,10 @@ def get_cluster_options(age_num, stance_filter=None):
                 'party': party,
                 'stance': stance,
                 'stance_display': stance_display_map[stance],  # 한글 값
+                'cardnews_url': cardnews_url,
                 })
 
     return options
-
 
 # cluster_api
 def cluster_chart_api(request):
@@ -420,14 +418,6 @@ def get_cluster_chart_data(congress_num, cluster_num, party=None, stance=None):
     차트에 바로 쓸 수 있게 정리해서 반환.
     """
     age = get_object_or_404(Age, number=congress_num)
-
-    # 클러스터 키워드 가져오기
-    # try:
-    #     cluster_keyword_obj = ClusterKeyword.objects.get(age=age, cluster_num=cluster_num)
-    #     keyword_list = cluster_keyword_obj.get_keywords()
-    #     keyword = ', '.join(keyword_list) if keyword_list else ''
-    # except ClusterKeyword.DoesNotExist:
-    #     keyword = ''
 
     # 상위 8개 정당 추출 (클러스터 무관, 전체 통계 기준)
     top_parties = (

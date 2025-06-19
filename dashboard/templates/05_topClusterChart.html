@@ -1,40 +1,65 @@
-<div class="flex justify-between items-center">
-    <p class="p-2">결과를 확인하고 싶은 주제를 선택해주세요🙌​</p>
-    <button class="explain-btn ml-3 text-sm flex items-center gap-1"
-            data-title="정당별 핵심 법안 차트"
-            data-content='
-            <p><strong>표결 기준:</strong> 국회 본회의 표결 데이터 중 가결 법안에 대해 정당 소속 의원들이 어떻게 투표했는지 집계</p>
-            <ul class="list-disc pl-5 mt-2 text-sm">
-                <li>찬성, 반대, 기권, 불참 수 기준 정당별 누적합 백분율 계산</li>
-                <li>마우스를 대면 정당 내 표결 비율을 확인할 수 있습니다</li>
-            </ul>
-            <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
-            '>
-        <i class="fi fi-rr-search"></i>
-    </button>
-</div>
-
-<div class="flex flex-row gap-8 mb-4">
+<div class="flex flex-row gap-6 mb-4">
     <!-- 찬반 드롭박스 -->
-    <div class="flex-1">
-        <label for="stanceSelect" class="block font-semibold mb-2">표결 선택</label>
-        <select id="stanceSelect" class="border rounded px-3 py-2 mb-4">
+    <div class="flex-shrink-0 relative">
+        <label for="stanceSelect" class="block font-semibold mb-2 text-gray-700">표결 선택</label>
+        <select id="stanceSelect"
+                class="appearance-none w-20 border border-gray-300 rounded-md px-4 py-1 pr-8 bg-white text-gray-800 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
         <option value="oppose">반대</option>
         <option value="abstain">기권</option>
         </select>
     </div>
 
     <!-- 정당별 클러스터 선택 -->
-    <div class="flex-1">
-    <label for="topSelect" class="block font-semibold mb-2">법안 키워드 선택</label>
-    <select id="topSelect" class="border rounded px-3 py-2 mb-4">
-        {% for option in cluster_options %}
-        <option value="{{ option.value }}" data-stance="{{ option.stance }}">
-        {{  option.party }} {{ option.stance_display }} 多: {{option.keyword}}
-        </option>
-        {% endfor %}
-    </select>
+    <div class="flex-1 min-w-[250px]">
+        <label for="topSelect" class="block font-semibold mb-2">법안 키워드 선택</label>
+        <select id="topSelect"
+                class="appearance-none w-full border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+            {% for option in cluster_options %}
+            <option value="{{ option.value }}"
+                    data-stance="{{ option.stance }}"
+                    data-url="{{ option.cardnews_url }}">
+            {{  option.party }} {{ option.stance_display }}⬆ - {{option.keyword}}
+            </option>
+            {% endfor %}
+        </select>
+
+        <!-- 카드뉴스 이동 버튼 -->
+         <div class="w-full text-right">
+            <button id="goToCardnewsBtn" class="mt-2 text-sm text-cyan-600 transition-transform duration-200 hover:scale-105">
+                이 키워드가 궁금하다면? click~
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-shrink-0 mt-6">
+        <button class="explain-btn ml-3 text-sm flex items-center gap-1"
+        data-title="정당별 집중 키워드 차트"
+        data-content='
+        <p>정당별 가장 <strong>반대/기권</strong> 비율이 많은 주제의 법안에 대해, 정당간 <strong>정치적 태도 차이</strong>를 한눈에 비교하는 그래프입니다.</p>
+        <p>법안 주제에 따른 정당간 <strong>연대 및 대립</strong> 현황을 파악할 수 있습니다.
+        <ul class="list-disc pl-5 mt-2 text-sm">
+            <li>
+                <strong>공식</strong>
+                <ul class="list-disc pl-5 mt-1">
+                    <li>반대율 = (반대 표 수 / 총 투표 수) * 100</li>
+                    <li>기권율 = (기권 표 수 / 총 투표 수) * 100</li>
+                    <li>의석 수 상위 8개 정당 대상, 최고 반대/기권 비율의 주제 필터링</li>
+                </ul>
+            </li>
+            <li><strong>해석</strong>
+                <ul class="list-disc pl-5 mt-1">
+                    <li>찬성 비율이 높다 = 해당 주제에 우호적인 입장</li>
+                    <li>반대 비율이 높다 = 해당 주제에 비판적이거나 소극적</li>
+                    <li>기권 비율이 높다 = 관심 부족 혹은 전략적 회피 가능</li>
+                </ul> 
+            </li>
+            </ul>
+        <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+        '>
+        <i class="fi fi-rr-info text-lg text-gray-700 transition-transform duration-200 hover:scale-125"></i>
+    </button>
     </div>
 </div>
+
 <div id="partyLegend" style="margin-bottom: 10px;"></div>
 <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
