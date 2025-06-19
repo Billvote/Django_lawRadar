@@ -25,12 +25,19 @@
             </svg>
             <span class="text-black font-semi">주제별 카드뉴스</span>
           </nav>
+          <!-- Stats -->
+          <div>
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              <div>
+                <p class="text-2xl text-lime-800">🧷 {{ cluster_bill_count }}개의 관련 법안을 찾았습니다! </p>
+              </div>
+            
+          </div>
           
           <!-- Keywords Title -->
           <div class="space-y-4">
-            <div class="inline-flex items-center px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium">
-              📌 법안 주제
-            </div>
             <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight"
                 style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
               {% for keyword in keywords %}
@@ -39,21 +46,6 @@
                 </span>
               {% endfor %}
             </h1>
-          </div>
-
-          <!-- Stats -->
-          <div class="flex flex-wrap gap-6">
-            <div class="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3">
-              <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-              </div>
-              <div>
-                <p class="text-2xl font-bold text-black">{{ cluster_bill_count }}</p>
-                <p class="text-sm text-black-300">관련 의안</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -116,7 +108,7 @@
               <!-- Card Content -->
               <div class="p-6 space-y-4">
                 <!-- Title -->
-                <h3 class="text-lg font-bold text-gray-800 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                <h3 class="text-lg font-bold text-gray-800 leading-tight line-clamp-2 transition-colors duration-300">
                   {{ bill.title }}
                 </h3>
                 
@@ -124,14 +116,14 @@
                 <div class="space-y-3">
                   <div class="flex items-center space-x-3">
                     <div class="flex items-center space-x-2 text-sm text-gray-600">
-                      <span class="font-medium">의안번호</span>
+                      <span class="font-medium">📃 의안번호</span>
                       <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
                     </div>
                   </div>
                   
                   <div class="flex items-center space-x-3">
                     <div class="flex items-center space-x-2 text-sm text-gray-600">
-                      <span class="font-medium">표결날짜</span>
+                      <span class="font-medium">📅 표결날짜</span>
                       <span class="text-gray-800 font-semibold">{{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span>
                     </div>
                   </div>
@@ -140,7 +132,7 @@
                 <!-- Action Button -->
                 <div class="pt-4 border-t border-gray-100">
                   <a href="{% url 'history:bill_detail' bill.pk %}" 
-                     class="inline-flex items-center space-x-2 w-full justify-center px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group/btn">
+                     class="inline-flex items-center space-x-2 w-full justify-center px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group/btn">
                     <span>자세히 보기</span>
                     <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -156,14 +148,14 @@
         {% endfor %}
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="swiper-button-prev !w-14 !h-14 !mt-0 !left-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-blue-300 !text-blue-600 hover:!text-blue-700 transition-all duration-300 hover:scale-110 z-20">
+      <!-- 넘기기 -->
+      <div class="swiper-button-prev !w-14 !h-14 !mt-0 !left-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
       </div>
 
-      <div class="swiper-button-next !w-14 !h-14 !mt-0 !right-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-blue-300 !text-blue-600 hover:!text-blue-700 transition-all duration-300 hover:scale-110 z-20">
+      <div class="swiper-button-next !w-14 !h-14 !mt-0 !right-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
