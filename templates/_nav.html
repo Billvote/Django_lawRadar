@@ -10,28 +10,28 @@
 
           <!-- 메뉴 항목 -->
           <div>
-            <div class="flex items-baseline space-x-4">
+            <div class="flex items-center space-x-4">
               <!-- Home -->
               <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">Home</a>
               <!-- Dashboard -->
               <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/dashboard/' %}active{% endif %}">Dashboard</a>
               
               <!-- Card News -->
-              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">Card News</a>
+              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">CardNews</a>
 
               <!-- 로고 -->
-              <a href="{% url 'home' %}">
-                <img src="{% static 'images/law_rader_logo2.png' %}" alt="Law Rader 로고" class="h-14 align-middle">
+              <a href="{% url 'home' %}" class="flex items-center">
+                <img src="{% static 'images/law_rader_logo2.png' %}" alt="Law Rader 로고" class="h-16 self-center" />
               </a>
 
               <!-- History -->
               <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == 'history/' %}active{% endif %}">History</a>
 
               <!-- TreeMap -->
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/treemap/' %}active{% endif %}">TreeMap</a>
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/treemap/' %}active{% endif %}">My District</a>
 
               <!-- About us -->
-              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/aboutUs/' %}active{% endif %}">About us</a>
+              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/aboutUs/' %}active{% endif %}">AboutUs</a>
             </div>
           </div>
         </div>
