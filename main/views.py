@@ -206,8 +206,8 @@ def search(request):
             bill.label_count = label_counts.get(bill.label, "-")
             words = bill.title.split()
             bill.title_custom = (
-                " ".join(words[:5]) + "<br>" + " ".join(words[5:])
-            ) if len(words) > 4 else bill.title
+                " ".join(words[:3]) + "<br>" + " ".join(words[3:])
+            ) if len(words) > 3 else bill.title
 
         results = sorted(
             results,
@@ -216,7 +216,7 @@ def search(request):
         )
 
         # 9) 페이지네이션
-        paginator = Paginator(results, 10)
+        paginator = Paginator(results, 9)
         page_obj  = paginator.get_page(request.GET.get("page"))
         current   = page_obj.number
         total     = paginator.num_pages

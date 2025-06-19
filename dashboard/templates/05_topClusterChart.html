@@ -1,19 +1,19 @@
-<div class="flex flex-row gap-6 mb-4">
+<div class="flex flex-row gap-4 mb-4">
     <!-- 찬반 드롭박스 -->
-    <div class="flex-shrink-0 relative">
-        <label for="stanceSelect" class="block font-semibold mb-2 text-gray-700">표결 선택</label>
+    <div class="flex-shrink-0 md:w-32">
+        <label for="stanceSelect" class="block text-sm font-semibold mb-2 text-gray-700">표결 선택</label>
         <select id="stanceSelect"
-                class="appearance-none w-20 border border-gray-300 rounded-md px-4 py-1 pr-8 bg-white text-gray-800 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+                class="w-full appearance-none border border-gray-300 rounded-md px-4 py-1 pr-8 bg-white text-gray-800 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
         <option value="oppose">반대</option>
         <option value="abstain">기권</option>
         </select>
     </div>
 
     <!-- 정당별 클러스터 선택 -->
-    <div class="flex-1 min-w-[250px]">
-        <label for="topSelect" class="block font-semibold mb-2">법안 키워드 선택</label>
+    <div class="w-full md:flex-1 md:min-w-[250px]">
+        <label for="topSelect" class="block text-sm font-semibold mb-2">법안 키워드 선택</label>
         <select id="topSelect"
-                class="appearance-none w-full border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+                class="w-full appearance-none border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
             {% for option in cluster_options %}
             <option value="{{ option.value }}"
                     data-stance="{{ option.stance }}"
@@ -23,12 +23,6 @@
             {% endfor %}
         </select>
 
-        <!-- 카드뉴스 이동 버튼 -->
-         <div class="w-full text-right">
-            <button id="goToCardnewsBtn" class="mt-2 text-sm text-cyan-600 transition-transform duration-200 hover:scale-105">
-                이 키워드가 궁금하다면? click~
-            </button>
-        </div>
     </div>
 
     <div class="flex-shrink-0 mt-6">
@@ -63,3 +57,9 @@
 
 <div id="partyLegend" style="margin-bottom: 10px;"></div>
 <div id="topClusterChart" style="height: 400px; width: 100%;"></div>
+        <!-- 카드뉴스 이동 버튼 -->
+         <div class="w-full text-right mt-2">
+            <button id="goToCardnewsBtn" class="mt-2 text-sm text-cyan-600 transition-transform duration-200 hover:scale-105">
+                이 키워드가 궁금하다면? click~
+            </button>
+        </div>
