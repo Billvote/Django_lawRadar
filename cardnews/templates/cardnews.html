@@ -18,10 +18,13 @@
   </div>
 
   <!-- 오른쪽 링크 -->
-  <div class="flex flex-wrap justify-end items-start">
+  <div class="flex flex-col items-end justify-start space-y-2">
     <a href="/cardnews/" class="mt-4 inline-block text-gray-600 text-lg">
       🔎 다른 주제 둘러보기
     </a>
+    {% if google_news_url %}
+      <a href="{{ google_news_url }}" target="_blank" rel="noopener noreferrer" class="inline-block text-gray-600 text-lg">📰관련 뉴스 보기</a>
+    {% endif %}
   </div>
 </section>
 

@@ -5,8 +5,7 @@ from django.core.cache import cache
 from django.db.models import Count, Max
 from billview.models import Bill
 from geovote.models import Vote
-import random
-import logging
+import random, logging, urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -182,11 +181,6 @@ def cardnews_index(request, cluster_number):
             'error': '유효하지 않은 클러스터 번호입니다.'
         })
     
-    # votes_qs = Vote.objects.only('date', 'bill_id')
-    
-    # bills = Bill.objects.filter(cluster=cluster_number).only(
-    #     'pk', 'card_news_content', 'cluster_keyword'
-    # )
     bills = Bill.objects.filter(cluster=cluster_number).annotate(
         latest_vote_date=Max('vote__date')  # Vote 모델에서 Bill FK 필드명은 vote__date
     ).only('pk', 'card_news_content', 'cluster_keyword', 'label'
@@ -196,7 +190,24 @@ def cardnews_index(request, cluster_number):
     for kw_str in bills.values_list('cluster_keyword', flat=True):
         if kw_str:
             keyword_set.update(kw.strip() for kw in kw_str.split(',') if kw.strip())
+
     sorted_keywords = sorted(keyword_set)
+
+    # 🔥 추가: 뉴스 검색용 키워드 조합
+    if sorted_keywords:
+        # 2개 글자인 keyword 필터링
+        # sorted_keywords = [kw for kw in sorted_keywords if len(kw) > 2]
+
+        or_clause = ' OR '.join(sorted_keywords)
+
+        # 법 AND 형식 추가
+        final_query = f'법 AND {or_clause}'
+
+        # url 인코딩
+        encoded_query = urllib.parse.quote(final_query)
+        google_news_url = f"https://news.google.com/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR%3Ako"
+    else:
+        google_news_url = None
 
     # 중복 없는 bill 만들기
     seen_contents = set()
@@ -220,5 +231,6 @@ def cardnews_index(request, cluster_number):
         'cluster_bills': unique_bills,
         'label_color_map': label_color_map,
         'cluster_bill_count': bills.count(),
+        'google_news_url': google_news_url,
     }
     return render(request, 'cardnews.html', context)
