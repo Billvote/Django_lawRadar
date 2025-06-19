@@ -1,165 +1,302 @@
-{# history/templates/history_list.html #}
+<!-- 개선된 history_list.html -->
 {% extends "base.html" %}
 {% load history_filters %}
 
-
 {% block body %}
-<div class="max-w-6xl mx-auto space-y-2">
-
-  <!-- 제목 --------------------------------------------------------->
-  <h2 class="font-bold text-4xl px-6">
-    {% if query %}"{{ query }}"{% else %}📋​그룹별 대표 법안 목록{% endif %}
-  </h2>
-
-  <!-- 검색창 : 제목 바로 아래 오른쪽 -------------------------------->
-  <div class="flex justify-end px-6 mb-2">
-    <form action="{% url 'history:history_list' %}" method="get" class="relative">
-      <label for="id_keyword" class="sr-only">검색어</label>
-      <input type="text" name="keyword" id="id_keyword"
-             value="{{ query }}" placeholder="검색어를 입력하세요"
-             class="w-96 px-4 py-3 border border-gray-300 rounded-md
-                    focus:outline-none focus:ring-2 focus:ring-cyan-400 transition">
-      {% if selected_cluster %}
-        <input type="hidden" name="cluster" value="{{ selected_cluster }}">
-      {% endif %}
-      <button type="submit"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 font-semibold">
-        검색
-      </button>
-    </form>
+<!-- Hero Section -->
+<div class="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 py-20">
+  <!-- Background Effects -->
+  <div class="absolute inset-0">
+    <div class="absolute top-10 right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
+    <div class="absolute bottom-10 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
   </div>
-
-  <!-- 두 통계 문구 한 줄 ------------------------------------------->
-  <div class="flex items-center gap-x-3 px-6 mb-1">
-    <p class="text-gray-600 whitespace-nowrap">
-      <!-- 👏 {{ total_results_count }}개의 대표법안이 존재합니다 -->
-    </p>
-    <p class="text-gray-600 whitespace-nowrap">
-      <!-- # {{ total_cluster_count }}개의 법안별 대표 키워드가 존재합니다 -->
+  
+  <div class="relative z-10 max-w-6xl mx-auto px-6 text-center">
+    <h1 class="text-4xl md:text-6xl font-black text-white mb-6">
+      {% if query %}
+        "<span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">{{ query }}</span>" 검색결과
+      {% else %}
+        📋 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">법안 목록</span>
+      {% endif %}
+    </h1>
+    <p class="text-xl md:text-2xl text-white/90 font-medium max-w-3xl mx-auto">
+      대한민국 국회에서 다루어진 주요 법안들을 한눈에 확인하고 상세 정보를 탐색하세요
     </p>
   </div>
-
-  <!-- 검색 실패 안내 ----------------------------------------------->
-  {% if page_obj and not total_results_count %}
-    <p class="text-gray-600 mb-6 px-6">😥 다른 키워드로 검색해보세요</p>
-  {% endif %}
-
-  <!-- 결과 표 ------------------------------------------------------->
-  {% if page_obj %}
-  <div class="overflow-x-auto rounded-lg shadow">
-    <table class="min-w-full bg-white border border-gray-200
-                 divide-y divide-gray-200 text-sm text-left">
-      <thead class="bg-gray-100 text-gray-700 font-semibold">
-        <tr>
-          <th class="px-6 py-3 w-[7%] text-center">대수</th>
-          <th class="px-6 py-3 w-[7%] text-center">의안번호</th>
-          <th class="px-6 py-3 w-[26%] text-center">의안명</th>
-          <th class="px-6 py-3 w-[38%] text-center">키워드</th>
-          <th class="px-6 py-3 w-[12%] text-center">개정 횟수</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        {% for bill in page_obj.object_list %}
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 text-center">{{ bill.age }}</td>
-          <td class="px-6 py-4 font-medium text-center">{{ bill.bill_number }}</td>
-          <td class="px-6 py-4 font-medium">
-            <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}"
-               class="block hover:underline">
-              {{ bill.title_custom|safe|default:bill.title }}
-            </a>
-          </td>
-          <td class="px-6 py-4">
-            {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
-              {% if kw_str %}
-                {% for kw in kw_str|split_by_comma|slice:":4" %}
-                  <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block mb-1">
-                    <span class="hashtag inline-block text-sm font-medium px-3 py-1 rounded-full"
-                          style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
-                      #{{ kw }}
-                    </span>
-                  </a>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
-          </td>
-          <td class="px-6 py-4 text-center">{{ bill.related_count }}회</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-            검색 결과가 없습니다.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- 페이지네이션 ------------------------------------------------>
-    <div class="pagination flex justify-center space-x-2
-                bg-white border-t border-gray-200 p-4">
-
-      {% if page_obj.has_previous %}
-        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
-           class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
-      {% else %}
-        <span class="px-3 py-1 text-gray-400">이전</span>
-      {% endif %}
-
-      {% for num in page_range %}
-        {% if num == page_obj.number %}
-          <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
-        {% else %}
-          <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
-             class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
-        {% endif %}
-      {% endfor %}
-
-      {% if page_obj.has_next %}
-        <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
-           class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
-      {% else %}
-        <span class="px-3 py-1 text-gray-400">다음</span>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
 </div>
-{% endblock %}
 
-{% block script %}
+<!-- Main Content -->
+<div class="bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
+      <div class="flex flex-col lg:flex-row gap-6 items-center">
+        <!-- Search Form -->
+        <div class="flex-1 w-full">
+          <form action="{% url 'history:history_list' %}" method="get" class="relative">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <input type="text" name="keyword" id="id_keyword"
+                     value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
+                     class="w-full pl-12 pr-32 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg transition-all duration-300">
+              {% if selected_cluster %}
+                <input type="hidden" name="cluster" value="{{ selected_cluster }}">
+              {% endif %}
+              <button type="submit"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold">
+                검색
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Stats -->
+        <div class="flex gap-8 text-center">
+          <div>
+            <div class="text-2xl font-bold text-gray-900">{{ total_results_count }}</div>
+            <div class="text-sm text-gray-600">총 법안</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-gray-900">{{ total_cluster_count }}</div>
+            <div class="text-sm text-gray-600">주제</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    {% if not total_results_count and query %}
+      <!-- No Results -->
+      <div class="text-center py-20">
+        <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.084-2.329"/>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">검색 결과가 없습니다</h3>
+        <p class="text-gray-600 mb-6">다른 키워드로 다시 검색해보세요</p>
+        <a href="{% url 'history:history_list' %}" 
+           class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300">
+          전체 목록 보기
+        </a>
+      </div>
+    {% else %}
+      <!-- Bill Cards Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        {% for bill in page_obj.object_list %}
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 group">
+          <!-- Card Header -->
+          <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
+                  {{ bill.age }}
+                </div>
+                <div>
+                  <div class="text-sm text-gray-500">법안번호</div>
+                  <div class="font-semibold text-gray-900">{{ bill.bill_number }}</div>
+                </div>
+              </div>
+              {% if bill.related_count %}
+              <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                개정 {{ bill.related_count }}회
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Card Content -->
+          <div class="p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+              <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}" class="hover:underline">
+                {{ bill.title_custom|safe|default:bill.title }}
+              </a>
+            </h3>
+            
+            <!-- Keywords -->
+            <div class="mb-6">
+              {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+                {% if kw_str %}
+                  <div class="flex flex-wrap gap-2">
+                    {% for kw in kw_str|split_by_comma|slice:":3" %}
+                      <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block">
+                        <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full transition-all duration-300 hover:scale-105"
+                              style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                          #{{ kw }}
+                        </span>
+                      </a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endwith %}
+            </div>
+            
+            <!-- Card Footer -->
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-500">
+                상세 정보 확인
+              </div>
+              <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-20">
+          <div class="text-gray-500 text-lg">표시할 법안이 없습니다.</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Enhanced Pagination -->
+      {% if page_obj.has_other_pages %}
+      <div class="mt-16 flex justify-center">
+        <nav class="flex items-center space-x-2">
+          {% if page_obj.has_previous %}
+            <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
+               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300 flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              이전
+            </a>
+          {% endif %}
+
+          {% for num in page_range %}
+            {% if num == page_obj.number %}
+              <span class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold">{{ num }}</span>
+            {% else %}
+              <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
+                 class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300">{{ num }}</a>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
+               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300 flex items-center">
+              다음
+              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<style>
+/* Line Clamp Utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Enhanced Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grid > div {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.grid > div:nth-child(2) { animation-delay: 0.1s; }
+.grid > div:nth-child(3) { animation-delay: 0.2s; }
+.grid > div:nth-child(4) { animation-delay: 0.3s; }
+.grid > div:nth-child(5) { animation-delay: 0.4s; }
+.grid > div:nth-child(6) { animation-delay: 0.5s; }
+
+/* Hover Effects */
+.hashtag:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  transform: scale(1.05);
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+</style>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 <script>
-/* 해시태그 hover ----------------------------------------------------*/
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.hashtag').forEach(tag => {
-    const bg = tag.style.backgroundColor || '#e5e7eb';
-    const co = tag.style.color || '#374151';
-    tag.addEventListener('mouseenter', () => {
-      tag.style.backgroundColor = '#eee';
-      tag.style.color = '#4B5563';
-    });
-    tag.addEventListener('mouseleave', () => {
-      tag.style.backgroundColor = bg;
-      tag.style.color = co;
-    });
-  });
-});
-
-/* jQuery-UI Autocomplete -------------------------------------------*/
-$(function () {
+document.addEventListener('DOMContentLoaded', function() {
+  // Enhanced Autocomplete
   $("#id_keyword").autocomplete({
     source: "{% url 'history:autocomplete' %}",
     minLength: 1,
-    delay: 150,
+    delay: 200,
     focus: () => false,
     select: (e, ui) => {
       $("#id_keyword").val(ui.item.value);
       return false;
+    },
+    open: function() {
+      $('.ui-autocomplete').addClass('shadow-lg border-0 rounded-lg mt-2');
     }
+  });
+
+  // Smooth card animations on scroll
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+
+  // Observe cards
+  document.querySelectorAll('.grid > div').forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+    observer.observe(card);
+  });
+
+  // Enhanced hashtag interactions
+  document.querySelectorAll('.hashtag').forEach(tag => {
+    const originalBg = tag.style.backgroundColor;
+    const originalColor = tag.style.color;
+    
+    tag.addEventListener('mouseenter', () => {
+      tag.style.backgroundColor = '#f3f4f6';
+      tag.style.color = '#374151';
+      tag.style.transform = 'scale(1.05)';
+    });
+    
+    tag.addEventListener('mouseleave', () => {
+      tag.style.backgroundColor = originalBg;
+      tag.style.color = originalColor;
+      tag.style.transform = 'scale(1)';
+    });
   });
 });
 </script>
