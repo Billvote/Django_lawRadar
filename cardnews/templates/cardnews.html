@@ -31,7 +31,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
               <div>
-                <p class="text-2xl font-bold text-lime-800">🧷 {{ cluster_bill_count }}개의 관련 법안을 찾았습니다! </p>
+                <p class="text-2xl text-lime-800">🧷 {{ cluster_bill_count }}개의 관련 법안을 찾았습니다! </p>
               </div>
             
           </div>
@@ -108,7 +108,7 @@
               <!-- Card Content -->
               <div class="p-6 space-y-4">
                 <!-- Title -->
-                <h3 class="text-lg font-bold text-gray-800 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                <h3 class="text-lg font-bold text-gray-800 leading-tight line-clamp-2 transition-colors duration-300">
                   {{ bill.title }}
                 </h3>
                 
@@ -148,14 +148,14 @@
         {% endfor %}
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="swiper-button-prev !w-14 !h-14 !mt-0 !left-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-blue-300 !text-blue-600 hover:!text-blue-700 transition-all duration-300 hover:scale-110 z-20">
+      <!-- 넘기기 -->
+      <div class="swiper-button-prev !w-14 !h-14 !mt-0 !left-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
       </div>
 
-      <div class="swiper-button-next !w-14 !h-14 !mt-0 !right-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-blue-300 !text-blue-600 hover:!text-blue-700 transition-all duration-300 hover:scale-110 z-20">
+      <div class="swiper-button-next !w-14 !h-14 !mt-0 !right-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
