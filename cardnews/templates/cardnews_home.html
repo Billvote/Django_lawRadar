@@ -1,20 +1,200 @@
 {% extends "base.html" %}
-
+{% load custom_filters %}
 {% block body %}
-<div class="gap-1 px-6 mt-6">
-  <h1 class="text-4xl font-bold">카드뉴스</h1>
-  <p class="text-lg font-medium text-gray-600 mt-3">설명</p>
+<!-- Hero Section with Gradient Background -->
+<!-- <div class="relative overflow-hidden bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500 min-h-[40vh] flex items-center"> -->
+  <!-- Decorative Elements -->
+  <!-- <div class="absolute inset-0 bg-black/10"></div>
+  <div class="absolute top-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+  <div class="absolute bottom-10 left-10 w-24 h-24 bg-white/20 rounded-full blur-lg"></div> -->
+  
+  <!-- Content -->
+  <!-- <div class="relative z-10 px-6 w-full">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
+        카드뉴스
+        <span class="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400 text-3xl md:text-5xl font-bold mt-2">
+          법안을 한눈에
+        </span>
+      </h1>
+      <p class="text-xl md:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
+        복잡한 법안 정보를 쉽고 빠르게 이해할 수 있도록 시각적으로 정리된 카드뉴스를 제공합니다
+      </p>
+    </div>
+  </div> -->
+  
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+    <div class="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+      <div class="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
+    </div>
+  </div>
 </div>
 
-  <!-- 해시태그 -->
-  <div class="flex flex-wrap gap-1 px-6 mt-10">
-    {% for cid, kw in top_clusters %}
-      <a href="{% url 'cardnews:card' cid %}" class="inline-block mb-1">
-        <span class="hashtag inline-block bg-gray-200 text-gray-700
-                     text-base font-semibold px-4 py-2 rounded-full">
-          #{{ kw }}
-        </span>
-      </a>
-    {% endfor %}
+<!-- Topics Section -->
+<div class="py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    <!-- Section Header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-semibold text-blue-800 mb-4">
+        🏷️ 인기 주제 탐색
+      </div>
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        지금 주목받는 
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">법안 주제</span>
+      </h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        관심 있는 주제를 클릭하여 관련 법안들을 카드뉴스로 확인해보세요
+      </p>
+    </div>
+
+<!-- Stats Section -->
+<div class="py-16 bg-50">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="text-center group">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl text-white text-2xl font-bold mb-4 group-hover:scale-110 transition-transform duration-300">
+          📚
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800 mb-2">{{ total_cluster_count }}+</h3>
+        <p class="text-gray-600 font-medium">법안 주제</p>
+      </div>
+      <div class="text-center group">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl text-white text-2xl font-bold mb-4 group-hover:scale-110 transition-transform duration-300">
+          📊
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800 mb-2">{{ total_results_count }}+</h3>
+        <p class="text-gray-600 font-medium">분석된 의안</p>
+      </div>
+      <div class="text-center group">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl text-white text-2xl font-bold mb-4 group-hover:scale-110 transition-transform duration-300">
+          ⚡
+        </div>
+        <h3 class="text-3xl font-bold text-gray-800 mb-2">5초</h3>
+        <p class="text-gray-600 font-medium">빠른 이해</p>
+      </div>
+    </div>
   </div>
+</div>
+
+
+    <!-- Hashtag Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {% for cid, kw in top_clusters %}
+        <a href="{% url 'cardnews:card' cid %}" 
+           class="group relative block p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+          
+          <!-- Gradient Background Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300"
+               style="background: linear-gradient(135deg, {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }}, {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }}88);"></div>
+          
+          <!-- Content -->
+          <div class="relative z-10">
+            <!-- Topic Icon -->
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300"
+                 style="background-color: {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }};">
+              <span class="text-white text-lg font-bold">#</span>
+            </div>
+            
+            <!-- Topic Name -->
+            <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+              {{ kw }}
+            </h3>
+            
+            <!-- View More Arrow -->
+            <div class="flex items-center text-sm text-gray-500 group-hover:text-blue-600 transition-colors duration-300">
+              <span class="mr-2">자세히 보기</span>
+              <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+                   fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Hover Effect Decoration -->
+          <div class="absolute top-4 right-4 w-8 h-8 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"
+               style="background-color: {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }};"></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<style>
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gradient Text Animation */
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+}
+</style>
+
+<script>
+// Intersection Observer for Scroll Animations
+document.addEventListener('DOMContentLoaded', function() {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-fade-in-up');
+      }
+    });
+  }, observerOptions);
+
+  // Observe all topic cards
+  document.querySelectorAll('.group').forEach(card => {
+    observer.observe(card);
+  });
+});
+
+// Add fade-in-up animation class
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+`;
+document.head.appendChild(style);
+</script>
+
 {% endblock %}
