@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load main_custom_filters %}  {# 필요하면 유지하세요 #}
+{% load main_custom_filters %}
 
 {% block body %}
         <!-- Left: Keywords and Info -->
 <div class="space-y-6">
   <!-- Breadcrumb -->
-  <nav class="flex items-center space-x-2 text-sm text-black">
+  <nav class="flex items-center space-x-2 text-sm text-black mb-6">
     <a href="{% url 'home' %}" class="hover:text-gray transition-colors">home</a>
     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
@@ -15,19 +15,19 @@
 
   <!-- Keywords Title -->
   <div class="space-y-4 mb-6">
-    <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight"
+    {% if total_results_count > 0 %}
+      <p class="text-gray-600 text-2xl mb-8">🧷​{{ total_results_count }}개의 법안을 찾았습니다!</p>
+    <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight mb-8"
         style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
         <span class="bg-gradient-to-r from-emerald-400 to-lime-500 bg-clip-text text-transparent">
           #{{ query }}
         </span>
     </h1>
-    {% if total_results_count > 0 %}
-      <p class="text-gray-600 mb-8">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
     {% else %}
-      <p class="text-gray-600 mb-8">😥다른 키워드로 검색해보세요</p>
+      <p class="text-gray-600 text-2xl mb-8">😥다른 키워드로 검색해보세요</p>
     {% endif %}
   </div>
-
+<div class="h-8"></div>
 <!-- 해시태그 -->
 <!-- <div class="p-6 max-w-6xl mx-auto">
     <div class="flex flex-wrap gap-2 mb-8">
@@ -43,13 +43,48 @@
     </div>
 </div> -->
 
+<!-- 구글 뉴스 -->
+{% if google_news_url %}
+  <a href="{{ google_news_url }}" target="_blank" rel="noopener noreferrer"
+      class="inline-flex items-center space-x-2 px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300 group">
+    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+    </svg>
+    <span class="font-medium">관련 뉴스 보기</span>
+  </a>
+{% endif %}
+
+<!-- 검색창 -->
+        <div class="flex-1 w-full">
+          <form action="{% url 'history:history_list' %}" method="get" class="relative">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <input type="text" name="keyword" id="id_keyword"
+                     value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
+                     class="w-full pl-12 pr-32 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
+              {% if selected_cluster %}
+                <input type="hidden" name="cluster" value="{{ selected_cluster }}">
+              {% endif %}
+              <button type="submit"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 text-cyan-500 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold">
+                검색
+              </button>
+            </div>
+          </form>
+        </div>
+
+
 {% if page_obj %}
 <!-- 카드 그리드 -->
-<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-none mx-auto px-6 mb-12">
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-none mx-auto px-6 mb-20">
   {% for bill in page_obj %}
-  <div class="flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow hover:shadow-2xl transition-all duration-500 overflow-hidden hover:border-blue-200 group">
+  <div class="flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-blue-200 group">
     <!-- 카드 헤더 -->
-    <div class="bg-white p-3 border-b border-gray-100">
+    <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
       <div class="flex items-start justify-between">
         <div class="flex items-center space-x-3">
           <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
@@ -58,7 +93,7 @@
         </div>
         {% if bill.label_count %}
         <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
-          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
           </svg>
           개정 {{ bill.label_count }}회
@@ -69,7 +104,7 @@
 
     <!-- 카드 본문 -->
     <div class="p-6 flex-1 flex flex-col justify-between text-center">
-      <h3 style="font-size: 16px;" class="font-bold text-gray-900 mb-4 group-hover:text-cyan-600 transition-colors duration-300 line-clamp-2">
+      <h3 style="font-size: 16px;" class="font-bold text-gray-900 mb-4 group-hover:text-cyan-500 transition-colors duration-300 line-clamp-2">
         <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
           {{ bill.title_custom|safe|default:bill.title }}
         </a>
@@ -95,9 +130,17 @@
 
       <!-- 카드 푸터 -->
       <div class="mt-6 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-        <div class="text-sm text-gray-500">의안번호: {{ bill.bill_number }}</div>
-            <!-- <div class="font-semibold text-gray-900">{{ bill.bill_number }}</div> -->
-        <div class="text-sm text-gray-500">최근 표결: {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}</div>
+        <div class="flex items-center space-x-1 text-gray-600 font-medium">
+          <span>📃 의안번호</span>
+          <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+        </div>
+
+        <div class="flex items-center space-x-1 text-gray-600 font-medium">
+          <span>📅 표결일</span>
+          <span class="text-gray-800 font-semibold">
+            {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -106,29 +149,58 @@
   {% endfor %}
 </div>
 
+<!-- 여백 -->
+<div class="h-8"></div>
+
 <!-- 페이징 -->
-<div class="pagination m-4 flex justify-center space-x-2">
-  {% if page_obj.has_previous %}
-    <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">이전</span>
-  {% endif %}
-
-  {% for num in page_range %}
-    {% if num == page_obj.number %}
-      <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
+<div class="pagination mt-12 mb-12 flex justify-center">
+  <nav class="flex items-center space-x-2">
+    {% if page_obj.has_previous %}
+      <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </a>
     {% else %}
-      <a href="?q={{ query }}&page={{ num }}" class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </span>
     {% endif %}
-  {% endfor %}
 
-  {% if page_obj.has_next %}
-    <a href="?q={{ query }}&page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">다음</span>
-  {% endif %}
+    {% for num in page_range %}
+      {% if num == page_obj.number %}
+        <span class="px-4 py-2 rounded bg-cyan-400 text-white rounded font-semibold">{{ num }}</span>
+      {% else %}
+      <a href="?q={{ query }}&page={{ num }}"
+          class="px-4 py-2 rounded hover:bg-gray-200 transition-colors duration-300">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+    
+    {% if page_obj.has_next %}
+      <a href="?q={{ query }}&page={{ page_obj.next_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+    {% else %}
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+      </span>
+    {% endif %}
+  </nav>
 </div>
 {% endif %}
+<div class="h-8"></div>
 {% endblock %}
 
 {% block script %}

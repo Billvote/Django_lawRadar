@@ -29,6 +29,8 @@ from billview.models import Bill
 from geovote.models import Vote
 from search import search_service as ss           # ★ 공통 검색 모듈
 from .models import VoteSummary
+import random, logging, urllib.parse
+
 
 logger = logging.getLogger(__name__)
 
@@ -206,8 +208,8 @@ def search(request):
             bill.label_count = label_counts.get(bill.label, "-")
             words = bill.title.split()
             bill.title_custom = (
-                " ".join(words[:3]) + "<br>" + " ".join(words[3:])
-            ) if len(words) > 3 else bill.title
+                " ".join(words[:4]) + "<br>" + " ".join(words[4:])
+            ) if len(words) > 4 else bill.title
 
         results = sorted(
             results,
@@ -224,6 +226,19 @@ def search(request):
         end       = min(start + 9, total)
         page_range = range(start, end + 1)
 
+        # 10) 구글 뉴스 검색용 키워드 조합 생성
+        google_news_url = None
+        if top_clusters:
+            # 상위 2개 클러스터의 키워드 중 앞에서 2개씩 추출
+            search_keywords = []
+            for cluster in top_clusters:
+                search_keywords.extend(cluster["keywords"][:2])  # 앞에서 2개
+            if search_keywords:
+                final_query = " OR ".join(search_keywords)
+                final_query = f"법 AND ({final_query})"
+                encoded_query = urllib.parse.quote(final_query)
+                google_news_url = f"https://news.google.com/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR%3Ako"
+
     context = {
         "query"               : query,
         "page_obj"            : page_obj,
@@ -232,6 +247,7 @@ def search(request):
         "cluster_keywords_dict": cluster_keywords_dict,
         "top_clusters"        : top_clusters,
         "cluster_color_map"   : cluster_color_map,
+        "google_news_url"     : google_news_url,
     }
     return render(request, "search.html", context)
 
