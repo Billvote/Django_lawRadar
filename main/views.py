@@ -317,3 +317,22 @@ def calculate_votesummary(member_name: str):
         # total_vote_count += sum(s.values())
 
     # return total_vote_count
+
+# ═════════════ 5. 자동완성 JSON (공통 모듈 사용) ═════════════
+@require_GET
+def autocomplete(request):
+    """
+    /history/autocomplete/?term=<검색어>
+    두 글자 이상 입력 시, 실제 결과 ≥ 1 건인 제목/키워드 최대 10개
+    """
+    term = request.GET.get("term", "").strip()
+    if len(term) < 2:
+        return JsonResponse([], safe=False)
+
+    cache_key = f"hist-ac:{term.lower()}"
+    if (cached := cache.get(cache_key)):
+        return JsonResponse(cached, safe=False)
+
+    suggestions = ss.autocomplete(term)            # ★ 공통 로직 호출
+    cache.set(cache_key, suggestions, 600)         # 10 분 캐시
+    return JsonResponse(suggestions, safe=False)
