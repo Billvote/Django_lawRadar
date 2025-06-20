@@ -106,6 +106,16 @@ def member_vote_summary_api(request):
             'bill_count': bill_count,
         }
 
+        from functools import reduce
+
+        total_vote_count = 0
+        for v in max_clusters.values():
+            if isinstance(v, dict) and 'counts' in v:
+                total_vote_count += sum(v['counts'].values())
+
+        max_clusters['total_vote_count'] = total_vote_count
+
+
     return JsonResponse(max_clusters)
 
 

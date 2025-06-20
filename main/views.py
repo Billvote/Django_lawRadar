@@ -311,3 +311,6 @@ def calculate_votesummary(member_name: str):
             기권            = s["기권"],
             불참            = s["불참"],
         )
+        total_vote_count += sum(s.values())
+
+    return total_vote_count
