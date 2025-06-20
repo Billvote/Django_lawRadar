@@ -68,7 +68,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Results Section -->
     {% if not total_results_count and query %}
       <!-- No Results -->
@@ -89,19 +89,16 @@
       <!-- Bill Cards Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {% for bill in page_obj.object_list %}
-        <div class="bill-card bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 group cursor-pointer"
+        <div class="bill-card flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-blue-200 border border-gray-100 group cursor-pointer"
              data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
-          <!-- 수정된 카드 헤더 -->
-          <div class="bg-white p-3 border-b border-gray-100">
+          
+          <!-- 카드 헤더 -->
+          <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
             <div class="flex items-start justify-between">
               <div class="flex items-center space-x-3">
                 <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
                   {{ bill.age }}
                 </div>
-                <!-- <div>
-                  <div class="text-sm text-gray-500">의안번호</div>
-                  <div class="font-semibold text-gray-900">{{ bill.bill_number }}</div>
-                </div> -->
               </div>
               {% if bill.related_count %}
               <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
@@ -114,29 +111,9 @@
             </div>
           </div>     
           
-          <!-- 기존 카드 헤더 -->
-          <!-- <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
-                  {{ bill.age }}
-                </div>
-                <div>
-                  <div class="text-sm text-gray-500">의안번호</div>
-                  <div class="font-semibold text-gray-900">{{ bill.bill_number }}</div>
-                </div>
-              </div>
-              {% if bill.related_count %}
-              <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                개정 {{ bill.related_count }}회
-              </div>
-              {% endif %}
-            </div>
-          </div> -->
-          
-          <!-- Card Content -->
-          <div class="p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-600 transition-colors duration-300">
+          <!-- 카드 본문 -->
+          <div class="p-6 flex-1 flex flex-col justify-between text-center">
+            <h3 style="font-size:16px;" class="font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-500 transition-colors duration-300">
               <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
                 {{ bill.title_custom|safe|default:bill.title }}
               </a>
@@ -146,7 +123,7 @@
             <div class="mb-6">
               {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
                 {% if kw_str %}
-                  <div class="flex flex-wrap gap-2">
+                  <div class="flex flex-wrap gap-2 justify-center">
                     {% for kw in kw_str|split_by_comma|slice:":3" %}
                       <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block">
                         <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full transition-all duration-300 hover:scale-105"
@@ -160,10 +137,18 @@
               {% endwith %}
             </div>
             
-            <!-- Card Footer -->
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-500"></div>
-              <!-- 아이콘 제거 또는 필요시 추가 -->
+            <!-- 카드 푸터 -->
+            <div class="mt-6 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+              <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                <span>📃 의안번호</span>
+                <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+              </div>
+              <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                <span>📅 표결일</span>
+                <span class="text-gray-800 font-semibold">
+                  {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -179,7 +164,7 @@
       <div class="mt-16 flex justify-center">
         <nav class="flex items-center space-x-2">
           {% if page_obj.has_previous %}
-            <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
+            <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
                class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -192,13 +177,13 @@
             {% if num == page_obj.number %}
               <span class="px-4 py-2 bg-cyan-400 text-white rounded-lg font-semibold">{{ num }}</span>
             {% else %}
-              <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
+              <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
                  class="px-4 py-2 rounded hover:bg-gray-200 transition-colors duration-300">{{ num }}</a>
             {% endif %}
           {% endfor %}
 
           {% if page_obj.has_next %}
-            <a href="?{% if query %}keyword={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
+            <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
                class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
               다음
               <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
