@@ -106,14 +106,15 @@ def member_vote_summary_api(request):
             'bill_count': bill_count,
         }
 
-        from functools import reduce
+        # 전체 표결 수 가져오기
+        # from functools import reduce
 
-        total_vote_count = 0
-        for v in max_clusters.values():
-            if isinstance(v, dict) and 'counts' in v:
-                total_vote_count += sum(v['counts'].values())
+        # total_vote_count = 0
+        # for v in max_clusters.values():
+        #     if isinstance(v, dict) and 'counts' in v:
+        #         total_vote_count += sum(v['counts'].values())
 
-        max_clusters['total_vote_count'] = total_vote_count
+        # max_clusters['total_vote_count'] = total_vote_count
 
 
     return JsonResponse(max_clusters)
