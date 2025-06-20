@@ -45,9 +45,9 @@
 
 {% if page_obj %}
 <!-- 카드 그리드 -->
-<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-none mx-auto px-6 mb-12">
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-none mx-auto px-6 mb-20">
   {% for bill in page_obj %}
-  <div class="flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow hover:shadow-2xl transition-all duration-500 overflow-hidden hover:border-blue-200 group">
+  <div class="flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow hover:shadow-2xl transition-all duration-500 hover:border-blue-200 group">
     <!-- 카드 헤더 -->
     <div class="bg-white p-3 border-b border-gray-100">
       <div class="flex items-start justify-between">
@@ -69,7 +69,7 @@
 
     <!-- 카드 본문 -->
     <div class="p-6 flex-1 flex flex-col justify-between text-center">
-      <h3 style="font-size: 16px;" class="font-bold text-gray-900 mb-4 group-hover:text-cyan-600 transition-colors duration-300 line-clamp-2">
+      <h3 style="font-size: 16px;" class="font-bold text-gray-900 mb-4 group-hover:text-cyan-500 transition-colors duration-300 line-clamp-2">
         <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
           {{ bill.title_custom|safe|default:bill.title }}
         </a>
@@ -106,29 +106,58 @@
   {% endfor %}
 </div>
 
+<!-- 여백 -->
+<div class="h-8"></div>
+
 <!-- 페이징 -->
-<div class="pagination m-4 flex justify-center space-x-2">
-  {% if page_obj.has_previous %}
-    <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">이전</span>
-  {% endif %}
-
-  {% for num in page_range %}
-    {% if num == page_obj.number %}
-      <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
+<div class="pagination mt-12 mb-12 flex justify-center">
+  <nav class="flex items-center space-x-2">
+    {% if page_obj.has_previous %}
+      <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </a>
     {% else %}
-      <a href="?q={{ query }}&page={{ num }}" class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </span>
     {% endif %}
-  {% endfor %}
 
-  {% if page_obj.has_next %}
-    <a href="?q={{ query }}&page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">다음</span>
-  {% endif %}
+    {% for num in page_range %}
+      {% if num == page_obj.number %}
+        <span class="px-4 py-2 rounded bg-cyan-400 text-white rounded font-semibold">{{ num }}</span>
+      {% else %}
+      <a href="?q={{ query }}&page={{ num }}"
+          class="px-4 py-2 rounded hover:bg-gray-200 transition-colors duration-300">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+    
+    {% if page_obj.has_next %}
+      <a href="?q={{ query }}&page={{ page_obj.next_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+    {% else %}
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+      </span>
+    {% endif %}
+  </nav>
 </div>
 {% endif %}
+<div class="h-8"></div>
 {% endblock %}
 
 {% block script %}
