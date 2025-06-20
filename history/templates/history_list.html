@@ -16,11 +16,11 @@
       {% if query %}
         "<span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">{{ query }}</span>" 검색결과
       {% else %}
-        📋 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">법안 목록</span>
+        📋 <span class="text-black">법안 목록</span>
       {% endif %}
     </h1>
     <p class="text-xl md:text-2xl text-black/90 font-medium max-w-3xl mx-auto">
-      주요 법안들을 한눈에 확인하고 상세 정보를 탐색하세요
+      주요 법안들을 한눈에 확인하고 개정 내용을 탐색하세요!
     </p>
   </div>
 </div>
@@ -98,14 +98,14 @@
                 <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
                   {{ bill.age }}
                 </div>
-                <div>
+                <!-- <div>
                   <div class="text-sm text-gray-500">의안번호</div>
                   <div class="font-semibold text-gray-900">{{ bill.bill_number }}</div>
-                </div>
+                </div> -->
               </div>
               {% if bill.related_count %}
               <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
                 </svg>
                 개정 {{ bill.related_count }}회

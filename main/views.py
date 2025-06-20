@@ -206,8 +206,8 @@ def search(request):
             bill.label_count = label_counts.get(bill.label, "-")
             words = bill.title.split()
             bill.title_custom = (
-                " ".join(words[:3]) + "<br>" + " ".join(words[3:])
-            ) if len(words) > 3 else bill.title
+                " ".join(words[:4]) + "<br>" + " ".join(words[4:])
+            ) if len(words) > 4 else bill.title
 
         results = sorted(
             results,
