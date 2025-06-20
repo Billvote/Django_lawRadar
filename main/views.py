@@ -123,8 +123,11 @@ def search(request):
     top_clusters  : list[dict] = []
     cluster_color_map = {}
     total_results_count = 0
+    google_news_url = None
 
     if query:
+        # get_queryset() 활용 ver
+
         # 1) 매칭 의안
         matching_bills = Bill.objects.filter(
             Q(title__icontains=query) |
@@ -163,7 +166,8 @@ def search(request):
             Bill.objects.filter(
                 Q(title__icontains=query) |
                 Q(summary__icontains=query) |
-                Q(cluster_keyword__icontains=query),
+                Q(cluster_keyword__icontains=query) |
+                Q(cleaned__icontains=kw),
                 id__in=Subquery(
                     Bill.objects
                         .filter(label=OuterRef("label"))
@@ -227,7 +231,6 @@ def search(request):
         page_range = range(start, end + 1)
 
         # 10) 구글 뉴스 검색용 키워드 조합 생성
-        google_news_url = None
         if top_clusters:
             # 상위 2개 클러스터의 키워드 중 앞에서 2개씩 추출
             search_keywords = []
