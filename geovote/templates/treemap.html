@@ -45,7 +45,10 @@
         <button id="closeModalBtn" class="absolute top-4 right-4 z-10 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
           &times;
         </button>
-        <h2 id="modalTitle" class="font-bold text-lg mb-2"></h2>
+        <div class="flex items-center mb-4">
+          <h2 id="modalTitle" class="font-bold text-xl text-gray-900 whitespace-nowrap"></h2>
+          <div id="modalVoteCount" class="text-base text-gray-500 ml-3 whitespace-nowrap"></div>
+        </div>
         <div id="modalContent" class="text-sm"></div>
       </div>
     </div>
@@ -80,8 +83,14 @@
   }
 
   // 팝업 열기
-  function openPopup(title, contentHtml) {
+  function openPopup(title, contentHtml, totalVoteCount = null) {
     modalTitle.textContent = title;
+    if (totalVoteCount !== null) {
+      // 총 투표수 표시 (예: "총 투표수: 1234")
+      document.getElementById("modalVoteCount").textContent = `총 투표수: ${totalVoteCount}`;
+    } else {
+      document.getElementById("modalVoteCount").textContent = "";
+    }
     modalContent.innerHTML = contentHtml;
     popupModal.classList.remove("hidden");
     mainContent.classList.add("opacity-70", "blur-sm"); // 메인 콘텐츠 흐림
@@ -239,7 +248,7 @@ function renderSummary(data) {
         const isSelected = selectedMemberName && d.data.member_name === selectedMemberName;
 
         const card = container.append("div")
-          .attr("class", `district-card${isSelected ? " selected" : ""}`)
+          .attr("class", `district-card${isSelected ? " selected" : ""} bg-white rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-1 cursor-pointer`)
           .style("border-color", d.data.color || "#888")
           .on("click", async () => {
             const memberName = d.data.member_name;
@@ -252,7 +261,9 @@ function renderSummary(data) {
               if (!res.ok) throw new Error("API 호출 실패");
               const summary = await res.json();
               const summaryHtml = renderSummary(summary);
-              openPopup(memberName + " 의원은 이렇게 투표했네요 📝🗳️", summaryHtml);
+              const totalVoteCount = summary.total_vote_count || null;
+
+              openPopup(memberName + " 의원은 이렇게 투표했네요 📝🗳️", summaryHtml, totalVoteCount);
             } catch (err) {
               console.error(err);
               alert("표결 정보를 가져오지 못했습니다.");
@@ -377,7 +388,7 @@ function renderSummary(data) {
   '상주시','문경시','경산시','의성군','청송군','영양군','영덕군','청도군','고령군','성주군',
   '칠곡군','예천군','봉화군','울진군','울릉군','창원시','진주시','통영시','사천시','김해시',
   '밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군',
-  '함양군','거창군','합천군','제주시','서귀포시','중구','동구','남구','세종시','동구','군위',
+  '함양군','거창군','합천군','제주시','서귀포시','중구','동구','남구','세종시','동구','군위','구례군','양구군'
 ]);
   function formatNameWithLineBreak(name) {
     if (exceptions.has(name)) {
