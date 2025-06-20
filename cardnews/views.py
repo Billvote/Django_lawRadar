@@ -201,7 +201,7 @@ def cardnews_index(request, cluster_number):
         or_clause = ' OR '.join(sorted_keywords)
 
         # 법 AND 형식 추가
-        final_query = f'법 AND {or_clause}'
+        final_query = f'법 AND ({or_clause})'
 
         # url 인코딩
         encoded_query = urllib.parse.quote(final_query)

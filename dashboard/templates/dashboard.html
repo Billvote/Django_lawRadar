@@ -3,31 +3,6 @@
 <!-- ✅ 공통 레이아웃 컨테이너 -->
 <div class="max-w-8wl mx-auto px-6 py-16 relative z-10">
 
-    <!-- 새 대시보드 타이틀 -->
-    <!-- <div class="text-center mb-16">
-      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-        
-        <span class="text-transparent bg-clip-text animate-gradient bg-gradient-to-r from-sky-300 via-pink-300 to-purple-300 gradient-text">
-          대시보드
-        </span>
-      </h2>
-    </div> -->
-
-
-  <!-- 새로운 네브바 ver -->
-  <!-- <nav class="flex items-center space-x-2 text-sm text-black">
-    <a href="{% url 'dashboard' 20 %}" class="hover:text-gray transition-colors {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %}">20대</a>
-      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-      </svg>
-    <a href="{% url 'dashboard' 21 %}" class="hover:text-gray transition-colors {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %}">21대</a>
-      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-    </svg>
-    <a href="{% url 'dashboard' 22 %}" class="hover:text-gray transition-colors {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %}">22대</a>
-    </svg>
-  </nav> -->
-
 <!-- ✅ 상단 네비게이션 바 -->
 <nav class="flex-1 p-6 bg-white/30 backdrop-blur-md shadow-sm border-b flex items-center justify-between">
   <!-- 왼쪽: 타이틀 -->
@@ -35,6 +10,9 @@
 
   <!-- 오른쪽: 대수 선택 -->
   <div class="space-x-4">
+    <!-- <button data-age="20" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">20대</button>
+    <button data-age="21" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">21대</button>
+    <button data-age="22" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">22대</button> -->
     <a href="{% url 'dashboard' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
     <a href="{% url 'dashboard' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
     <a href="{% url 'dashboard' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>

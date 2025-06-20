@@ -117,73 +117,60 @@ def aboutUs(request):
 
 # ───────────────────────── 4. 검색 뷰 ─────────────────────────────────────
 def search(request):
-    query  = request.GET.get("q", "").strip()
+    query = request.GET.get("q", "").strip()
     page_obj = page_range = None
-    cluster_keywords_dict: dict[int, str] = {}
-    top_clusters  : list[dict] = []
+    cluster_keywords_dict = {}
+    top_clusters = []
     cluster_color_map = {}
     total_results_count = 0
     google_news_url = None
 
     if query:
-        # get_queryset() 활용 ver
-
-        # 1) 매칭 의안
-        matching_bills = Bill.objects.filter(
-            Q(title__icontains=query) |
-            Q(cleaned__icontains=query) |
-            Q(summary__icontains=query) |
-            Q(cluster_keyword__icontains=query)
-        )
-
-        # 2) 라벨별 개정 횟수
-        label_counts = {
-            r["label"]: r["count"]
-            for r in (
-                matching_bills
-                    .exclude(label__isnull=True)
-                    .values("label")
-                    .annotate(count=Count("id"))
-            )
-        }
-
-        # 3) 클러스터 → 키워드 집계
-        cluster_to_keywords = defaultdict(set)
-        for bill in matching_bills:
-            if bill.cluster_keyword and bill.cluster is not None:
-                for kw in bill.cluster_keyword.split(","):
-                    kw = kw.strip()
-                    if kw:
-                        cluster_to_keywords[bill.cluster].add(kw)
-
-        cluster_keywords_dict = {
-            cid: ", ".join(sorted(kws))
-            for cid, kws in cluster_to_keywords.items()
-        }
-
-        # 4) 최신 1건으로 제한된 실제 결과
+        # 🔹 최신 의안만 필터링 (중복 제거된 결과셋)
         results = (
-            Bill.objects.filter(
+            Bill.objects
+            .filter(
                 Q(title__icontains=query) |
+                Q(cleaned__icontains=query) |
                 Q(summary__icontains=query) |
-                Q(cluster_keyword__icontains=query) |
-                Q(cleaned__icontains=kw),
+                Q(cluster_keyword__icontains=query),
                 id__in=Subquery(
                     Bill.objects
                         .filter(label=OuterRef("label"))
                         .order_by("-bill_number")
                         .values("id")[:1]
-                ),
+                )
             )
             .annotate(last_vote_date=Max("vote__date"))
             .order_by("-bill_number")
         )
         total_results_count = results.count()
 
-        # 5) 클러스터 빈도
-        cluster_counter = Counter(bill.cluster for bill in results if bill.cluster)
+        # 🔹 라벨별 개정 횟수
+        label_counts = {
+            r["label"]: r["count"]
+            for r in (
+                Bill.objects
+                    .filter(label__in=[b.label for b in results if b.label])
+                    .values("label")
+                    .annotate(count=Count("id"))
+            )
+        }
 
-        # 6) 클러스터별 색상
+        # 🔹 클러스터 키워드 정리 (💥 results 기준으로 바꿈!)
+        cluster_to_keywords = defaultdict(set)
+        for bill in results:
+            if bill.cluster_keyword and bill.cluster is not None:
+                for kw in bill.cluster_keyword.split(","):
+                    kw = kw.strip()
+                    if kw:
+                        cluster_to_keywords[bill.cluster].add(kw)
+        cluster_keywords_dict = {
+            cid: ", ".join(sorted(kws))
+            for cid, kws in cluster_to_keywords.items()
+        }
+
+        # 🔹 클러스터별 색상
         palette = [
             "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
             "#6ee7b7", "#c3b4fc", "#fda4af", "#5eead4", "#34d399",
@@ -195,19 +182,18 @@ def search(request):
             cid: palette[i % len(palette)] for i, cid in enumerate(cluster_ids)
         }
 
-        # 7) 상위 2개 클러스터
+        # 🔹 상위 클러스터 추출
+        cluster_counter = Counter(bill.cluster for bill in results if bill.cluster)
         for i, (cid, _) in enumerate(cluster_counter.most_common(2)):
             kw_str = cluster_keywords_dict.get(cid)
             if kw_str:
-                top_clusters.append(
-                    {
-                        "cluster_id": cid,
-                        "keywords"  : [k.strip() for k in kw_str.split(",") if k.strip()],
-                        "color"     : palette[i % len(palette)],
-                    }
-                )
+                top_clusters.append({
+                    "cluster_id": cid,
+                    "keywords": [k.strip() for k in kw_str.split(",") if k.strip()],
+                    "color": palette[i % len(palette)],
+                })
 
-        # 8) 라벨 개정 횟수·제목 가공
+        # 🔹 라벨 개정 횟수, 제목 가공
         for bill in results:
             bill.label_count = label_counts.get(bill.label, "-")
             words = bill.title.split()
@@ -215,27 +201,27 @@ def search(request):
                 " ".join(words[:4]) + "<br>" + " ".join(words[4:])
             ) if len(words) > 4 else bill.title
 
+        # 🔹 정렬 (개정 횟수 많은 순)
         results = sorted(
             results,
             key=lambda b: label_counts.get(b.label, 0),
             reverse=True,
         )
 
-        # 9) 페이지네이션
+        # 🔹 페이지네이션
         paginator = Paginator(results, 9)
-        page_obj  = paginator.get_page(request.GET.get("page"))
-        current   = page_obj.number
-        total     = paginator.num_pages
-        start     = ((current - 1) // 10) * 10 + 1
-        end       = min(start + 9, total)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        current = page_obj.number
+        total = paginator.num_pages
+        start = ((current - 1) // 10) * 10 + 1
+        end = min(start + 9, total)
         page_range = range(start, end + 1)
 
-        # 10) 구글 뉴스 검색용 키워드 조합 생성
+        # 🔹 구글 뉴스 키워드 생성
         if top_clusters:
-            # 상위 2개 클러스터의 키워드 중 앞에서 2개씩 추출
             search_keywords = []
             for cluster in top_clusters:
-                search_keywords.extend(cluster["keywords"][:2])  # 앞에서 2개
+                search_keywords.extend(cluster["keywords"][:2])
             if search_keywords:
                 final_query = " OR ".join(search_keywords)
                 final_query = f"법 AND ({final_query})"
@@ -243,16 +229,17 @@ def search(request):
                 google_news_url = f"https://news.google.com/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR%3Ako"
 
     context = {
-        "query"               : query,
-        "page_obj"            : page_obj,
-        "page_range"          : page_range,
-        "total_results_count" : total_results_count,
+        "query": query,
+        "page_obj": page_obj,
+        "page_range": page_range,
+        "total_results_count": total_results_count,
         "cluster_keywords_dict": cluster_keywords_dict,
-        "top_clusters"        : top_clusters,
-        "cluster_color_map"   : cluster_color_map,
-        "google_news_url"     : google_news_url,
+        "top_clusters": top_clusters,
+        "cluster_color_map": cluster_color_map,
+        "google_news_url": google_news_url,
     }
     return render(request, "search.html", context)
+
 
 # ───────────────────────── 5. 클러스터 링크 리다이렉트 ────────────────────
 def cluster_index(request, cluster_number: int):

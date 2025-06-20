@@ -16,13 +16,13 @@
   <!-- Keywords Title -->
   <div class="space-y-4 mb-6">
     {% if total_results_count > 0 %}
-      <p class="text-gray-600 text-2xl mb-8">🧷​{{ total_results_count }}개의 법안을 찾았습니다!</p>
-    <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight mb-8"
-        style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
-        <span class="bg-gradient-to-r from-emerald-400 to-lime-500 bg-clip-text text-transparent">
-          #{{ query }}
-        </span>
-    </h1>
+      <p class="text-gray-600 text-2xl mb-8">🧷​{{ total_results_count }}개의 법안을 찾았습니다</p>
+      <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight mb-8"
+          style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
+          <span class="bg-gradient-to-r from-emerald-400 to-lime-500 bg-clip-text text-transparent">
+            #{{ query }}
+          </span>
+      </h1>
     {% else %}
       <p class="text-gray-600 text-2xl mb-8">😥다른 키워드로 검색해보세요</p>
     {% endif %}
@@ -45,14 +45,14 @@
 <div class="flex flex-col md:flex-row md:items-center md:space-x-4 w-full mb-8">
   <!-- 검색창 -->
   <div class="flex-1 w-full">
-    <form action="{% url 'history:history_list' %}" method="get" class="h-full">
+    <form action="{% url 'search' %}" method="get" class="h-full">
       <div class="h-full relative">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
-        <input type="text" name="keyword" id="id_keyword"
+        <input type="text" name="q" id="id_keyword"
                 value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
                 class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
         {% if selected_cluster %}
@@ -254,7 +254,7 @@
     }
   })});
 
-  
+
 </script>
 
 <style>

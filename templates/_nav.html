@@ -14,10 +14,10 @@
               <!-- Home -->
               <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">Home</a>
               <!-- Dashboard -->
-              <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/dashboard/' %}active{% endif %}">Dashboard</a>
+              <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Dashboard</a>
               
               <!-- Card News -->
-              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/billview/' %}active{% endif %}">CardNews</a>
+              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">CardNews</a>
 
               <!-- 로고 -->
               <a href="{% url 'home' %}" class="flex items-center">
@@ -25,13 +25,13 @@
               </a>
 
               <!-- History -->
-              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == 'history/' %}active{% endif %}">History</a>
+              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">History</a>
 
               <!-- TreeMap -->
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/treemap/' %}active{% endif %}">My District</a>
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">My District</a>
 
               <!-- About us -->
-              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 {% if request.path == '/aboutUs/' %}active{% endif %}">AboutUs</a>
+              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/aboutUs/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">AboutUs</a>
             </div>
           </div>
         </div>
