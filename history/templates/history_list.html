@@ -1,28 +1,19 @@
-{# history/templates/history_list.html — 카드 전체 클릭 시 상세 페이지로 이동 (해시태그 제외) #}
 {% extends "base.html" %}
 {% load history_filters %}
 
 {% block body %}
 <!-- Hero Section -->
-<!-- <div class="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 py-20"> -->
-  <!-- Background Effects -->
-  <!-- <div class="absolute inset-0">
-    <div class="absolute top-10 right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
-    <div class="absolute bottom-10 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
-  </div> -->
-  
-  <div class="relative z-10 max-w-6xl mx-auto px-6 text-center">
-    <h1 class="text-4xl md:text-6xl font-black text-white mb-6">
-      {% if query %}
-        "<span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">{{ query }}</span>" 검색결과
-      {% else %}
-        📋 <span class="text-black">법안 목록</span>
-      {% endif %}
-    </h1>
-    <p class="text-xl md:text-2xl text-black/90 font-medium max-w-3xl mx-auto">
-      주요 법안들을 한눈에 확인하고 개정 내용을 탐색하세요!
-    </p>
-  </div>
+<div class="relative z-10 max-w-6xl mx-auto px-6 text-center">
+  <h1 class="text-4xl md:text-6xl font-black text-white mb-6">
+    {% if query %}
+      "<span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">{{ query }}</span>" 검색결과
+    {% else %}
+      📋 <span class="text-black">법안 목록</span>
+    {% endif %}
+  </h1>
+  <p class="text-xl md:text-2xl text-black/90 font-medium max-w-3xl mx-auto">
+    주요 법안들을 한눈에 확인하고 개정 내용을 탐색하세요!
+  </p>
 </div>
 
 <!-- Main Content -->
@@ -86,80 +77,246 @@
         </a>
       </div>
     {% else %}
-      <!-- Bill Cards Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {% for bill in page_obj.object_list %}
-        <div class="bill-card flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-blue-200 border border-gray-100 group cursor-pointer"
-             data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
-          
-          <!-- 카드 헤더 -->
-          <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
-            <div class="flex items-start justify-between">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
-                  {{ bill.age }}
+      <!-- 3-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- ① 최근 개정 -->
+        <div>
+          <h2 class="text-xl font-bold mb-4">🆕 최근 개정</h2>
+          <div class="space-y-6">
+            {% for bill in recent_bills %}
+            <div class="bill-card flex flex-col h-[380px]   
+                        bg-white backdrop-blur-sm rounded-2xl
+                        shadow-lg hover:shadow-2xl transition-all duration-500
+                        hover:border-blue-200 border border-gray-100 overflow-hidden
+                        group cursor-pointer"
+                 data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+              
+              <!-- 헤더 -->
+              <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
+                      {{ bill.age }}
+                    </div>
+                  </div>
+                  {% if bill.related_count %}
+                  <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                    </svg>
+                    개정 {{ bill.related_count }}회
+                  </div>
+                  {% endif %}
                 </div>
               </div>
-              {% if bill.related_count %}
-              <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
-                <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                </svg>
-                개정 {{ bill.related_count }}회
-              </div>
-              {% endif %}
-            </div>
-          </div>     
-          
-          <!-- 카드 본문 -->
-          <div class="p-6 flex-1 flex flex-col justify-between text-center">
-            <h3 style="font-size:16px;" class="font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-500 transition-colors duration-300">
-              <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
-                {{ bill.title_custom|safe|default:bill.title }}
-              </a>
-            </h3>
-            
-            <!-- Keywords -->
-            <div class="mb-6">
-              {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
-                {% if kw_str %}
-                  <div class="flex flex-wrap gap-2 justify-center">
-                    {% for kw in kw_str|split_by_comma|slice:":3" %}
-                      <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block">
-                        <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full transition-all duration-300 hover:scale-105"
-                              style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
-                          #{{ kw }}
-                        </span>
-                      </a>
-                    {% endfor %}
+              
+              <!-- 본문 -->
+              <div class="p-6 flex-1 flex flex-col justify-between text-center">
+                <h3 class="font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-500 transition-colors duration-300"
+                    style="font-size:16px;">
+                  <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+                    {{ bill.title_custom|safe|default:bill.title }}
+                  </a>
+                </h3>
+                
+                <!-- 키워드 -->
+                <div class="mb-6">
+                  {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+                    {% if kw_str %}
+                      <div class="flex flex-wrap gap-2 justify-center">
+                        {% for kw in kw_str|split_by_comma|slice:":3" %}
+                          <a href="{% url 'cardnews:card' bill.cluster %}">
+                            <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full
+                                         transition-all duration-300 hover:scale-105"
+                                  style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                              #{{ kw }}
+                            </span>
+                          </a>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                
+                <!-- 푸터 -->
+                <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📃 의안번호</span>
+                    <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
                   </div>
-                {% endif %}
-              {% endwith %}
-            </div>
-            
-            <!-- 카드 푸터 -->
-            <div class="mt-6 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-              <div class="flex items-center space-x-1 text-gray-600 font-medium">
-                <span>📃 의안번호</span>
-                <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
-              </div>
-              <div class="flex items-center space-x-1 text-gray-600 font-medium">
-                <span>📅 표결일</span>
-                <span class="text-gray-800 font-semibold">
-                  {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
-                </span>
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📅 표결일</span>
+                    <span class="text-gray-800 font-semibold">
+                      {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+            {% endfor %}
           </div>
         </div>
-        {% empty %}
-        <div class="col-span-full text-center py-20">
-          <div class="text-gray-500 text-lg">표시할 법안이 없습니다.</div>
+
+        <!-- ② 가장 많이 개정 -->
+        <div>
+          <h2 class="text-xl font-bold mb-4">🔁 개정 최다</h2>
+          <div class="space-y-6">
+            {% for bill in amended_bills %}
+            <div class="bill-card flex flex-col h-[380px]   
+                        bg-white backdrop-blur-sm rounded-2xl
+                        shadow-lg hover:shadow-2xl transition-all duration-500
+                        hover:border-blue-200 border border-gray-100 overflow-hidden
+                        group cursor-pointer"
+                 data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+              
+              <!-- 헤더 -->
+              <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
+                      {{ bill.age }}
+                    </div>
+                  </div>
+                  {% if bill.related_count %}
+                  <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                    </svg>
+                    개정 {{ bill.related_count }}회
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <!-- 본문 -->
+              <div class="p-6 flex-1 flex flex-col justify-between text-center">
+                <h3 class="font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-500 transition-colors duration-300"
+                    style="font-size:16px;">
+                  <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+                    {{ bill.title_custom|safe|default:bill.title }}
+                  </a>
+                </h3>
+                
+                <!-- 키워드 -->
+                <div class="mb-6">
+                  {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+                    {% if kw_str %}
+                      <div class="flex flex-wrap gap-2 justify-center">
+                        {% for kw in kw_str|split_by_comma|slice:":3" %}
+                          <a href="{% url 'cardnews:card' bill.cluster %}">
+                            <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full
+                                         transition-all duration-300 hover:scale-105"
+                                  style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                              #{{ kw }}
+                            </span>
+                          </a>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                
+                <!-- 푸터 -->
+                <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📃 의안번호</span>
+                    <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+                  </div>
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📅 표결일</span>
+                    <span class="text-gray-800 font-semibold">
+                      {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
         </div>
-        {% endfor %}
+
+        <!-- ③ 랜덤 -->
+        <div>
+          <h2 class="text-xl font-bold mb-4">🎲 랜덤</h2>
+          <div class="space-y-6">
+            {% for bill in random_bills %}
+            <div class="bill-card flex flex-col h-[380px]   
+                        bg-white backdrop-blur-sm rounded-2xl
+                        shadow-lg hover:shadow-2xl transition-all duration-500
+                        hover:border-blue-200 border border-gray-100 overflow-hidden
+                        group cursor-pointer"
+                 data-href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+              
+              <!-- 헤더 -->
+              <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
+                      {{ bill.age }}
+                    </div>
+                  </div>
+                  {% if bill.related_count %}
+                  <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                    </svg>
+                    개정 {{ bill.related_count }}회
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <!-- 본문 -->
+              <div class="p-6 flex-1 flex flex-col justify-between text-center">
+                <h3 class="font-bold text-gray-900 mb-4 line-clamp-2 group-hover:text-cyan-500 transition-colors duration-300"
+                    style="font-size:16px;">
+                  <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number|default:'1' }}">
+                    {{ bill.title_custom|safe|default:bill.title }}
+                  </a>
+                </h3>
+                
+                <!-- 키워드 -->
+                <div class="mb-6">
+                  {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+                    {% if kw_str %}
+                      <div class="flex flex-wrap gap-2 justify-center">
+                        {% for kw in kw_str|split_by_comma|slice:":3" %}
+                          <a href="{% url 'cardnews:card' bill.cluster %}">
+                            <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full
+                                         transition-all duration-300 hover:scale-105"
+                                  style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                              #{{ kw }}
+                            </span>
+                          </a>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                
+                <!-- 푸터 -->
+                <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📃 의안번호</span>
+                    <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+                  </div>
+                  <div class="flex items-center space-x-1 text-gray-600 font-medium">
+                    <span>📅 표결일</span>
+                    <span class="text-gray-800 font-semibold">
+                      {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        
       </div>
 
-      <!-- Enhanced Pagination -->
+      <!-- Enhanced Pagination (for search results) -->
       {% if page_obj.has_other_pages %}
       <div class="mt-16 flex justify-center">
         <nav class="flex items-center space-x-2">
@@ -223,6 +380,9 @@
 html{scroll-behavior:smooth;}
 </style>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
