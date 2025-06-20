@@ -301,9 +301,9 @@ def calculate_votesummary(member_name: str):
             기권            = s["기권"],
             불참            = s["불참"],
         )
-        total_vote_count += sum(s.values())
+        # total_vote_count += sum(s.values())
 
-    return total_vote_count
+    # return total_vote_count
 
 # ═════════════ 5. 자동완성 JSON (공통 모듈 사용) ═════════════
 @require_GET
