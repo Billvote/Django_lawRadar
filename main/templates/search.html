@@ -236,6 +236,25 @@
       });
     });
   });
+
+  // 자동완성 기능-------------
+  document.addEventListener('DOMContentLoaded',function(){
+  /* jQuery UI Autocomplete */
+  $("#id_keyword").autocomplete({
+    source:"{% url 'history:autocomplete' %}",
+    minLength:1,
+    delay:200,
+    focus:()=>false,
+    select:(e,ui)=>{
+      $("#id_keyword").val(ui.item.value);
+      return false;
+    },
+    open:function(){
+      $('.ui-autocomplete').addClass('shadow-lg border-0 rounded-lg mt-2');
+    }
+  })});
+
+  
 </script>
 
 <style>
