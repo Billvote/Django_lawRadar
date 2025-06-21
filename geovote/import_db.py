@@ -269,9 +269,9 @@ def run_all():
     import_ages(csv_path / f'age.csv')
     import_parties(csv_path / f'party.csv')
     import_districts(csv_path / f'district.csv')
-    check_missing_sido_sgg(csv_path / f'member.csv')
+    check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
     import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'card_news.csv')
+    import_bills(csv_path / f'bill(4).csv')
     import_votes(csv_path / f'vote.csv')
 
     print(f"✅ 데이터 임포트 완료")
