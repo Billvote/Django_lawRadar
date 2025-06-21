@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block body %}
+<!-- Header Section with Dynamic Background -->
+<!-- <section class="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white"> -->
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0">
+    <div class="absolute top-20 left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute top-40 right-20 w-32 h-32 bg-cyan-400/10 rounded-full blur-2xl animate-bounce"></div>
+    <div class="absolute bottom-20 left-1/3 w-24 h-24 bg-pink-400/10 rounded-full blur-xl animate-pulse delay-1000"></div>
+  </div>
+  
+  <div class="relative z-10 py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        
+        <!-- Left: Keywords and Info -->
+        <div class="space-y-6">
+          <!-- Breadcrumb -->
+          <nav class="flex items-center space-x-2 text-sm text-black">
+            <a href="/cardnews/" class="hover:text-gray transition-colors">카드뉴스</a>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-black font-semi">주제별 카드뉴스</span>
+          </nav>
+          <!-- Stats -->
+          <div>
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              <div>
+                <p class="text-2xl text-gray-600">🧷 {{ cluster_bill_count }}개의 법안을 찾았습니다! </p>
+              </div>
+            
+          </div>
+          
+          <!-- Keywords Title -->
+          <div class="space-y-4">
+            <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight"
+                style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
+              {% for keyword in keywords %}
+                <span class="bg-gradient-to-r from-emerald-400 to-lime-500 bg-clip-text text-transparent">
+                  #{{ keyword }}
+                </span>
+              {% endfor %}
+            </h1>
+          </div>
+        </div>
+
+        <!-- Right: Navigation Links -->
+        <div class="space-y-4 lg:text-right">
+          <div class="space-y-4">
+            <a href="/cardnews/" 
+               class="inline-flex items-center space-x-2 px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300 group">
+              <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <span class="font-medium">다른 주제 둘러보기</span>
+            </a>
+            
+            {% if google_news_url %}
+            <a href="{{ google_news_url }}" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300 group">
+              <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+              </svg>
+              <span class="font-medium">관련 뉴스 보기</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Cards Section -->
+<section>
+  <div class="max-w-8xl mx-auto px-6">
+    
+    <!-- Cards Container -->
+    <div class="swiper mySwiper relative">
+      <div class="swiper-wrapper">
+        {% for bill in cluster_bills %}
+          <div class="swiper-slide flex justify-center">
+            <article class="group relative w-full max-w-[600px] bg-white rounded-3xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden border border-gray-100">
+              
+              <!-- Card Header with Dynamic Color -->
+              <div class="relative h-[280px] overflow-hidden flex items-center justify-center p-8"
+                   style="background: linear-gradient(135deg, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}dd);">
+                
+                
+                <!-- Main Content -->
+                <div class="relative z-10 text-center">
+                  <div class="inline-flex items-center justify-center  bg-white/20 backdrop-blur-sm rounded-2xl mb-6">
+                    <!-- <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> -->
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <p class="text-white text-xl md:text-2xl font-bold leading-relaxed text-center max-w-md mx-auto drop-shadow-lg">
+                    {{ bill.card_news_content }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Card Content -->
+              <div class="p-6 space-y-4">
+                <!-- Title -->
+                <h3 class="text-lg font-bold text-gray-800 leading-tight text-center whitespace-normal break-words transition-colors duration-300">
+                  {{ bill.title }}
+                </h3>
+                
+                <!-- Meta Information -->
+                <div class="space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                      <span class="font-medium">📃 의안번호</span>
+                      <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                      <span class="font-medium">📅 표결날짜</span>
+                      <span class="text-gray-800 font-semibold">{{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Action Button -->
+                <div class="pt-4 border-t border-gray-100">
+                  <a href="{% url 'history:bill_detail' bill.pk %}" 
+                     class="inline-flex items-center space-x-2 w-full justify-center px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group/btn">
+                    <span>자세히 보기</span>
+                    <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- 넘기기 -->
+      <div class="swiper-button-prev !w-14 !h-14 !mt-0 !left-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </div>
+
+      <div class="swiper-button-next !w-14 !h-14 !mt-0 !right-4 !top-1/2 !-translate-y-1/2 bg-white shadow-xl !rounded-full border border-gray-200 hover:border-cyan-300 !text-cyan-600 hover:!text-cyan-700 transition-all duration-300 hover:scale-110 z-20">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+
+      <!-- Pagination -->
+      <div class="swiper-pagination !bottom-8 z-20"></div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Swiper 기존 요소 제거 */
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  content: none !important;
+}
+
+.swiper-pagination-bullet {
+  width: 10px !important;
+  height: 10px !important;
+  background: #e5e7eb !important;
+  opacity: 1 !important;
+  transition: all 0.3s ease !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: linear-gradient(135deg, #17ffbd, #16eeb1) !important;
+  transform: scale(1.2) !important;
+}
+
+/* 글자 줄 제한(줄임표로 자르기 처리) */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Animations - 둥실 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Gradient Animation */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* 전환 - 부드럽게 */
+* {
+  transition-property: transform, opacity, background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
+<div class="h-20"></div>
+{% endblock %}
+
+{% block script %}
+<script>
+// Enhanced Swiper Configuration
+const swiper = new Swiper('.mySwiper', {
+  slidesPerView: 1,
+  grid: {
+    rows: 1,
+    fill: 'row',
+  },
+  spaceBetween: 30,
+  loop: false,
+  
+  // Navigation
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+  
+  // Pagination
+  pagination: {
+    el: '.swiper-pagination',
+    clickable: true,
+    dynamicBullets: true,
+  },
+  
+  // Responsive breakpoints
+  breakpoints: {
+    640: {
+      slidesPerView: 1,
+      spaceBetween: 20,
+    },
+    768: {
+      slidesPerView: 1,
+      spaceBetween: 30,
+    },
+    1024: {
+      slidesPerView: 2,
+      spaceBetween: 30,
+      grid: {
+        rows: 1,
+      },
+    },
+    1280: {
+      slidesPerView: 2,
+      spaceBetween: 40,
+      grid: {
+        rows: 2,
+      },
+    },
+  },
+  
+  // Effects
+  effect: 'slide',
+  speed: 400,
+  
+  // Auto height
+  autoHeight: false,
+  
+  // Keyboard control
+  keyboard: {
+    enabled: true,
+  },
+  
+  // 마우스 휠
+  mousewheel: {
+    forceToAxis: true,
+  },
+});
+
+// 스크롤 애니메이션 주기
+document.addEventListener('DOMContentLoaded', function() {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+
+  // Observe all cards
+  document.querySelectorAll('.swiper-slide').forEach((slide, index) => {
+    slide.style.opacity = '0';
+    slide.style.transform = 'translateY(50px)';
+    slide.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+    observer.observe(slide);
+  });
+});
+
+// Enhanced hover effects
+document.querySelectorAll('article').forEach(card => {
+  card.addEventListener('mouseenter', function() {
+    this.style.transform = 'translateY(-8px) scale(1.02)';
+  });
+  
+  card.addEventListener('mouseleave', function() {
+    this.style.transform = 'translateY(0) scale(1)';
+  });
+});
+</script>
+
+{% endblock %}

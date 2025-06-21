@@ -1,11 +1,13 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils.safestring import mark_safe
-from django.db.models import Count, Min, Sum, Q, F, FloatField, ExpressionWrapper
+from django.db.models import Count, Min, Sum, Max, Q, F, FloatField, ExpressionWrapper
 from collections import Counter, defaultdict
 from geovote.models import Vote, Member, Party, Age
 from billview.models import Bill
 from main.models import AgeStats, PartyClusterStats, ClusterKeyword, PartyConcentration
+from django.http import JsonResponse
 import json
+
 
 result_types = ['찬성', '반대', '기권', '불참']
 
@@ -291,7 +293,197 @@ def get_concentration_timeseries():
         'top2_seat_shares_series': top2_seat_shares_series,
     }
 
-# 특이 클러스터
+# 정당별 특이 클러스트 차트 옵션 데이터 생성
+def get_cluster_options(age_num, stance_filter=None):
+    age = get_object_or_404(Age, number=age_num)
+
+    # 반대, 기권 데이터 한꺼번에 준비
+    stances = ['oppose', 'abstain']
+    if stance_filter in stances:
+        stances = [stance_filter]
+
+    field_map = {
+        'oppose': 'oppose_ratio',
+        'abstain': 'abstain_ratio',
+    }
+
+    # 한글 표시용 매핑
+    stance_display_map = {
+        'oppose': '반대',
+        'abstain': '기권',
+    }
+
+    cluster_keyword_map = {}
+    keywords_raw = ClusterKeyword.objects.filter(age=age)
+    for ck in keywords_raw:
+        try:
+            keyword_list = json.loads(ck.keyword_json)
+            keyword_display = ', '.join(keyword_list)
+        except:
+            keyword_display = ck.keyword_json
+        cluster_keyword_map[ck.cluster_num] = keyword_display
+
+    # 상위 8개 정당명 집합
+    top_parties = (
+        PartyClusterStats.objects
+        .filter(age=age)
+        .values('party__party')
+        .annotate(member_count=Count('id'))
+        .order_by('-member_count')[:8]
+    )
+    top_party_names = {p['party__party'] for p in top_parties}
+
+    # stats 쿼리셋 필터링
+    stats = PartyClusterStats.objects.filter(age=age).select_related('party').only(
+        'cluster_num', 'oppose_ratio', 'abstain_ratio', 'party', 'party__party',
+        )
+
+    # 정당별, stance별로 가장 높은 하나의 클러스터만 선택
+    party_stance_clusters = defaultdict(dict)
+
+    for stat in stats:
+        party_name = stat.party.party
+        if party_name not in top_party_names:
+            continue
+        for stance in stances:
+            field_name = field_map[stance]
+            ratio = getattr(stat, field_name)
+
+            current_best = party_stance_clusters[party_name].get(stance)
+            if current_best is None or ratio > current_best['ratio']:
+                party_stance_clusters[party_name][stance] = {
+                    'cluster_num': stat.cluster_num,
+                    'ratio': ratio
+                }
+
+    # 옵션 생성
+    options = []
+    for party, stance_map in party_stance_clusters.items():
+        for stance, c in stance_map.items():
+            cluster_num = c['cluster_num']
+            keyword = cluster_keyword_map.get(cluster_num, '')
+            # 옵션 텍스트
+            text = f"{party} - {stance_display_map[stance]} - 클러스터 {cluster_num} ({keyword})"
+            # 옵션 value는 나중에 파싱하기 좋게
+            value = f"{party}--{stance}--{cluster_num}"
+            # 카드뉴스 URL
+            cardnews_url = f"/cardnews/cluster/{cluster_num}/"
+
+            options.append({
+                'value': value,
+                'text': text,
+                'keyword': keyword,
+                'cluster_num': cluster_num,
+                'party': party,
+                'stance': stance,
+                'stance_display': stance_display_map[stance],  # 한글 값
+                'cardnews_url': cardnews_url,
+                })
+
+    return options
+
+# cluster_api
+def cluster_chart_api(request):
+    value = request.GET.get('cluster_value')  # "당--입장--클러스터번호" 형식
+    age_num = request.GET.get('age_num')
+
+    if not value:
+        party = request.GET.get('party')
+        stance = request.GET.get('stance')
+        cluster_num_str = request.GET.get('cluster_num')
+        if not (party and stance and cluster_num_str and age_num):
+            return JsonResponse({'error': 'Invalid parameters'}, status=400)
+        try:
+            cluster_num = int(cluster_num_str)
+            age_num = int(age_num)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid number format'}, status=400)
+
+    else:
+        try:
+            party, stance, cluster_num_str = value.split('--')
+            cluster_num = int(cluster_num_str)
+            age_num = int(age_num)
+        except (IndexError, ValueError):
+            return JsonResponse({'error': 'Invalid number format'}, status=400)
+
+    chart_data = get_cluster_chart_data(age_num, cluster_num, party=party, stance=stance)
+    return JsonResponse(chart_data)
+
+
+# 당별 찬/반 가장 많은 클러스터 무엇인지 차트
+def get_cluster_chart_data(congress_num, cluster_num, party=None, stance=None):
+    """
+    특정 cluster_num에 대해 상위 8개 정당의 찬성, 반대, 기권, 불참 비율 데이터를
+    차트에 바로 쓸 수 있게 정리해서 반환.
+    """
+    age = get_object_or_404(Age, number=congress_num)
+
+    # 상위 8개 정당 추출 (클러스터 무관, 전체 통계 기준)
+    top_parties = (
+        PartyClusterStats.objects
+        .filter(age=age)
+        .values('party', 'party__party', 'party__color')
+        .annotate(member_count=Count('id'))
+        .order_by('-member_count')[:8]
+    )
+    top_party_ids = [p['party'] for p in top_parties]
+    party_info_map = {p['party']: {'name': p['party__party'], 'color': p['party__color']} for p in top_parties}
+
+    # stats 필터링 조건
+    filters = {
+        'age': age,
+        'cluster_num': cluster_num,
+        'party__in': top_party_ids,
+    }
+    # if party:
+        # filters['party__party'] = party
+
+    stats = PartyClusterStats.objects.filter(**filters).select_related('party')
+
+    # 정당별 찬/반/기권/불참 비율 모으기
+    categories = []
+    series_data = {
+        '찬성': [],
+        '반대': [],
+        '기권': [],
+        '불참': []
+    }
+
+    # party_id 순서대로 정렬하기 위해 dict 준비
+    stats_map = {stat.party.id: stat for stat in stats}
+
+    for party_id in top_party_ids:
+        info = party_info_map[party_id]
+        categories.append(info['name'])
+        stat = stats_map.get(party_id)
+        if stat:
+            support = round(stat.support_ratio, 1)
+            oppose = round(stat.oppose_ratio, 1)
+            abstain = round(stat.abstain_ratio, 1)
+            absent = round(stat.absent_ratio, 1)
+        else:
+            support = oppose = abstain = absent = 0
+
+        series_data['찬성'].append(support)
+        series_data['반대'].append(oppose)
+        series_data['기권'].append(abstain)
+        series_data['불참'].append(absent)
+
+    # ApexCharts 형태로 변환
+    series = [
+        {'name': '찬성', 'data': series_data['찬성'], 'color': '#00E396'},   # 녹색
+        {'name': '반대', 'data': series_data['반대'], 'color': '#FF4560'},   # 빨강
+        {'name': '기권', 'data': series_data['기권'], 'color': '#FEB019'},   # 주황
+        {'name': '불참', 'data': series_data['불참'], 'color': '#888888'},   # 회색
+    ]
+
+    return {
+        'categories': categories,
+        'series': series,
+        # 'keyword': keyword,
+    }
+
 
 # dashboard.html로 보내는 함수
 def dashboard(request, congress_num):
@@ -303,6 +495,30 @@ def dashboard(request, congress_num):
     cluster_vote_data = get_partyClusterStats_data(congress_num, top_n_clusters=10)
     party_concentration_data = get_partyConcentration_data(congress_num)
     timeseries_data = get_concentration_timeseries()
+
+    selected_stance = request.GET.get('stance')
+    selected_value = request.GET.get('cluster_value')  # 예: "더불어민주당--oppose--13"
+    cluster_options = get_cluster_options(congress_num, stance_filter=selected_stance)
+
+    # stance 필드 추가
+    for option in cluster_options:
+        try:
+            option['stance'] = option['value'].split('--')[1]
+        except IndexError:
+            option['stance'] = None  # 혹시 split 실패해도 안전하게
+
+    cluster_num = None
+    if selected_value:
+        try:
+            cluster_num = int(selected_value.split('--')[-1])
+        except (IndexError, ValueError):
+            cluster_num = None
+    if cluster_num is None and cluster_options:
+        first_value = cluster_options[0]['value']  # "당--찬성--22"
+        cluster_num = int(first_value.split('--')[-1])
+
+    # 4. 차트 데이터 생성
+    cluster_chart_data = get_cluster_chart_data(congress_num, cluster_num)
 
     # AgeStats 정보
     try:
@@ -369,6 +585,11 @@ def dashboard(request, congress_num):
         'timeseries_data_hhi': timeseries_data['hhi_values'],
         'timeseries_data_enp': timeseries_data['enp_values'],
         'timeseries_data_top2_ratio': timeseries_data['top2_seat_shares_series'],
+
+        # 정당별 반대/기권 탑 클러스터
+        'cluster_options': cluster_options,
+        'selected_stance': selected_stance,
+        'cluster_chart_data': cluster_chart_data,
     }
 
     return render(request, 'dashboard.html', context)

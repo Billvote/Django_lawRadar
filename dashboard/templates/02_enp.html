@@ -1,0 +1,39 @@
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+    <div class="md:col-span-1 bg-white/90 p-4 backdrop-blur-sm rounded shadow relative group">
+        <div class="p-3 h-full flex flex-col items-center justify-center">
+            <button class="explain-btn absolute top-3 right-3 text-sm flex items-center gap-1"
+                    data-title="정당 유효성 지수(ENP)"
+                    data-content='
+                    <p>실질적으로 영향력 있는 정당의 수를 확인할 수 있는 지수입니다.</p>
+                    <ul class="list-disc pl-5 mt-2 text-sm">
+                        <li>
+                            <strong>공식</strong>
+                            <ul class="list-disc pl-5 mt-1">
+                                <li>ENP = 1 / ((정당별 의석 점유율**2).sum())</li>
+                                <li>정당별 의석 점유율 = 정당별 의원 수 / 전체 의석 수</li>
+                            </ul>
+                        </li>
+                        <li><strong>해석 방법</strong>
+                            <ul class="list-disc pl-5 mt-1">
+                                <li>ENP = 1: 한 정당이 모든 권력을 가짐</li>
+                                <li>ENP = 실제 정당 수: 모든 정당이 동등하게 경쟁 중</li>
+                                <li>ENP가 2에 가까움: 양당제적 성격이 강함</li>
+                                <li>ENP가 높아질수록 다당제 경향</li>
+                            </ul> 
+                        </li>
+                    </ul>
+                    <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+                    '>
+                <i class="fi fi-rr-info text-lg text-gray-700 transition-transform duration-200 hover:scale-125"></i>
+            </button>
+            
+            <h2 class="text-2xl font-medium mb-2">정당 유효성 지수 (ENP)</h2>
+            <br>
+            <p class="text-4xl font-bold group-hover:text-pink-400 transition-colors duration-300">{{ party_concentration_enp }}</p>
+        </div>
+    </div>
+
+    <div class="md:col-span-2 bg-white p-4 rounded shadow">
+        <div id="enp-progress-bars"></div>
+    </div>
+</div>

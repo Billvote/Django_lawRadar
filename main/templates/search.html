@@ -1,130 +1,303 @@
 {% extends "base.html" %}
+{% load main_custom_filters %}
+
 {% block body %}
-{% load custom_filters %}
-<div class="p-6 max-w-6xl mx-auto">
-    <h2 class="font-bold text-4xl mb-2">"{{ query }}"</h2>
-    <br>
+        <!-- Left: Keywords and Info -->
+<div class="space-y-6">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center space-x-2 text-sm text-black mb-6">
+    <a href="{% url 'home' %}" class="hover:text-gray transition-colors">home</a>
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+    </svg>
+    <span class="text-black font-semi">키워드 검색</span>
+  </nav>
+
+  <!-- Keywords Title -->
+  <div class="space-y-4 mb-6">
     {% if total_results_count > 0 %}
-      <p class="text-gray-600 mb-6">👏​{{ total_results_count }}개의 의안을 찾았습니다</p>
+      <p class="text-gray-600 text-2xl mb-8">🧷​{{ total_results_count }}개의 법안을 찾았습니다</p>
+      <h1 class="flex flex-wrap gap-2 text-4xl md:text-6xl font-black leading-tight mb-8"
+          style="font-family: 'TmoneyRoundWindExtraBold', sans-serif;">
+          <span class="bg-gradient-to-r from-emerald-400 to-lime-500 bg-clip-text text-transparent">
+            #{{ query }}
+          </span>
+      </h1>
     {% else %}
-      <p class="text-gray-600 mb-6">😥다른 키워드로 검색해보세요</p>
+      <p class="text-gray-600 text-2xl mb-8">😥다른 키워드로 검색해보세요</p>
     {% endif %}
-    <div class="flex flex-wrap gap-2">
+  </div>
+<!-- 해시태그 -->
+<!-- <div class="p-6 max-w-6xl mx-auto">
+    <div class="flex flex-wrap gap-2 mb-8">
       {% for cluster in top_clusters %}
         {% for kw in cluster.keywords %}
-          <a href="{% url 'history:cluster_index' cluster.cluster_id %}" class="inline-block mb-2">
-                <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
-                  #{{ kw }}
-                </span>
+          <a href="{% url 'cardnews:card' cluster.cluster_id %}" class="inline-block mb-2">
+            <span class="hashtag inline-block bg-gray-200 text-gray-600 text-sm font-medium px-3 py-1 rounded-full">
+              #{{ kw }}
+            </span>
           </a>
         {% endfor %}
       {% endfor %}
     </div>
+</div> -->
+
+<div class="flex flex-col md:flex-row md:items-center md:space-x-4 w-full mb-8">
+  <!-- 검색창 -->
+  <div class="flex-1 w-full">
+    <form action="{% url 'search' %}" method="get" class="h-full">
+      <div class="h-full relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input type="text" name="q" id="id_keyword"
+                value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
+                class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
+        {% if selected_cluster %}
+          <input type="hidden" name="cluster" value="{{ selected_cluster }}">
+        {% endif %}
+        <button type="submit"
+                class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 text-cyan-500 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold">
+          검색
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 구글 뉴스 -->
+  {% if google_news_url %}
+  <div class="w-auto mt-1 md:mt-0">
+    <a href="{{ google_news_url }}" target="_blank" rel="noopener noreferrer"
+      class="flex h-full items-center justify-center h-[48px] px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl hover:bg-white/20 transition-all duration-300 group">
+      <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+      </svg>
+      <span class="font-medium">관련 뉴스 보기</span>
+    </a>
+  {% endif %}
+  </div>
 </div>
+<div class="h-3"></div>
+
 {% if page_obj %}
-<div class="overflow-x-auto rounded-lg shadow">
-    <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200 text-sm text-left">
-        <thead class="bg-gray-100 text-gray-700 font-semibold">
-            <tr>
-                <th scope="col" class="px-6 py-3 w-[7%] text-center">대수</th>
-                <th scope="col" class="px-6 py-3 w-[7%] text-center">의안 번호</th>
-                <th scope="col" class="px-6 py-3 w-[26%] text-center">의안명</th>
-                <th scope="col" class="px-6 py-3 w-[38%] text-center">키워드</th>
-                <th scope="col" class="px-6 py-3 w-[13%] text-center">최근 표결</th>
-                <th scope="col" class="px-6 py-3 text-center w-[7%] text-center">개정</th>
-            </tr>
-            <!-- <th>최근 표결 날짜</th> -->
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            {% for bill in page_obj %}
-            <tr class="hover:bg-gray-50 hoverable-row">
-                <td class="px-6 py-4 text-gray-800">{{ bill.age }}</td>
-                <td class="px-6 py-4 text-gray-800 font-medium">{{ bill.bill_number }}</td>
-                <td class="px-6 py-4 text-gray-800 font-medium relative">
-                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs block">
-                    {{ bill.title_custom|safe }}
-                  </a>
-                </td>
-                <td class="px-6 py-4 text-gray-700">
-                  <a href="{% url 'history:bill_detail' bill.pk%}?page={{ page_obj.number }}" class="max-w-xs">
-                      {% with cluster_keywords_dict|get_item:bill.cluster as keywords_str %}
-                        {% if keywords_str %}
-                          {% with kw_list=keywords_str|split_by_comma %}
-                            {% for kw in kw_list %}
-                              <a href="{% url 'history:cluster_index' bill.cluster %}" class="inline-block mb-1">
-                                <span style="background-color: {{ cluster_color_map|get_item:bill.cluster }};" class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full text-white hover:text-gray-800 transition-colors duration-300">
-                                  #{{ kw }}
-                                </span>
-                              </a>
-                            {% endfor %}
-                          {% endwith %}
-                        {% endif %}
-                      {% endwith %}
-                  </a>
-                </td>
-                
-                <td class="px-6 py-4 text-gray-800">
-                  {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
-                </td>
-                <td class="px-6 py-4 text-center">{{ bill.label_count }}건</td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <tr>
-                <p class="text-gray-500 text-center mt-8">검색 결과가 없습니다.</p>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
+<!-- 카드 그리드 -->
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-none mx-auto px-6 mb-20">
+  {% for bill in page_obj %}
+  <div class="flex flex-col h-full bg-white backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-blue-200 group">
+    <!-- 카드 헤더 -->
+    <div class="bg-white p-3 border-b border-gray-100 rounded-2xl">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 text-cyan-600 rounded-lg flex items-center justify-center font-bold">
+            {{ bill.age }}
+          </div>
+        </div>
+        {% if bill.label_count %}
+        <div class="text-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+          <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+          </svg>
+          개정 {{ bill.label_count }}회
+        </div>
+        {% endif %}
+      </div>
+    </div>
 
-<!-- 페이지네이션 전체 컨테이너 -->
-<div class="pagination m-4 flex justify-center space-x-2">
-  <!-- 이전 버튼 -->
-  {% if page_obj.has_previous %}
-    <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">이전</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">이전</span>
-  {% endif %}
+    <!-- 카드 본문 -->
+    <div class="p-6 flex-1 flex flex-col justify-between text-center">
+      <h3 style="font-size: 16px;" class="font-bold text-gray-900 mb-4 group-hover:text-cyan-500 transition-colors duration-300 line-clamp-2">
+        <a href="{% url 'history:bill_detail' bill.pk %}?page={{ page_obj.number }}">
+          {{ bill.title_custom|safe|default:bill.title }}
+        </a>
+      </h3>
 
-  <!-- 페이지 번호 버튼 -->
-  {% for num in page_range %}
-    {% if num == page_obj.number %}
-      <span class="px-3 py-1 rounded bg-cyan-500 text-white">{{ num }}</span>
-    {% else %}
-      <a href="?q={{ query }}&page={{ num }}" class="px-3 py-1 rounded hover:bg-gray-200">{{ num }}</a>
-    {% endif %}
+      <!-- 키워드 -->
+      <div class="mb-6">
+        {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+          {% if kw_str %}
+            <div class="flex flex-wrap gap-2 justify-center">
+              {% for kw in kw_str|split_by_comma|slice:":3" %}
+                <a href="{% url 'cardnews:card' bill.cluster %}" class="inline-block">
+                  <span class="hashtag inline-block text-xs font-medium px-3 py-1 rounded-full transition-all duration-300 hover:scale-105"
+                        style="background-color: {{ cluster_color_map|get_item:bill.cluster }}; color:#fff;">
+                    #{{ kw }}
+                  </span>
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- 카드 푸터 -->
+      <div class="mt-6 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+        <div class="flex items-center space-x-1 text-gray-600 font-medium">
+          <span>📃 의안번호</span>
+          <span class="text-gray-800 font-semibold">{{ bill.bill_number }}</span>
+        </div>
+
+        <div class="flex items-center space-x-1 text-gray-600 font-medium">
+          <span>📅 표결일</span>
+          <span class="text-gray-800 font-semibold">
+            {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-span-full text-center py-20 text-gray-500 text-lg">검색 결과가 없습니다.</div>
   {% endfor %}
+</div>
 
-  <!-- 다음 버튼 -->
-  {% if page_obj.has_next %}
-    <a href="?q={{ query }}&page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">다음</a>
-  {% else %}
-    <span class="px-3 py-1 text-gray-400">다음</span>
-  {% endif %}
+<!-- 여백 -->
+<div class="h-8"></div>
+
+<!-- 페이징 -->
+<div class="pagination mt-12 mb-12 flex justify-center">
+  <nav class="flex items-center space-x-2">
+    {% if page_obj.has_previous %}
+      <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </a>
+    {% else %}
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        이전
+      </span>
+    {% endif %}
+
+    {% for num in page_range %}
+      {% if num == page_obj.number %}
+        <span class="px-4 py-2 rounded bg-cyan-400 text-white rounded font-semibold">{{ num }}</span>
+      {% else %}
+      <a href="?q={{ query }}&page={{ num }}"
+          class="px-4 py-2 rounded hover:bg-gray-200 transition-colors duration-300">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+    
+    {% if page_obj.has_next %}
+      <a href="?q={{ query }}&page={{ page_obj.next_page_number }}"
+          class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+    {% else %}
+      <span class="px-4 py-2 text-gray-400 flex items-center">
+          다음
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+      </span>
+    {% endif %}
+  </nav>
+</div>
+{% endif %}
+<div class="h-8"></div>
+
+<!-- 위로 올라가기 버튼 -->
+<div class="fixed bottom-8 right-8 z-50">
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
 </div>
 {% endblock %}
 
 {% block script %}
 <script>
-  // 해시태그
-    document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
     const hashtags = document.querySelectorAll('.hashtag');
 
     hashtags.forEach(tag => {
-      // 원래 배경색, 글자색 저장
       const originalBg = tag.style.backgroundColor;
-      const originalColor = tag.style.color;
+      const originalColor = window.getComputedStyle(tag).color;
 
       tag.addEventListener('mouseenter', () => {
         tag.style.backgroundColor = '#eeeeee';
-        tag.style.color = 'white';
+        tag.style.setProperty('color', '#4B5563', 'important');
       });
       tag.addEventListener('mouseleave', () => {
         tag.style.backgroundColor = originalBg;
         tag.style.color = originalColor;
+        tag.style.setProperty('color', originalColor, 'important');
       });
     });
   });
 
+  // 자동완성 기능-------------
+  document.addEventListener('DOMContentLoaded',function(){
+  /* jQuery UI Autocomplete */
+  $("#id_keyword").autocomplete({
+    source:"{% url 'history:autocomplete' %}",
+    minLength:1,
+    delay:200,
+    focus:()=>false,
+    select:(e,ui)=>{
+      $("#id_keyword").val(ui.item.value);
+      return false;
+    },
+    open:function(){
+      $('.ui-autocomplete').addClass('shadow-lg border-0 rounded-lg mt-2');
+    }
+  })});
+
+
 </script>
+
+<style>
+/* 줄임 텍스트 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 카드 애니메이션 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grid > div {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.grid > div:nth-child(2) { animation-delay: 0.1s; }
+.grid > div:nth-child(3) { animation-delay: 0.2s; }
+.grid > div:nth-child(4) { animation-delay: 0.3s; }
+.grid > div:nth-child(5) { animation-delay: 0.4s; }
+.grid > div:nth-child(6) { animation-delay: 0.5s; }
+
+/* 해시태그 호버 효과 */
+.hashtag:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  transform: scale(1.05);
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+</style>
 {% endblock %}

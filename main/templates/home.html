@@ -1,227 +1,134 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block body %}
-<!-- 배경 설정 -->
 <style>
-  /* 전체 영역에 SVG 배경 고정 */
-  #galaxy {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100vh;
-    pointer-events: none;
-  }
-  #galaxy circle {
-    pointer-events: auto;
-  }
-
-  /* 겹치는 콘텐츠 - 텍스트, 검색창 */
-  .home-overlay {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    padding-top: 10vh;
-    color: #111827; /* text-gray-900 */
-  }
-
-  .home-tooltip {
-    position: absolute;
-    display: none;
-    padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.75);
-    color: white;
-    border-radius: 6px;
-    font-size: 14px;
-    pointer-events: none;
-    z-index: 20;
-  }
-  @keyframes twinkle {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.5); }
-  }
-
-  circle.twinkle {
-    animation: twinkle 2s infinite ease-in-out;
-  }
-  circle {
-  shape-rendering: geometricPrecision;
-  }
+  /* ── 배경/전역 ─────────────────────────────── */
+  #galaxy{position:fixed;top:0;left:0;z-index:0;width:100%;height:100vh;pointer-events:none;}
+  #galaxy circle{pointer-events:auto;}
+  .home-overlay{position:relative;z-index:10;text-align:center;padding-top:10vh;color:#111827;}
+  .home-tooltip{position:absolute;display:none;padding:6px 10px;background:rgba(0,0,0,.75);color:#fff;
+                border-radius:6px;font-size:14px;pointer-events:none;z-index:20;}
+  @keyframes twinkle{0%,100%{filter:brightness(1);}50%{filter:brightness(1.5);}}
+  circle.twinkle{animation:twinkle 2s infinite ease-in-out;}
+  circle{shape-rendering:geometricPrecision;}
 </style>
 
-<!-- 갤럭시 -->
+<!-- ── SVG 갤럭시 ─────────────────────────────── -->
 <svg id="galaxy">
   <defs>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 </svg>
 <div id="tooltip" class="home-tooltip"></div>
+<!-- ── 콘텐츠 박스 ─────────────────────────────── -->
+<div id="home-content"
+     class="home-overlay px-6 max-w-3xl mx-auto relative text-gray-800"
+     style="backdrop-filter:blur(8px);background:rgba(255,255,255,.75);
+            border-radius:12px;padding:3rem 2rem;opacity:0;transition:opacity 1s;">
 
-<!-- 제목 및 설명 -->
-<div id="home-content" class="home-overlay px-6 max-w-3xl mx-auto relative z-10 text-center text-gray-800" style="backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.75); border-radius: 12px; padding: 3rem 2rem; opacity: 0; transition: opacity 1s ease;">
-  <h1 class="text-5xl font-extrabold mb-8">지금 우리 '국회'는?</h1>
+  <div class="inline-flex items-end gap-3 mb-4" style="margin: 0 auto; width: max-content;">
+    <h1 class="text-5xl font-extrabold relative" style="left: 40px;">Law Radar</h1>
+    <button class="explain-btn text-sm flex items-center gap-1"
+            style="margin-left: 50px;"
+            data-title="🍅홈 화면의 기능을 소개합니다!"
+            data-content='
+            <ul class="list-disc pl-5 mt-2 text-sm space-y-3">
+              <li>
+                궁금한 키워드가 있다면 <span class="font-semibold text-blue-600">직접 검색</span>해보세요!<br>
+                <span class="text-gray-500 text-xs">
+                  예: "기후변화", "청년", "부동산" 등의 키워드를 입력해보세요.
+                </span>
+              </li>
+              <li>
+                키워드를 모르겠다면 <span class="font-semibold text-blue-600">점</span>들을 클릭해보세요!<br>
+                <span class="text-gray-500 text-xs">
+                  점 크기는 법안 수에 비례하며, 클릭하면 카드뉴스로 이동합니다.
+                </span>
+              </li>
+            </ul>
+
+            '>
+      <i class="fi fi-rr-info text-lg text-blue-600 hover:text-blue-800 transform transition-transform duration-200 hover:scale-125"></i>
+    </button>
+  </div>
+
   <p class="text-lg leading-relaxed mb-8">
-    국회의 표결은 우리의 삶과 직결됩니다
-    <br>궁금한 법안, 내 지역구 의원, 그들의 선택까지
-    <br>한눈에 확인하세요
+    국회의 표결은 우리의 삶과 직결됩니다<br>
+    각 정당은 어떤 법안에 찬성하고, 지역구 국회의원들은 어떤 주제에 집중하고 있을까요?<br>
+    정당별·지역별 표결 현황과 관심 키워드를 한눈에 살펴보세요.<br>
   </p>
+  <br>
   <p class="text-sm mb-12 opacity-75 text-gray-900">
-    점 위에 마우스를 가까이 대보세요
-    <br>점을 클릭하면 다양한 법안 주제를 확인할 수 있습니다
+    점 위에 마우스를 가까이 대보세요<br>
+    점을 클릭하면 다양한 법안 주제를 확인할 수 있습니다
   </p>
 
-  <!-- 검색창 -->
-  <section>
-    <form method="GET" action="{% url 'search' %}" class="flex justify-center gap-3 max-w-xl mx-auto">
-      <input type="text" name="q" placeholder="키워드를 입력해주세요" class="flex-grow text-lg font-semibold rounded-md border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition">
-      <button type="submit" class="text-xl font-semibold rounded p-1 text-cyan-500">검색</button>
+  <!-- ── 검색창 + 자동완성 ──────────────────────── -->
+   <div class="max-w-xl mx-auto">
+    <form method="GET" action="{% url 'search' %}" class="relative">
+      <input id="search-input" name="q" type="text"
+             placeholder="법안명이나 키워드로 검색해보세요"
+             class="w-full text-lg font-medium rounded-3xl border border-gray-300
+                    px-4 py-2 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition"/>
+      <!-- 자동완성 드롭다운 -->
+      <ul id="ac-box"
+          class="absolute left-0 top-full mt-1 w-full bg-white border border-gray-300
+                 rounded-md shadow-lg z-50 hidden text-left"></ul>
+      <!-- 제출 버튼 -->
+      <button type="submit"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 font-semibold rounded-lg">
+        검색
+      </button>
     </form>
-  </section>
+  </div>
 </div>
-
-
-<!-- 클러스터 검색 -->
-<!-- <section class="mb-10">
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
-  {% if clusters %}
-    <div class="flex justify-center">
-      <select onchange="window.location.href=this.value" class="border rounded p-2 bg-white text-gray-900 focus:ring-2 focus:ring-cyan-500 w-96 max-w-full">
-        <option value="">키워드 선택</option>
-        {% for cluster in clusters %}
-          {% if cluster.cluster %}
-            <option value="{% url 'history:cluster_index' cluster.cluster %}">{{ cluster.keyword }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-    </div>
-  {% else %}
-    <div class="text-center py-10">
-      <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
-    </div>
-  {% endif %}
-</section>
-<style>
-  select option {
-    white-space: normal; /* 긴 텍스트 줄바꿈 */
-    max-width: 100%; /* 드롭다운 폭 제한 */
-  }
-</style> -->
-
-
-
-
-  {% comment %} <!-- 클러스터 목록 -->
-  <section class="mb-10">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">의안 키워드</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {% for cluster in clusters %}
-        <a href="{% url 'history:cluster_index' cluster %}" class="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 hover:border-cyan-500">
-          <div class="flex items-center space-x-3">
-            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10m-7 7h7"></path>
-            </svg>
-            <h3 class="text-lg font-semibold text-gray-900">키워드 번호 {{ cluster }}</h3>
-          </div>
-          <p class="mt-2 text-sm text-gray-500">관련 법안 탐색하기</p>
-        </a>
-      {% empty %}
-        <div class="col-span-full text-center py-10">
-          <p class="text-gray-500 text-lg">클러스터가 없습니다.</p>
-        </div>
-      {% endfor %}
-    </div>
-  </section> {% endcomment %}
-
-  
 {% endblock %}
 
 {% block script %}
+<!-- ── D3 갤럭시 스크립트 ──────────────────────── -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-  // d3 노드 효과
-    const width = window.innerWidth;
-    const height = 1000;
-    const svg = d3.select("#galaxy")
-                  .attr("width", width)
-                  .attr("height", height);
+const width  = window.innerWidth;
+const height = 1000;
+const svg    = d3.select("#galaxy").attr("width", width).attr("height", height);
+const tooltip= d3.select("#tooltip");
 
-    const tooltip = d3.select("#tooltip");
-
-    d3.json("/api/cluster_keywords/").then(data => {
-       // jitter force 함수 정의
-      // function jitterForce(strength = 0.6) {
-      //   return function(alpha) {
-      //     data.forEach(d => {
-      //       d.vx += (Math.random() - 0.5) * strength * alpha;
-      //       d.vy += (Math.random() - 0.5) * strength * alpha;
-      //     })};
-      //   };
-
-      const simulation = d3.forceSimulation(data)
+d3.json("/api/cluster_keywords/").then(data => {
+  const simulation = d3.forceSimulation(data)
         .force("charge", d3.forceManyBody().strength(-50))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.num_bills) * 4 + 10))
-        // .force("jitter", jitterForce(0.6)) // jitter force 추가
-        // .alphaDecay(0.008) // 시뮬레이션 안 멈추게 조절
-        .on("tick", ticked)
-        // .alphaTarget(0.05);
+        .on("tick", ticked);
 
-      const node = svg.selectAll("circle")
-        .data(data)
-        .enter().append("circle")
-        .attr("r", d => Math.sqrt(d.num_bills) * 3)
-        
-        // 노드 색상
-        // .attr("fill", d => colorScale(d.num_bills))
-        .attr("fill", d => d3.interpolateCool(Math.random()))
-        
-        .attr("filter", "url(#glow)")  // ✨ glow 필터 추가
-        
-        // 테두리
-        .attr("stroke", "none")
-        .attr("stroke-width", 0)
-        
-        .attr("twinkle", true)
-        .on("mouseover", function(event, d) {
-
-          d._r = Math.sqrt(d.num_bills) * 3; // 반지름 저장
-
-          console.log("마우스 오버", d);
+  const node = svg.selectAll("circle")
+      .data(data)
+      .enter().append("circle")
+      .attr("r", d => Math.sqrt(d.num_bills) * 3)
+      .attr("fill", () => d3.interpolateCool(Math.random()))
+      .attr("filter", "url(#glow)")
+      .on("mouseover", function (event, d) {
+          d._r = Math.sqrt(d.num_bills) * 3;
           tooltip.style("display", "block")
                  .html(`<strong>#${d.keyword}</strong><br>법안 ${d.num_bills}건`)
                  .style("left", (event.pageX + 10) + "px")
-                 .style("top", (event.pageY - 20) + "px");
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .attr("r", d._r * 1.5);
-        })
-        .on("mousemove", function(event) {
+                 .style("top",  (event.pageY - 20) + "px");
+          d3.select(this).transition().duration(200).attr("r", d._r * 1.5);
+      })
+      .on("mousemove", event => {
           tooltip.style("left", (event.pageX + 10) + "px")
-                 .style("top", (event.pageY - 20) + "px");
-        })
-        .on("mouseout", function(event, d) {
+                 .style("top",  (event.pageY - 20) + "px");
+      })
+      .on("mouseout", function (event, d) {
           tooltip.style("display", "none");
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .attr("r", d._r); // 원래 반지름으로 복원
-        })
-        .on("click", function(event, d) {
-          console.log("클릭된 데이터:", d);
-          window.location.href = d.url;  // ✅ URL로 이동
-        })
-        ;
+          d3.select(this).transition().duration(200).attr("r", d._r);
+      })
+      .on("click", (event, d) => window.location.href = d.url);
 
-        // 노드 배경 애니메이션 끝나면 -> 타이틀 등장 애니메이션
-    node.transition()
-      .duration(1500)
+  node.transition().duration(1500)
       .attr("r", d => Math.sqrt(d.num_bills) * 4.3)
       .attr("opacity", 1)
       .on("end", (d, i, nodes) => {
@@ -230,11 +137,131 @@
         }
       });
 
-      function ticked() {
-        node.attr("cx", d => d.x)
-            .attr("cy", d => d.y)
-      }
-    });
+  function ticked() {
+    node.attr("cx", d => d.x).attr("cy", d => d.y);
+  }
+});
+</script>
 
+<!-- 팝업(모달) 영역 ------------------------------------------------------------------------------>
+ <div id="popupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div id="popupOverlay" class="absolute inset-0 bg-black opacity-50"></div>
+  <div class="relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 z-10">
+    <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
+    <div id="modalContent" class="text-gray-700">모달 콘텐츠</div>
+    <div class="mt-6 text-right">
+      <button id="closeModalBtn" class="absolute top-4 right-4 z-10 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
+      &times;
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const popupModal = document.getElementById("popupModal");
+  const popupOverlay = document.getElementById("popupOverlay");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  const mainContent = document.getElementById("home-content");
+
+
+// 팝업 열기
+  function openPopup(title, contentHtml) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = contentHtml;
+    popupModal.classList.remove("hidden");
+    mainContent.classList.add("opacity-70", "blur-sm");
+  }
+
+  // 팝업 닫기
+  function closePopup() {
+    popupModal.classList.add("hidden");
+    mainContent.classList.remove("opacity-70", "blur-sm");
+  }
+
+  // 닫기/오버레이 클릭 시 팝업 닫기
+  closeModalBtn.addEventListener("click", closePopup);
+  popupOverlay.addEventListener("click", closePopup);
+
+  // explain-btn 클릭 시 팝업 열기 이벤트 연결
+  document.querySelectorAll(".explain-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const title = btn.dataset.title;
+    const content = btn.dataset.content;
+    openPopup(title, content);
+  });
+});
+  
+</script>
+
+<!-- ── 커스텀 자동완성 스크립트 ──────────────────── -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const inp = document.getElementById("search-input");
+  const box = document.getElementById("ac-box");
+  let selected = -1;
+
+  /* 결과 표시 */
+  function render(list) {
+    box.innerHTML = "";
+    selected = -1;
+    if (!list.length) { box.classList.add("hidden"); return; }
+    list.forEach((txt, idx) => {
+      const li = document.createElement("li");
+      li.textContent = txt;
+      li.className = "px-4 py-2 cursor-pointer hover:bg-gray-100 text-left";
+      li.addEventListener("mousedown", () => {
+        inp.value = txt;
+        box.classList.add("hidden");
+      });
+      box.appendChild(li);
+    });
+    box.classList.remove("hidden");
+  }
+
+  /* 선택 하이라이트 */
+  function highlight() {
+    [...box.children].forEach((li, i) =>
+      li.classList.toggle("bg-cyan-100", i === selected));
+  }
+
+  /* 입력 감지 */
+  inp.addEventListener("input", () => {
+    const term = inp.value.trim();
+    if (term.length < 2) { render([]); return; }
+    fetch(`/api/autocomplete/?term=${encodeURIComponent(term)}`)
+      .then(r => r.json())
+      .then(render)
+      .catch(err => console.error("Autocomplete error:", err));
+  });
+
+  /* 화살표/엔터 처리 */
+  inp.addEventListener("keydown", e => {
+    const cnt = box.children.length;
+    if (!cnt) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selected = (selected + 1) % cnt;
+      highlight();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selected = (selected - 1 + cnt) % cnt;
+      highlight();
+    } else if (e.key === "Enter" && selected > -1) {
+      e.preventDefault();
+      inp.value = box.children[selected].textContent;
+      box.classList.add("hidden");
+      inp.form.submit();
+    }
+  });
+
+  /* 외부 클릭 시 닫기 */
+  document.addEventListener("click", e => {
+    if (!inp.contains(e.target) && !box.contains(e.target)) {
+      box.classList.add("hidden");
+    }
+  });
+});
 </script>
 {% endblock %}

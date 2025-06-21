@@ -1,0 +1,39 @@
+<div class="flex justify-between items-center">
+    <p>결과가 궁금한 주제를 선택해주세요🙌​</p>
+    <button class="explain-btn ml-3 text-sm flex items-center gap-1"
+            data-title="최다 키워드별 표결 차트"
+            data-content='
+            <p>국회에서 표결이 가장 많이 이뤄진 20개 주제를 선별한 뒤, 정당별로 해당 주제에 대한 표결 정보를 확인할 수 있습니다.</p>
+            <ul class="list-disc pl-5 mt-2 text-sm">
+            <li>
+                <strong>공식</strong>
+                <ul class="list-disc pl-5 mt-1">
+                    <li>클러스터 총 투표 수 = ∑ (모든 정당이 이 클러스터에 대해 행사한 투표 수)</li>
+                </ul>
+            </li>
+            <li><strong>해석</strong>
+                <ul class="list-disc pl-5 mt-1">
+                    <li>상위 주제일수록, 의안 수가 많거나 의원 참여가 활발했던 이슈</li>
+                </ul> 
+            </li>
+            </ul>
+            <p class="mt-3 text-gray-500 text-xs">※ 데이터 출처: 열린국회정보 Open API</p>
+            '>
+        <i class="fi fi-rr-info text-lg text-gray-700 transition-transform duration-200 hover:scale-125"></i>
+    </button>
+</div>
+
+<label for="clusterSelect" class="block font-semibold mt-3 mb-2"></label>
+<select id="clusterSelect"
+        class="appearance-none w-full border border-gray-300 rounded rounded-md px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+    {% for cluster in cluster_vote_data %}
+    <option value="{{ cluster.cluster_num }}">{{ cluster.cluster_keywords }}</option>
+    {% endfor %}
+</select>
+
+
+    {{ cluster_vote_data|json_script:"cluster-vote-data" }}
+    {{ cluster_categories|json_script:"cluster-categories" }}
+    {{ cluster_party_names|json_script:"cluster-party-names" }}
+    {{ cluster_party_colors|json_script:"cluster-party-colors" }}
+<br>

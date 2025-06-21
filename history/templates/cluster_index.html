@@ -1,36 +1,160 @@
 {% extends "base.html" %}
+{% load history_filters %}
 {% block body %}
 <!-- 클러스터 키워드 페이지 -->
-<section class="mb-10">
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-    클러스터 {{ cluster_number }} 키워드
-  </h2>
-  {% if error %}
-    <div class="text-center py-10">
-      <p class="text-red-500 text-lg">{{ error }}</p>
+<section class="mb-10 grid grid-cols-2 items-center mt-10">
+  <h1 class="col-span-1 text-4xl mb-4 font-bold">의안 카테고리 #{{ cluster_number }}</h1>
+
+  <div class="flex flex-wrap justify-end gap-2 mb-6">
+    {% for keyword in keywords %}
+      <span class="inline-block bg-gray-100 text-gray-600 rounded-full px-3 py-1 text-lg font-semibold cursor-default">
+        #{{ keyword }}
+      </span>
+    {% endfor %}
+  </div>
+  <div>
+    <p class="text-gray-600 mb-6">🚩​{{ cluster_bill_count }}개의 의안이 있습니다!</p>
+  </div>
+    <div class="flex flex-wrap justify-end">
+      <a href="{% url 'history:history_list' %}" class="mt-8 inline-block text-gray-600 text-lg">
+        🔎다른 주제 둘러보기
+      </a>
     </div>
-  {% elif keywords %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {% for keyword in keywords %}
-        <a href="{% url 'history:history_list' %}?keyword={{ keyword|urlencode }}"
-           class="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 hover:border-cyan-500 cursor-pointer">
-          <div class="flex items-center space-x-3">
-            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10m-7 7h7"></path>
-            </svg>
-            <h3 class="text-lg font-semibold text-gray-900">{{ keyword }}</h3>
+</section>
+    
+<!-- 카드 뉴스 -->
+<div class="swiper mySwiper pb-20 relative">
+  <div class="swiper-wrapper">
+    {% for bill in cluster_bills %}
+      <div class="swiper-slide flex justify-center">
+        <a href="{% url 'history:bill_detail' bill.pk %}" 
+           class="block w-[600px] rounded-lg shadow-md hover:shadow-xl border border-gray-200 hover:border-cyan-400 transition duration-300 p-4">
+          
+           <!-- 상단: 라벨별 배경색 다르게 -->
+          <div class="relative h-[180px] overflow-hidden flex items-center justify-center" style="background-color: {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }};">
+            <p class="card-news text-white text-2xl font-bold leading-relaxed whitespace-pre-line z-10 relative" style="font-size: clamp(1.2rem, 2vw, 1.3rem);">
+              {{ bill.card_news_content }}
+            </p>
+            <!-- 반투명 오버레이로 텍스트 가독성 높이기 (옵션) -->
+            <!-- <div class="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent pointer-events-none rounded-t-3xl"></div> -->
           </div>
-          <p class="mt-2 text-sm text-gray-500"></p>
+
+          <!-- 하단: 타이틀 영역 -->
+          <div class="rounded-b-2xl mt-4 border-t border-gray-200 flex items-center justify-center">
+            <div class="rounded-b-2xl mt-3 border-gray-200 flex flex-col">
+              <h3 class="text-gray-800 font-semibold text-lg text-center truncate">
+                {{ bill.title }}
+              </h3>
+              <div class="flex space-x-4 mt-2 mb-2">
+                <p class="text-gray-500 font-medium">의안 번호 - {{ bill.bill_number }}</p>
+                <p class="text-gray-500 font-medium">표결 일시 - {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</p>
+              </div>
+              <i class="fi fi-rr-share"></i>
+            </div>
+          </div>
         </a>
+      </div>
       {% endfor %}
     </div>
-  {% else %}
-    <div class="text-center py-10">
-      <p class="text-gray-500 text-lg">키워드가 없습니다.</p>
-    </div>
-  {% endif %}
-</section>
 
-<!-- 카드 뉴스 -->
+    <!-- 화살표 아이콘이 들어간 스타일 -->
+    <div class="swiper-button-prev w-10 h-10 flex items-center justify-center rounded-full bg-white/80 shadow-md text-cyan-600 hover:bg-white hover:text-cyan-800 transition duration-200 z-10">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </div>
+
+    <div class="swiper-button-next w-10 h-10 flex items-center justify-center rounded-full bg-white/80 shadow-md text-cyan-600 hover:bg-white hover:text-cyan-800 transition duration-200 z-10">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+    <!-- <div class="swiper-button-next text-cyan-600"></div>
+    <div class="swiper-button-prev text-cyan-600"></div> -->
+    <div class="swiper-pagination mt-16"></div>
+</div>
+
+
+<style>
+  .swiper-button-prev, .swiper-button-next {
+  width: 40px; height: 40px;
+  background: rgba(255 255 255 / 0.8);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #06b6d4; /* cyan-600 */
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+.swiper-button-prev:hover, .swiper-button-next:hover {
+  background: #ffffff;
+  color: #0e7490; /* cyan-800 */
+}
+
+.swiper-button-prev {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.swiper-button-next {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  content: none !important;
+  background-image: none !important;
+}
+
+.swiper-button-prev svg,
+.swiper-button-next svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+</style>
+{% endblock %}
+
+
+{% block script %}
+<script>
+
+// 슬라이드 카드----
+  const swiper = new Swiper('.mySwiper', {
+    // direction: 'vertical',
+    slidesPerView: 2,  // 한 번에 보여줄 슬라이드 수
+    grid: {
+      rows: 2,
+      fill: 'row',
+    },
+    spaceBetween: 20,   // 슬라이드 사이 간격(px)
+    // loop: true,         // 무한루프
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    breakpoints: {
+      0: {               slidesPerView: 1, grid: { rows: 1 } },   // 작은 화면 1열 1행
+    768: {             slidesPerView: 1, grid: { rows: 1 } },   // 태블릿도 1열 1행 유지
+    1024: {            slidesPerView: 2, grid: { rows: 2 } },   // 데스크탑 2열 2행
+  },
+  });
+
+
+</script>
 
 {% endblock %}

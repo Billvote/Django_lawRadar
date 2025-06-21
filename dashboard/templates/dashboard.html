@@ -1,69 +1,100 @@
 {% extends "base.html" %}
 {% block body %}
 <!-- ✅ 공통 레이아웃 컨테이너 -->
-<div class="max-w-screen-lg mx-auto">
+<div class="max-w-8wl mx-auto px-6 py-16 relative z-10">
 
 <!-- ✅ 상단 네비게이션 바 -->
-<nav class="flex-1 p-6 bg-white shadow-sm border-b flex items-center justify-between">
+<nav class="flex-1 p-6 bg-white/30 backdrop-blur-md shadow-sm border-b flex items-center justify-between">
   <!-- 왼쪽: 타이틀 -->
   <div class="text-2xl font-bold text-gray-800">대시보드</div>
 
   <!-- 오른쪽: 대수 선택 -->
   <div class="space-x-4">
-    <a href="{% url 'dashboard' 20 %}" class="text-lg font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
-    <a href="{% url 'dashboard' 21 %}" class="text-lg font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
-    <a href="{% url 'dashboard' 22 %}" class="text-lg font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
+    <!-- <button data-age="20" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">20대</button>
+    <button data-age="21" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">21대</button>
+    <button data-age="22" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">22대</button> -->
+    <a href="{% url 'dashboard' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
+    <a href="{% url 'dashboard' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
+    <a href="{% url 'dashboard' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
   </div>
 </nav>
 
-  <!-- Main Content -->
-  <div class="flex-1 p-6">
-    <!-- Topbar -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">입법 현황</h1>
-    </div>
-
-<!-- Stats Cards -->
-{% include 'Stats_cards.html' %}
+<!-- Main Content -->
+<div class="flex-1 p-6">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold leading-tight mt-8">☑️입법 현황</h1>
+  </div>
+  {% include '00_stats_cards.html' %}
+  {% include '_popup.html'%}
+</div>
 
 <!-- Chart Section -->
-<div class="grid grid-cols-1 gap-6 mb-6">
+<div class="grid grid-cols-1 gap-6">
   <!-- 정당별 법안 발의 수 -->
-  <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-xl font-semibold mb-6">💬정당별 표결 현황</h2>
+  <div class="bg-white/90 backdrop-blur-sm p-6 rounded shadow">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl sm:text-2xl font-bold">💬정당별 표결 현황</h2>
+      {% include '01_partyChart.html'%}
+    </div>
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
+    <!-- 권력 집중도 -->
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-xl sm:text-2xl font-bold leading-tight">💪​국회 권력은 얼마나 집중됐을까?</h1>
+    </div>
+    <div class="w-full flex flex-col items-center">
+    {% include '03_hhi.html' %}
+    </div>
   
   <!-- enp 프로그래스 바 -->
-  <div class="dashboard-section mt-6">
-    <h1 class="text-2xl font-bold">유효한 정당</h1>
-    {% include 'enp.html' %}
-  </div>
-  
-  <!-- 권력 집중도 -->
-  <div class="flex justify-between items-center mt-6">
-    <h1 class="text-2xl font-bold">💪​국회 권력은 얼마나 집중돼 있을까?</h1>
-    <p class="text-sm text-gray-500">의석수 상위 2개 당 기준</p>
-  </div>
-  <div class="dashboard-section">
-  {% include 'hhi_cards.html' %}
+  <div class="dashboard-section mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold whitespace-nowrap">🤔실질적으로 영향력 있는 정당은?</h1>
+    {% include '02_enp.html' %}
   </div>
 
-
-  <div class="flex justify-between items-center mt-6">
-    <h1 class="text-2xl font-bold">👀정당/주제별 표결 현황</h1>
-  </div>
 
   <!-- 정당/클러스터별 표결 현황 -->
-  <div class="grid grid-cols-5 gap-4 mt-6">
-    <div class="col-span-5 bg-white p-4 rounded shadow">
-      {% include 'clusterSelect.html' %}
-      <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
-    </div>
-  </div>
+     <div class="flex justify-between items-center">
+       <h1 class="text-xl sm:text-2xl font-bold">👀최다 키워드별 표결</h1>
+     </div>
+     <div class="grid grid-cols-5 gap-4">
+       <div class="col-span-5 bg-white/90 backdrop-blur-sm p-6 rounded shadow mb-8">
+         {% include '04_clusterSelect.html' %}
+         <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
+       </div>
+     </div>
 
+<!-- 정당별 특이 클러스터 차트 -->
+   <div class="flex justify-between items-center mt-2">
+     <h1 class="text-2xl font-bold">🔥정당별 집중 키워드</h1>
+   </div>
+   
+   <div class="grid grid-cols-5 gap-4 mb-8">
+     <div class="col-span-5 bg-white/90 backdrop-blur-sm p-6 rounded shadow">
+         {% include '05_topClusterChart.html' %}
+     </div>
+   </div>
+ </div>
+
+<!-- 위로 올라가기 버튼 -->
+<div class="fixed bottom-8 right-8 z-50">
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
 </div>
+
+<style>
+  .timeline-item {
+    /* 아무것도 설정하지 않음 – 기본 상태를 초기화 */
+    border: none;
+    outline: none;
+    background: none;
+  }
+</style>
 {% endblock %}
 
 {% block script %}
@@ -360,5 +391,200 @@ barWrapper.innerHTML = `
   }
 });
 
+// 팝업------------
+  const popupModal = document.getElementById("popupModal");
+  const popupOverlay = document.getElementById("popupOverlay");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  const mainContent = document.querySelector(".flex-1.p-6");
+
+  // 팝업 열기
+  function openPopup(title, contentHtml) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = contentHtml;
+    popupModal.classList.remove("hidden");
+    mainContent.classList.add("opacity-70", "blur-sm"); // 메인 콘텐츠 흐림
+  }
+
+  // 팝업 닫기
+  function closePopup() {
+    popupModal.classList.add("hidden");
+    mainContent.classList.remove("opacity-70", "blur-sm");
+  }
+
+    // 버튼 이벤트 등록
+  closeModalBtn.addEventListener("click", closePopup);
+  popupOverlay.addEventListener("click", closePopup);
+
+document.querySelectorAll(".explain-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const title = btn.dataset.title;
+    const content = btn.dataset.content;
+    openPopup(title, content);
+  });
+});
+
+
+// 정당별 탑 클러스터 차트-------------------------------------
+document.addEventListener("DOMContentLoaded", function () {
+  const ageNum = {{ congress_num|safe }};
+  const stanceSelect = document.getElementById("stanceSelect");
+  const topSelect = document.getElementById("topSelect");
+  const chartContainer = document.getElementById("topClusterChart");
+  let chart;
+  // console.log("topSelect.value:", topSelect.value);
+
+  if (!stanceSelect || !topSelect || !chartContainer) {
+    console.error("필수 DOM 요소가 없습니다.");
+    return;
+  }
+  // ✅ 1. 이 자리에 추가해줘 (fetchAndRenderChart 앞이면 좋아)
+  function filterTopSelectOptionsByStance() {
+    const selectedStance = stanceSelect.value;
+
+    Array.from(topSelect.options).forEach(option => {
+      const stance = option.getAttribute("data-stance");
+      if (stance === selectedStance) {
+        option.style.display = "";
+      } else {
+        option.style.display = "none";
+      }
+    });
+
+    // 필터된 첫 옵션으로 기본 선택 설정
+    const firstVisibleOption = Array.from(topSelect.options).find(
+      option => option.style.display !== "none"
+    );
+    if (firstVisibleOption) {
+      topSelect.value = firstVisibleOption.value;
+      // 강제로 change 이벤트 트리거 (그래야 fetchAndRenderChart가 호출됨)
+      const event = new Event('change');
+      topSelect.dispatchEvent(event);
+    }
+  }
+
+
+function getSelectedParams() {
+    // stanceSelect 값은 "oppose" or "abstain" 형태, topSelect는 "party--stance--clusterNum" 형태라 가정
+    const stance = stanceSelect.value;
+    const selectedTop = topSelect.value;
+    const [party, topStance, clusterNum] = selectedTop.split("--");
+    console.log(selectedTop)
+    console.log(topSelect)
+
+    // 만약 topStance랑 stanceSelect가 같은 의미라면 조합이 필요할 수도 있음
+    // 여기서는 단순히 topSelect에 클러스터 번호만 중요하다고 가정
+    return { ageNum, clusterNum, stance, party };
+  }
+
+  function fetchAndRenderChart() {
+    const { ageNum, clusterNum, party, stance } = getSelectedParams();
+
+    if (!clusterNum) {
+      console.warn("clusterNum이 없습니다.");
+      return;
+    }
+
+    const url = `/api/cluster_chart?age_num=${ageNum}&cluster_num=${clusterNum}&party=${party}&stance=${stance}`;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error("서버 응답 오류");
+        return res.json();
+      })
+      .then(data => {
+        if (chart) {
+          chart.updateOptions({
+            xaxis: { categories: data.categories },
+            series: data.series
+          });
+        } else {
+          chart = new ApexCharts(chartContainer, {
+            chart: {
+              type: 'bar',
+              stacked: true,
+              height: 400
+            },
+            plotOptions: {
+              bar: {
+                horizontal: false,
+                borderRadius: 4
+              }
+            },
+            xaxis: {
+              categories: data.categories
+            },
+            yaxis: {
+              title: { text: "비율 (%)" },
+              max: 100
+            },
+            tooltip: {
+              y: { formatter: val => `${val}%` }
+            },
+            series: data.series
+          });
+          chart.render();
+        }
+      })
+      .catch(err => {
+        console.error("차트 데이터 불러오기 실패:", err);
+      });
+  }
+
+  // 두 select가 바뀔 때마다 차트 다시 그림
+  stanceSelect.addEventListener("change", function () {
+  filterTopSelectOptionsByStance();  // 클러스터 옵션 필터링
+  // fetchAndRenderChart();             // 차트 다시 그림
+});
+  topSelect.addEventListener("change", fetchAndRenderChart);
+
+  // 페이지 로드 시 자동 렌더링 (두 select 첫 값으로)
+  // fetchAndRenderChart();
+
+  // ✅ 3. 페이지 첫 로딩 시: 옵션 필터링 먼저, 차트 렌더링 그 다음!
+  filterTopSelectOptionsByStance();   // ⭐⭐ 이거 반드시 먼저!
+  fetchAndRenderChart();              // 그 다음 차트 호출
+});
+
+// 카드 뉴스로 이동하기----------------------------------------
+document.addEventListener("DOMContentLoaded", function () {
+  const selectEl = document.getElementById("topSelect");
+  const btn = document.getElementById("goToCardnewsBtn");
+
+  btn.addEventListener("click", function () {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    const url = selected.dataset.url;
+    if (url) {
+      window.open(url, "_blank"); // 새 탭으로 열기 (원하면 _self로 수정)
+    }
+  });
+});
+
+
+// 스크롤 내리면 부드럽게 무빙---------------------------------
+document.addEventListener('DOMContentLoaded', function() {
+  const observerOptions = {
+    threshold: 0.3,
+    rootMargin: '0px 0px -100px 0px'
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+
+  // 카드들 애니메이션
+  document.querySelectorAll('.timeline-item').forEach((item, index) => {
+    item.style.opacity = '0';
+    item.style.transform = 'translateY(40px)';
+    item.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+    observer.observe(item);
+  });
+});
 </script>
 {% endblock %}

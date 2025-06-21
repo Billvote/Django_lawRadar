@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block body %}
+  
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+    <div class="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+      <div class="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Topics Section -->
+<div class="py-15 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    <!-- Section Header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center px-4 py-2 bg-gray-100 rounded-full text-sm font-semibold text-cyan-800 mb-4">
+        🏷️ 키워드 탐색
+      </div>
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-600 mb-4 mt-2">
+        지금 개정된 법
+      </h2>
+      <p class="text-lg text-gray-500 max-w-2xl mx-auto mt-5">
+        관심 있는 주제를 클릭하여 관련 법안들을 카드뉴스로 확인해보세요
+      </p>
+    </div>
+
+    <!-- Hashtag Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {% for cid, kw in top_clusters %}
+        <a href="{% url 'cardnews:card' cid %}" 
+           class="group relative block p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+          
+          <!-- Gradient Background Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300"
+               style="background: linear-gradient(135deg, {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }}, {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }}88);"></div>
+          
+          <!-- Content -->
+          <div class="relative z-10">
+            <!-- Icon + Name 한 줄 배치 -->
+            <div class="flex items-center mb-4">
+              <!-- Topic Icon -->
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl mr-3 group-hover:scale-110 transition-transform duration-300"
+                   style="background-color: {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }};">
+                <span class="text-white text-lg font-bold">#</span>
+              </div>
+              
+              <!-- Topic Name -->
+              <h3 class="text-lg font-bold text-gray-900 group-hover:text-cyan-500 transition-colors duration-300">
+                {{ kw }}
+              </h3>
+            </div>
+            
+            <!-- View More Arrow -->
+            <div class="flex items-center text-sm text-gray-500 group-hover:text-cyan-500 transition-colors duration-300">
+              <span class="mr-2">자세히 보기</span>
+              <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+                   fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Hover Effect Decoration -->
+          <div class="absolute top-4 right-4 w-8 h-8 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"
+               style="background-color: {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }};"></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gradient Text Animation */
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+}
+</style>
+
+<script>
+// Intersection Observer for Scroll Animations
+document.addEventListener('DOMContentLoaded', function() {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-fade-in-up');
+      }
+    });
+  }, observerOptions);
+
+  // Observe all topic cards
+  document.querySelectorAll('.group').forEach(card => {
+    observer.observe(card);
+  });
+});
+
+// Add fade-in-up animation class
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+`;
+document.head.appendChild(style);
+</script>
+<div class="h-20"></div>
+{% endblock %}

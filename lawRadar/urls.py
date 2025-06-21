@@ -23,6 +23,7 @@ from main import views as main_v
 from geovote import views as geovote_v
 from dashboard import views as dashboard_v
 from history import views as history_v
+from cardnews import views as cardnews_v
 
 
 urlpatterns = [
@@ -31,9 +32,9 @@ urlpatterns = [
     # home
     path('', main_v.home, name='home'),
     # about us
-    path('/aboutUs/', main_v.aboutUs, name='about'),
+    path('aboutUs/', main_v.aboutUs, name='about'),
     # search
-    path('/search/', main_v.search, name='search'),
+    path('search/', main_v.search, name='search'),
     path("galaxy/", main_v.cluster_galaxy_view, name="cluster_galaxy"),
     path("api/cluster_keywords/", main_v.cluster_keywords_json, name="cluster_keywords_json"),
 
@@ -43,14 +44,22 @@ urlpatterns = [
 
     # tree map
     path('treemap/', geovote_v.treemap_view, name='treemap'),
+    path('api/treemap-data/', geovote_v.region_tree_data, name='treemap_data_api'),
     path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
     path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
+    path('api/cluster_chart/', dashboard_v.cluster_chart_api, name='cluster_chart_api'),
 
     # history
     path('history/', include('history.urls')),
+
+    # card news
+    path('cardnews/', include('cardnews.urls')),
+
+    # 검색 자동완성 -------------------------------★
+    path("api/autocomplete/", main_v.autocomplete, name="autocomplete"),
 
 
 ]
