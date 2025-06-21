@@ -2,114 +2,109 @@
 {% extends "base.html" %}
 {% load history_filters %}
 
-{% block body %}
-<!-- Hero Section with Gradient Background -->
-<!-- <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 min-h-[40vh]"> -->
-  <!-- Animated Background Elements -->
-  <!-- <div class="absolute inset-0">
-    <div class="absolute top-20 right-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-    <div class="absolute bottom-20 left-20 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
-    <div class="absolute top-1/2 left-1/2 w-32 h-32 bg-cyan-500/20 rounded-full blur-xl animate-bounce"></div>
-  </div> -->
-  
+{% block body %}  
   <!-- Content -->
-  <div class="relative z-10 px-6 py-16">
+  <div class="relative z-10 px-6 py-4 mt-16">
     <div class="max-w-4xl mx-auto">
-      <!-- Bill Number Badge -->
-      <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold text-black mb-6 border border-white/20">
-        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 014 11.5V5z" clip-rule="evenodd"/>
-        </svg>
-        의안번호: {{ bill.bill_number }}
-      </div>
+
+      <p class="uppercase tracking-wide text-cyan-600 font-semibold mb-2">📘 입법 요약</p>
       
-      <!-- Bill Title -->
-      <h1 class="text-4xl md:text-6xl font-black text-black mb-6 leading-tight">
+      <!-- 의안명 -->
+      <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 mb-6 leading-tight">
         {{ bill.title }}
       </h1>
-      
+
       <!-- Meta Information -->
-      <div class="flex flex-wrap items-center gap-4 mb-8">
+      <div class="flex justify-between items-start my-10">
         {% if bill.related_count %}
-          <div class="flex items-center px-3 py-2 bg-cyan-500/20 backdrop-blur-sm rounded-lg text-black-100 border border-cyan-500/30">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <div class="flex flex-nowrap items-center min-w-[140px] shrink-0 px-3 py-2 backdrop-blur-sm rounded-full text-black border border-gray-100">
+            <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
             </svg>
             개정 {{ bill.related_count }}회
-          </div>
+        </div>
         {% endif %}
-        
-        <!-- Keywords -->
-        <div class="flex flex-wrap gap-2">
-          {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
-            {% if kw_str %}
-              {% with kw_list=kw_str|split_by_comma %}
-                {% for kw in kw_list|slice:":5" %}
-                  <a href="{% url 'cardnews:card' bill.cluster %}"
-                     class="px-3 py-1 bg-white/10 backdrop-blur-sm text-black rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 border border-white/20 hover:scale-105">
-                     #{{ kw }}
-                  </a>
-                {% endfor %}
-              {% endwith %}
-            {% endif %}
-          {% endwith %}
+
+          <!-- 키워드 해시태그 -->
+          <div class="flex flex-wrap gap-2 justify-end">
+            {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+              {% if kw_str %}
+                {% with kw_list=kw_str|split_by_comma %}
+                  {% for kw in kw_list|slice:":5" %}
+                    <a href="{% url 'cardnews:card' bill.cluster %}"
+                      class="px-3 py-1 bg-gray-100 backdrop-blur-sm text-black rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                      #{{ kw }}
+                    </a>
+                  {% endfor %}
+                {% endwith %}
+              {% endif %}
+            {% endwith %}
+          </div>
         </div>
       </div>
+      <div class="border-t border-gray-300 my-6"></div>
     </div>
   </div>
 </div>
 
+
 <!-- Main Content -->
 <!-- <div class="bg-gray-50 min-h-screen"> -->
-  <div class="max-w-6xl mx-auto px-6 py-12">
-    
-    <!-- Timeline Section Header -->
-    <!-- <div class="text-center mb-16">
-      <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-semibold text-blue-800 mb-4">
-        📋 법안 개정 이력
-      </div>
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-        개정 타임라인 -->
-        <!-- <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-cyan-600">타임라인</span> -->
-      <!-- </h2>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        해당 법안의 제정부터 현재까지의 모든 개정 과정을 시간순으로 확인하세요
-      </p>
-    </div> -->
+  <div class="max-w-6xl mx-auto px-6">
+    <p class="text-lg text-gray-500 mb-4 text-center mb-10">
+      ✔️ 법안이 어떻게 달라졌는지 한눈에 확인하세요
+    </p>
 
     <!-- Enhanced Timeline -->
-    <div class="relative">
-      <!-- Timeline Line -->
-      <div class="absolute left-8  top-0 h-full w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 transform md:-translate-x-1/2"></div>
+    <div class="relative mb-32">
+      <!-- 타임라인 선 -->
+      <div class="absolute left-8 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 via-yellow-300 to-pink-300 transform md:-translate-x-1/2"></div>
       
       <div class="space-y-16">
         {% for related in related_bills %}
         <div class="relative group timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
           <!-- Timeline Dot -->
-          <div class="absolute left-6  w-6 h-6 bg-white border-4 border-blue-500 rounded-full transform md:-translate-x-1 shadow-lg group-hover:scale-125 transition-all duration-300 z-10">
-            <div class="absolute inset-1 bg-blue-500 rounded-full group-hover:bg-purple-500 transition-colors duration-300"></div>
+          <div class="absolute left-6  w-6 h-6 bg-white rounded-full transform md:-translate-x-1 shadow-md group-hover:scale-125 transition-all duration-300 z-10
+                {% if related.age.number >= 22 %}
+                  border-emerald-400
+                {% elif related.age.number >= 21 %}
+                  border-yellow-400
+                {% elif related.age.number >= 20 %}
+                  border-pink-400
+                {% else %}
+                  border-gray-400
+                {% endif %}
+                border-4
+                 ">
+            <div class="absolute inset-1 bg-cyan-400 rounded-full group-hover:bg-cyan-400 transition-colors duration-300"></div>
           </div>
           
-          <!-- Timeline Content -->
+          <!-- Content -->
           <div class="ml-16 md:ml-16 {% cycle 'md:pr-1/2' 'md:pl-1/2 md:ml-1/2' %}">
             <!-- Date Badge -->
-            <div class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-sm font-semibold mb-4 {% cycle 'md:float-left' 'md:float-left' %}">
-              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-              </svg>
-              {{ related.age.number }}대 | {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
+            <div class="inline-flex items-center px-3 py-1 bg-blue-100 text-gray-900 rounded-full text-sm font-semibold mb-4 {% cycle 'md:float-left' 'md:float-left' %}
+                        {% if related.age.number >= 22 %}
+                          bg-emerald-100
+                        {% elif related.age.number >= 21 %}
+                          bg-yellow-100
+                        {% elif related.age.number >= 20 %}
+                          bg-pink-100
+                        {% else %}
+                          bg-gray-200
+                        {% endif %}
+                        text-gray-800 md:float-left">
+              📅 {{ related.age.number }}대 | {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
             </div>
             
             <div class="clear-both"></div>
             
-            <!-- Content Card -->
-            <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
-              <!-- Card Header -->
-              <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
+            <!-- 개별 카드 -->
+            <div class="group overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
+              <!-- 카드 헤더 -->
+              <div class="bg-white p-6 border-b border-gray-100">
                 <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                  <div class="flex-1 mt-1 px-3">
+                    <h3 class="text-lg font-medium text-gray-900 group-hover:font-bold transition-all duration-300">
                       {{ related.summary|default:"(내용 없음)" }}
                     </h3>
                   </div>
@@ -118,7 +113,7 @@
                   class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 hover:scale-110"> -->
                   <!-- <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/> -->
-                  </svg>
+                  <!-- </svg> -->
                 </a>
                 {% endif %}
               </div>
@@ -132,7 +127,7 @@
                     <!-- <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/> -->
                   </svg>
                   <p class="text-gray-600 font-medium">
-                    의안번호: {{ related.bill_number }}
+                    의안번호 {{ related.bill_number }}
                   </p>
                     <!-- 상세 정보 보기 -->
                   </div>
@@ -140,6 +135,7 @@
                   <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                   </svg>
+                  </a>
                 </div>
               </div>
             </div>
@@ -151,10 +147,12 @@
   </div>
 </div>
 
-<!-- Floating Action Button -->
+<!-- 위로 올라가기 버튼 -->
 <div class="fixed bottom-8 right-8 z-50">
-  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-          class="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
+  <button type="button"
+          onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          id="scrollTopBtn">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
     </svg>
@@ -240,5 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
     title.classList.remove('text-4xl', 'md:text-6xl');
   }
 });
+
 </script>
 {% endblock %}
