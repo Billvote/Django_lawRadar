@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from .models import Age, Member, District
 from collections import defaultdict
 from billview.models import Bill
+from main.models import VoteSummary, PartyClusterStats
+from django.views.decorators.http import require_GET
 
 def treemap_view(request):
     ages = Age.objects.all().order_by('number')
@@ -64,9 +66,6 @@ def region_tree_data(request):
     return JsonResponse(result)
 
 #----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
-from django.http import JsonResponse
-from main.models import VoteSummary
-
 def member_vote_summary_api(request):
     member_name = request.GET.get('member_name')
     if not member_name:
@@ -119,8 +118,67 @@ def member_vote_summary_api(request):
 
     return JsonResponse(max_clusters)
 
+#------------------정당과 의원의 표결 경향 분석--------------------------------
+# @require_GET
+# def member_alignment_api(request):
+#     member_name = request.GET.get("member_name")
+#     congress_num = request.GET.get("congress_num")
 
+#     if not member_name or not congress_num:
+#         return JsonResponse({'error': 'member_name and congress are required'}, status=400)
 
+#     try:
+#         age = Age.objects.get(number=congress_num)
+#     except Age.DoesNotExist:
+#         return JsonResponse({'error': 'Invalid congress_num'}, status=404)
+
+#     try:
+#         member = Member.objects.get(name=member_name, age=age)
+#     except Member.DoesNotExist:
+#         return JsonResponse({'error': 'Member not found'}, status=404)
+
+#     party = member.party
+#     summaries = VoteSummary.objects.filter(member_name=member_name, age=age)
+#     if not summaries.exists():
+#         return JsonResponse({'error': 'No vote summary found for member'}, status=404)
+
+#     aligned = 0
+#     total = 0
+
+#     for s in summaries:
+#         try:
+#             party_stat = PartyClusterStats.objects.get(
+#                 age=age, cluster_num=s.cluster, party=party
+#             )
+#         except PartyClusterStats.DoesNotExist:
+#             continue
+
+#         party_stance = max([
+#             ('찬성', party_stat.support_ratio),
+#             ('반대', party_stat.oppose_ratio),
+#             ('기권', party_stat.abstain_ratio)
+#         ], key=lambda x: x[1])[0]
+
+#         member_stance = max([
+#             ('찬성', s.찬성),
+#             ('반대', s.반대),
+#             ('기권', s.기권)
+#         ], key=lambda x: x[1])[0]
+
+#         if party_stance == member_stance:
+#             aligned += 1
+#         total += 1
+    
+#     alignment_rate = round(aligned / total * 100, 2) if total else 0
+
+#     return JsonResponse({
+#         'member_name': member.name,
+#         'party': party.party,
+#         'alignment_count': aligned,
+#         'total_clusters': total,
+#         'alignment_rate': alignment_rate,
+#         'deviation_rate': round(100 - alignment_rate, 2),
+#     })
 
 
 

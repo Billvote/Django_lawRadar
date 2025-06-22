@@ -51,9 +51,12 @@
 <!-- Main Content -->
 <!-- <div class="bg-gray-50 min-h-screen"> -->
   <div class="max-w-6xl mx-auto px-6">
-    <p class="text-lg text-gray-500 mb-4 text-center mb-10">
+    <p class="text-lg text-gray-500 mb-4 text-center mb-2">
       ✔️ 법안이 어떻게 달라졌는지 한눈에 확인하세요
     </p>
+      <p class="text-base text-gray-400 text-center mb-10">
+        개정 내용은 최근 개정안부터 차례로 정렬됩니다
+      </p>
 
     <!-- Enhanced Timeline -->
     <div class="relative mb-32">
@@ -99,6 +102,7 @@
             <div class="clear-both"></div>
             
             <!-- 개별 카드 -->
+          <a href="{{ related.url }}" target="_blank" class="block group">
             <div class="group overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
               <!-- 카드 헤더 -->
               <div class="bg-white p-6 border-b border-gray-100">
@@ -108,37 +112,27 @@
                       {{ related.summary|default:"(내용 없음)" }}
                     </h3>
                   </div>
-                  {% if related.url %}
-                  <!-- <a href="{{ related.url }}" target="_blank"
-                  class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 hover:scale-110"> -->
-                  <!-- <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/> -->
-                  <!-- </svg> -->
-                </a>
-                {% endif %}
+                </div>
               </div>
-            </div>
-            
-            <!-- Card Footer -->
-            <div class="p-6">
-              <div class="flex items-center justify-between text-sm text-gray-500">
-                <div class="flex items-center">
-                  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <!-- <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/> -->
-                  </svg>
-                  <p class="text-gray-600 font-medium">
-                    의안번호 {{ related.bill_number }}
-                  </p>
-                    <!-- 상세 정보 보기 -->
+
+              <!-- 카드 푸터 -->
+              <div class="p-6">
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"></svg>
+                    <p class="text-gray-600 font-medium">
+                      의안번호 {{ related.bill_number }}
+                    </p>
                   </div>
-                  <a href="{{ related.url }}" target="_blank" class="group">
                   <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                   </svg>
-                  </a>
                 </div>
               </div>
+
             </div>
+          </a>
+            
           </div>
         </div>
         {% endfor %}

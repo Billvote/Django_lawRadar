@@ -83,7 +83,7 @@
   }
 
   // 팝업 열기
-  function openPopup(title, contentHtml, totalVoteCount = null) {
+  function openPopup(title, contentHtml) {
     modalTitle.textContent = title;
     modalContent.innerHTML = contentHtml;
     popupModal.classList.remove("hidden");
@@ -109,6 +109,23 @@ function renderSummary(data) {
   const voteTypes = ['찬성', '반대', '기권', '불참'];
   const uniqueClusters = new Set();
   let html = '<div class="space-y-4">';
+
+  // //정당과의 일치정도
+  // if (data.alignment_rate !== undefined && data.party) {
+  //   html += `
+  //     <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded">
+  //       <div class="text-xl font-semibold">
+  //         소속 정당 (${data.party})과의 표결 일치율 💡
+  //       </div>
+  //       <div class="text-3xl font-bold mt-2 text-blue-800">
+  //         ${data.alignment_rate.toFixed(1)}%
+  //       </div>
+  //       <div class="text-sm text-gray-600 mt-1">
+  //         이탈 지수: ${data.deviation_rate.toFixed(1)}%
+  //       </div>
+  //     </div>
+  //   `;
+  // } 
 
   // 유형별 클러스터 설명 텍스트
   function getClusterText(type, keywords) {
@@ -368,8 +385,8 @@ function renderSummary(data) {
       '연수구','남동구','부평구','계양구','서구','강화군','옹진군','광산구','유성구','대덕구',
       '울주군','세종시','수원시','용인시','고양시','화성시','성남시','부천시','남양주시','안산시',
       '평택시','안양시','시흥시','파주시','김포시','의정부시','광주시','하남시','광명시','군포시',
-      '양주시','오산시','이천시','안성시','구리시','의왕시','포천시','양평군','여주시','동두천시',
-      '과천시','가평군','연천군','춘천시','원주시','강릉시','동해시','태백시','속초시','삼척시',
+      '양주시','오산시','이천시','안성시','구리시','포천시','양평군','여주시','동두천시','양구군',
+      '가평군','연천군','춘천시','원주시','강릉시','동해시','태백시','속초시','삼척시','구례군',
       '홍천군','횡성군','영월군','평창군','정선군','철원군','화천군','양구군','인제군','고성군',
       '양양군','청주시','충주시','제천시','보은군','옥천군','영동군','증평군','진천군','괴산군',
       '음성군','단양군','천안시','공주시','보령시','아산시','서산시','논산시','계룡시','당진시',
@@ -381,8 +398,7 @@ function renderSummary(data) {
       '상주시','문경시','경산시','의성군','청송군','영양군','영덕군','청도군','고령군','성주군',
       '칠곡군','예천군','봉화군','울진군','울릉군','창원시','진주시','통영시','사천시','김해시',
       '밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군',
-      '함양군','거창군','합천군','제주시','서귀포시','중구','동구','남구','세종시','동구','군위',
-      '구례군','양구군'
+      '함양군','거창군','합천군','제주시','서귀포시','중구','동구','남구','세종시','동구','군위'
     ]);
     function formatNameWithLineBreak(name) {
       // 예외 단어는 그대로 반환
