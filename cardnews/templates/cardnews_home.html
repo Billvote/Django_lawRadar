@@ -79,7 +79,7 @@
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  animation: float 2s ease-in-out infinite;
 }
 
 /* Smooth Scroll */
@@ -100,7 +100,7 @@ html {
 }
 
 .animate-gradient-x {
-  animation: gradient-x 15s ease infinite;
+  animation: gradient-x 5s ease infinite;
 }
 </style>
 
@@ -109,7 +109,7 @@ html {
 document.addEventListener('DOMContentLoaded', function() {
   const observerOptions = {
     threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
+    rootMargin: '0px 0px -150px 0px'
   };
 
   const observer = new IntersectionObserver(function(entries) {
@@ -141,7 +141,7 @@ style.textContent = `
   }
   
   .animate-fade-in-up {
-    animation: fade-in-up 0.6s ease-out forwards;
+    animation: fade-in-up 0.4s ease-out forwards;
   }
 `;
 document.head.appendChild(style);
