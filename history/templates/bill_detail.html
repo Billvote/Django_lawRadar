@@ -103,7 +103,7 @@
             
             <!-- 개별 카드 -->
           <a href="{{ related.url }}" target="_blank" class="block group">
-            <div class="group overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
+            <div class="group overflow-hidden rounded border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
               <!-- 카드 헤더 -->
               <div class="bg-white p-6 border-b border-gray-100">
                 <div class="flex items-start justify-between">
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.timeline-item').forEach((item, index) => {
     item.style.opacity = '0';
     item.style.transform = 'translateY(50px)';
-    item.style.transition = `opacity 0.8s ease ${index * 0.05}s, transform 0.4s ease ${index * 0.05}s`;
+    item.style.transition = `opacity 0.3s ease ${index * 0.02}s, transform 0.2s ease ${index * 0.02}s`;
     observer.observe(item);
   });
   

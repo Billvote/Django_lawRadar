@@ -11,22 +11,25 @@
 
 {% block body %}
 <!--────────── Hero ──────────-->
-<div class="relative z-10 max-w-6xl mx-auto px-6 text-center py-16">
-  <h1 class="text-4xl md:text-6xl font-black text-gray-900 mb-6">
+<div class="relative z-10 max-w-6xl mx-auto px-6 text-center py-8">
+  <h1 class="text-4xl md:text-5xl font-bold mb-6">
     {% if query %}
       "<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">{{ query }}</span>" 검색결과
     {% else %}
-      📋 <span class="bg-gradient-to-r from-gray-600 to-gray-600 bg-clip-text text-transparent">법안 목록</span>
+      <div class="flex flex-col items-center space-y-2 mb-4">
+        <div class="inline-flex items-center px-4 py-2 bg-gray-100 rounded-full text-sm font-semibold text-cyan-800 mb-3">
+          📜 개정 탐색
+        </div>
+        <span class="text-4xl md:text-5xl font-bold text-gray-700 mb-4 mt-2">법안 목록</span>
+      </div>
     {% endif %}
   </h1>
-  <p class="text-xl md:text-2xl text-gray-700 font-medium max-w-3xl mx-auto">
+  <p class="text-lg md:text-lg text-gray-500 max-w-3xl mx-auto mb-3">
     주요 법안들을 체계적으로 확인하고 개정 내용을 탐색하세요!
   </p>
 </div>
 
 <!--────────── Main ──────────-->
-<div class="bg-gray-50 min-h-screen">
-
   <!-- 검색창 & 통계 -->
   <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
     <div class="flex flex-col lg:flex-row gap-6 items-center">
@@ -61,7 +64,7 @@
         </div>
         <div>
           <div class="text-2xl font-bold text-gray-900">{{ total_cluster_count }}</div>
-          <div class="text-sm text-gray-600">주제</div>
+          <div class="text-sm text-gray-600">총 키워드</div>
         </div>
       </div>
     </div>
@@ -91,7 +94,7 @@
     <!-- ① 최근 개정 -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
       <div style="background:#4fc1af;" class="p-4 rounded-md">
-        <h2 class="text-xl font-bold text-white">🆕 최근 개정</h2>
+        <h2 class="text-xl font-bold text-white">✅ 최근 개정</h2>
          <p class="text-green-100 text-sm mt-1">최근 표결한 법안들</p>
       </div>
       <div class="p-6">
@@ -145,7 +148,7 @@
     </div>
 
     <!-- ③ 반대 최다 -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <!-- <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
       <div style="background:#fca5a5;" class="px-6 py-4">
         <h2 class="text-xl font-bold text-white">❌ 반대 최다</h2>
          <p class="text-rose-100 text-sm mt-1">반대 표가 많았던 최신 법안</p>
@@ -172,11 +175,46 @@
           {% endfor %}
         </div>
       </div>
+    </div> -->
+
+    <!-- 랜덤 법안 -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+  <div style="background:#a5f3fc;" class="px-6 py-4">
+    <h2 class="text-xl font-bold text-cyan-900">🎲 랜덤 법안 추천</h2>
+    <p class="text-cyan-800 text-sm mt-1">랜덤으로 추출된 키워드별 최신 법안</p>
+  </div>
+  <div class="p-6">
+    <div class="space-y-4">
+      {% for bill in cluster_random_latest_bills %}
+      <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
+                  hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
+           onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+        <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
+          {{ bill.title_custom|safe|default:bill.title }}
+        </h3>
+        <div class="flex items-center justify-between text-xs text-gray-600">
+          <div class="flex items-center gap-2 mt-1">
+            {% if bill.hashtag %}
+              <span class="inline-block text-xs font-medium text-cyan-700 bg-cyan-100 px-2 py-1 rounded-full">
+                {{ bill.hashtag}}
+              </span>
+            {% endif %}
+          </div>
+          <!-- {% if bill.last_vote_date %}
+          <span class="text-gray-400">{{ bill.last_vote_date|date:"Y.m.d" }}</span>
+          {% endif %} -->
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-sm text-gray-500">추천 가능한 법안이 없습니다.</p>
+      {% endfor %}
     </div>
+  </div>
+</div>
+
 
   </div>  <!-- /grid -->
   {% endif %}
-</div>  <!-- /Main -->
 
 <!-- ────────── Pagination ──────────
 {% if page_obj.has_other_pages %}

@@ -29,6 +29,11 @@ from billview.models import Bill
 from geovote.models import Vote
 from main.models import PartyClusterStats
 from search import search_service as ss
+from django.db.models.functions import Random
+from collections import defaultdict
+import random
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -233,22 +238,61 @@ class BillHistoryListView(ListView):
         ctx["amended_bills"] = amended_qs
 
         # ❌ 반대 최다 -------------------------------------------------------
-        current_age = self.request.GET.get("age")
-        age_filter = {"age": current_age} if current_age else {}
+        # current_age = self.request.GET.get("age")
+        # age_filter = {"age": current_age} if current_age else {}
 
-        hot_clusters = PartyClusterStats.objects.filter(**age_filter).values_list(
+        # hot_clusters = PartyClusterStats.objects.filter(**age_filter).values_list(
+        #     "cluster_num", flat=True
+        # )
+
+        # ctx["opposed_bills"] = (
+        #     Bill.objects.filter(cluster__in=hot_clusters, **age_filter)
+        #     .annotate(
+        #         last_vote_date=Subquery(vote_sq),
+        #         against=Count("vote", filter=Q(vote__result="반대")),
+        #     )
+        #     .filter(against__gt=0)
+        #     .order_by("-last_vote_date")[:8]
+        # )
+
+        # 랜덤 법안-----------------------------------------------------------
+        hot_clusters = PartyClusterStats.objects.values_list(
             "cluster_num", flat=True
         )
 
-        ctx["opposed_bills"] = (
-            Bill.objects.filter(cluster__in=hot_clusters, **age_filter)
-            .annotate(
-                last_vote_date=Subquery(vote_sq),
-                against=Count("vote", filter=Q(vote__result="반대")),
-            )
-            .filter(against__gt=0)
-            .order_by("-last_vote_date")[:8]
+        # 랜덤 후보군 넉넉하게 추출 (표결 정보 포함)
+        candidate_bills = (
+            Bill.objects.filter(cluster__in=hot_clusters)
+            .annotate(last_vote_date=Subquery(vote_sq))
+            .order_by(Random())[:100]  # 클러스터가 많으면 수 늘려도 OK
         )
+
+        # 클러스터별 최대 8개씩 그룹화
+        cluster_groups = defaultdict(list)
+        for bill in candidate_bills:
+            if bill.cluster and len(cluster_groups[bill.cluster]) < 8:
+                cluster_groups[bill.cluster].append(bill)
+
+        # 각 클러스터별로 최신 법안 1건 선택
+        latest_bills = []
+        for bills in cluster_groups.values():
+            latest = sorted(
+                [b for b in bills if b.last_vote_date],
+                key=lambda b: b.last_vote_date,
+                reverse=True,
+            )
+            if latest:
+                latest_bills.append(latest[0])
+
+        # 키워드 랜덤으로 가져오기
+        for b in latest_bills:
+            if b.cluster_keyword:
+                keywords = [kw.strip(",.") for kw in b.cluster_keyword.split()]
+                b.hashtag = f"#{random.choice(keywords)}" if keywords else ""
+            else:
+                b.hashtag = ""
+
+        ctx["cluster_random_latest_bills"] = latest_bills[:7]
 
         return ctx
 
