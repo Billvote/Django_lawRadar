@@ -106,12 +106,14 @@
             <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
               {{ bill.title_custom|safe|default:bill.title }}
             </h3>
-            <div class="flex items-center text-xs text-gray-600">
+            <div class="flex items-center text-xs text-gray-600 font-semibold">
               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
-              {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+              <div style="color: #4fc1af;">
+                {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
+              </div>
             </div>
           </div>
           {% endfor %}
@@ -139,7 +141,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
-              <span class="font-semibold text-blue-600">{{ bill.related_count }}회 개정</span>
+              <span class="font-semibold"
+                    style="color: #fdba74;">{{ bill.related_count }}회 개정</span>
             </div>
           </div>
           {% endfor %}
@@ -179,9 +182,19 @@
 
     <!-- 랜덤 법안 -->
 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-  <div style="background:#a5f3fc;" class="px-6 py-4">
-    <h2 class="text-xl font-bold text-cyan-900">🎲 랜덤 법안 추천</h2>
-    <p class="text-cyan-800 text-sm mt-1">랜덤으로 추출된 키워드별 최신 법안</p>
+  <div style="background:#fca5a5;" class="px-6 py-4">
+      <h2 class="text-xl font-bold text-cyan-900 text-white">
+        <span class="cursor-pointer hover:text-2xl transition-all duration-200" onclick="window.location.reload()">🎲</span> 랜덤 법안 추천
+      </h2>
+      <!-- <p class="text-sm mt-1 text-white">랜덤으로 추출된 키워드별 최신 법안</p> -->
+      <p class="text-sm mt-1 text-rose-100">주사위를 눌러 랜덤 법안을 확인하세요</p>
+      <!-- 랜덤 버튼 -->
+      <!-- <div class="flex justify-end mb-4">
+        <button onclick="window.location.reload()"
+                class="text-sm font-medium text-white bg-rose-400 hover:bg-rose-500 px-3 py-1.5 rounded-lg shadow transition-all duration-200">
+          🕹️ 새로 추천받기
+        </button>
+      </div> -->
   </div>
   <div class="p-6">
     <div class="space-y-4">
@@ -195,7 +208,8 @@
         <div class="flex items-center justify-between text-xs text-gray-600">
           <div class="flex items-center gap-2 mt-1">
             {% if bill.hashtag %}
-              <span class="inline-block text-xs font-medium text-cyan-700 bg-cyan-100 px-2 py-1 rounded-full">
+              <span class="inline-block text-xs font-semibold bg-gray-100 px-2 py-1 rounded-full"
+                    style="color: #b91c1c; color: #fca5a5;">
                 {{ bill.hashtag}}
               </span>
             {% endif %}
@@ -215,6 +229,17 @@
 
   </div>  <!-- /grid -->
   {% endif %}
+
+
+  <!-- 위로 올라가기 버튼 -->
+<div class="fixed bottom-8 right-8 z-50">
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
+</div>
 
 <!-- ────────── Pagination ──────────
 {% if page_obj.has_other_pages %}
