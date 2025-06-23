@@ -23,6 +23,8 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+STATIC_ROOT = 'collectstatic'
+
 # 환경변수 로드
 # env = environ.Env()
 # environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -47,7 +49,9 @@ SECRET_KEY = 'django-insecure-xtpiq=arsxdi6ak@qrl-qt$#!onbzwwvipa0y5ha-urmtt#=@&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "*",
+]
 
 
 # Application definition

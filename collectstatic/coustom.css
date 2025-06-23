@@ -1,0 +1,119 @@
+/* fonts & 기본 body 스타일 */
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* navbar */
+.navbar {
+  padding: 0.7rem 1rem;
+}
+
+.navbar-nav .nav-link {
+  transition: 0.3s ease-in-out;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.nav-link.active {
+  font-weight: 600;
+  color: #0d6efd !important;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+.navbar-nav .nav-item {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-nav .nav-link {
+  text-align: center;
+}
+
+/* Tailwind @apply 스타일은 별도 CSS에서는 사용할 수 없으니 일반 CSS로 변환 */
+/* .nav-item { @apply rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400; } */
+/* .active { @apply text-cyan-500; } */
+
+/* 위를 아래와 같이 변환 (tailwind 컬러값을 유사하게 재현) */
+.nav-item {
+  border-radius: 0.375rem; /* rounded-md */
+  padding: 0.5rem 0.75rem; /* px-3 py-2 */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #6b7280; /* text-gray-500 */
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.nav-item:hover {
+  color: #22d3ee; /* hover:text-cyan-400 */
+}
+
+.active {
+  color: #06b6d4; /* text-cyan-500 */
+}
+
+/* 추가로 트리맵 카드용 클래스 예시 */
+.district-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.district-card {
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease, opacity 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: white;
+}
+
+.district-card:hover {
+  box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+}
+
+.district-card.selected {
+  opacity: 1;
+  border-width: 4px;
+}
+
+.district-card img {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.district-card .district-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.district-card .member-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2563eb; /* blue-700 */
+}
+
+.district-card .party-name {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* 필요하면 더 추가 가능 */
