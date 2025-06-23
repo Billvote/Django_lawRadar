@@ -90,7 +90,13 @@ def member_vote_summary_api(request):
             '기권': top_summary.기권,
             '불참': top_summary.불참,
         }
-        ratios = {k: round(counts[k] / bill_count * 100, 2) for k in counts}
+        # 비율 계산, 최대 100% 제한
+        ratios = {}
+        for k in counts:
+            ratio = (counts[k] / bill_count) * 100
+            if ratio > 100:
+                ratio = 100.0
+            ratios[k] = round(ratio, 2)
 
         # 클러스터 키워드를 Bill 테이블에서 가져오기
         bill = Bill.objects.filter(cluster=top_summary.cluster).first()
@@ -119,6 +125,8 @@ def member_vote_summary_api(request):
     return JsonResponse(max_clusters)
 
 #------------------정당과 의원의 표결 경향 분석--------------------------------
+# import logging
+# logger = logging.getLogger(__name__)
 # @require_GET
 # def member_alignment_api(request):
 #     member_name = request.GET.get("member_name")
@@ -126,10 +134,11 @@ def member_vote_summary_api(request):
 
 #     if not member_name or not congress_num:
 #         return JsonResponse({'error': 'member_name and congress are required'}, status=400)
-
+    
 #     try:
-#         age = Age.objects.get(number=congress_num)
+#         age = Age.objects.get(id=congress_num)
 #     except Age.DoesNotExist:
+#         logger.error(f"Age ID {congress_num} not found")
 #         return JsonResponse({'error': 'Invalid congress_num'}, status=404)
 
 #     try:

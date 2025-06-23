@@ -26,7 +26,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from billview.models import Bill
-from geovote.models import Vote
+from geovote.models import Vote, Age, Member
 from search import search_service as ss           # ★ 공통 검색 모듈
 from .models import VoteSummary
 import random, logging, urllib.parse
@@ -247,14 +247,19 @@ def cluster_index(request, cluster_number: int):
     return redirect(url)
 
 # ───────────────────────── 6. 의원별 표결 통계 저장 ───────────────────────
-def calculate_votesummary(member_name: str):
+def calculate_votesummary(member_name: str, age: Age = None):
+    votes_query = Vote.objects.filter(member__name=member_name)
+    if age is not None:
+        votes_query = votes_query.filter(age=age)
     # 1) 투표 집계
     votes = (
         Vote.objects
             .filter(member__name=member_name)
-            .values("bill__cluster", "result")
+            .values("bill_id", "result")
             .annotate(count=Count("id"))
+            .order_by("bill_id")
     )
+
     clusters = {v["bill__cluster"] for v in votes if v["bill__cluster"] is not None}
 
     # 2) cluster → 대표 키워드

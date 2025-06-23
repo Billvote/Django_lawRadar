@@ -31,9 +31,14 @@
         <div id="breadcrumb" class="text-base text-gray-500"></div>
         <!-- 뒤로가기버튼 -->
         <span id="backButton"
-              class="cursor-pointer text-2xl hover:text-pink-500 transition duration-300">
-          🔙
+              class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm 
+                    hover:bg-pink-50 hover:text-pink-600 transition-colors duration-300 cursor-pointer text-base font-medium">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+          이전
         </span>
+
       </div>
       <div id="treemap"  class="flex-1 overflow-auto h-full"></div>
     </main>
@@ -71,6 +76,8 @@
   const mainContent = document.getElementById("mainContent");
   
   let svg, currentNode, hierarchyRoot;
+  let selectedAge = null;
+  let defaultAgeBtn = null;
 
   function updateBreadcrumb(node) {
     let path = [];
@@ -110,22 +117,22 @@ function renderSummary(data) {
   const uniqueClusters = new Set();
   let html = '<div class="space-y-4">';
 
-  // //정당과의 일치정도
-  // if (data.alignment_rate !== undefined && data.party) {
-  //   html += `
-  //     <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded">
-  //       <div class="text-xl font-semibold">
-  //         소속 정당 (${data.party})과의 표결 일치율 💡
-  //       </div>
-  //       <div class="text-3xl font-bold mt-2 text-blue-800">
-  //         ${data.alignment_rate.toFixed(1)}%
-  //       </div>
-  //       <div class="text-sm text-gray-600 mt-1">
-  //         이탈 지수: ${data.deviation_rate.toFixed(1)}%
-  //       </div>
-  //     </div>
-  //   `;
-  // } 
+  //정당과의 일치정도
+  if (data.alignment_rate !== undefined && data.party) {
+    html += `
+      <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded">
+        <div class="text-xl font-semibold">
+          소속 정당 (${data.party})과의 표결 일치율 💡
+        </div>
+        <div class="text-3xl font-bold mt-2 text-blue-800">
+          ${data.alignment_rate.toFixed(1)}%
+        </div>
+        <div class="text-sm text-gray-600 mt-1">
+          이탈 지수: ${data.deviation_rate.toFixed(1)}%
+        </div>
+      </div>
+    `;
+  } 
 
   // 유형별 클러스터 설명 텍스트
   function getClusterText(type, keywords) {
@@ -224,6 +231,8 @@ function renderSummary(data) {
   document.querySelectorAll(".age-btn").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       const newAge = btn.dataset.age;
+      selectedAge = newAge;
+      
       document.querySelectorAll(".age-btn").forEach(b => b.classList.remove("text-cyan-500", "bg-indigo-600"));
       btn.classList.add("text-cyan-500");
       await init(newAge);
@@ -271,8 +280,18 @@ function renderSummary(data) {
               const res = await fetch(`/api/member-vote-summary/?member_name=${encodeURIComponent(memberName)}`);
               if (!res.ok) throw new Error("API 호출 실패");
               const summary = await res.json();
-              const summaryHtml = renderSummary(summary);
 
+              // // [2] 정당 일치율 API 호출
+              // const alignmentRes = await fetch(`/api/member-alignment/?member_name=${encodeURIComponent(memberName)}&congress_num=${selectedAge}`);
+              // if (alignmentRes.ok) {
+              //   const alignment = await alignmentRes.json();
+              //   // 정당 정보와 일치율 데이터를 요약에 병합
+              //   summary.party = alignment.party;
+              //   summary.alignment_rate = alignment.alignment_rate;
+              //   summary.deviation_rate = alignment.deviation_rate;
+              // }
+              
+              const summaryHtml = renderSummary(summary);
               openPopup(memberName + " 의원은 이렇게 투표했네요 📝🗳️", summaryHtml);
             } catch (err) {
               console.error(err);
@@ -511,13 +530,6 @@ function renderSummary(data) {
     render(currentNode, width, height);
   }
 
-
-  // 초기화: 선택된 대수
-  const selectedAge = document.querySelector('.age-btn.text-cyan-500')?.dataset.age;
-  if (selectedAge) {
-    init(selectedAge);
-  }
-
 function debounce(func, wait) {
   let timeout;
   return function(...args) {
@@ -528,32 +540,46 @@ function debounce(func, wait) {
 
 // DOM 준비 후 초기화 및 이벤트 리스너 등록
 document.addEventListener("DOMContentLoaded", () => {
-  const ageButtons = document.querySelectorAll('.age-btn');
-  let defaultAgeBtn = null;
+  const ageButtons = document.querySelectorAll(".age-btn");
 
-  // "22대" 버튼 찾기
+  // 대수 버튼 클릭 이벤트 한 번만 등록
+  ageButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const newAge = btn.dataset.age;
+      selectedAge = newAge;
+
+      // 모든 버튼 클래스 초기화
+      ageButtons.forEach(b => b.classList.remove("text-cyan-500", "bg-indigo-600"));
+      btn.classList.add("text-cyan-500");
+
+      // 트리맵 다시 초기화
+      await init(newAge);
+    });
+  });
+
+  // 초기화 버튼 찾기
+  let defaultAgeBtn = null;
   ageButtons.forEach(btn => {
     if (btn.textContent.trim() === '22대') {
       defaultAgeBtn = btn;
     }
   });
-
-  // 22대가 있으면 선택, 없으면 첫 번째 버튼 fallback
   if (!defaultAgeBtn && ageButtons.length > 0) {
     defaultAgeBtn = ageButtons[0];
   }
 
   if (defaultAgeBtn) {
     defaultAgeBtn.classList.add("text-cyan-500");
-    const selectedAge = defaultAgeBtn.dataset.age;
+    selectedAge = defaultAgeBtn.dataset.age;
     init(selectedAge);
   } else {
     console.error("초기화할 age 버튼이 없습니다!");
   }
 
-  // 리사이즈 이벤트에 디바운스 적용
-  window.addEventListener('resize', debounce(resize, 200));
+  // 리사이즈 이벤트 등록
+  window.addEventListener("resize", debounce(resize, 200));
 });
+
 
 </script>
 {% endblock %}
