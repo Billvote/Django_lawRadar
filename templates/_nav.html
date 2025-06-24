@@ -20,9 +20,9 @@
               <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Card News</a>
 
               <!-- 로고 -->
-              <a href="{% url 'home' %}" class="flex items-center">
+              <!-- <a href="{% url 'home' %}" class="flex items-center">
                 <img src="{% static 'images/law_rader_logo2.png' %}" alt="Law Rader 로고" class="h-16 self-center" />
-              </a>
+              </a> -->
 
               <!-- History -->
               <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">History</a>
@@ -31,7 +31,7 @@
               <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Treemap</a>
 
               <!-- About us -->
-              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/aboutUs/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">AboutUs</a>
+              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/aboutUs/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">About us</a>
             </div>
           </div>
         </div>

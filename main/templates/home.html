@@ -1,10 +1,31 @@
+{# templates/home.html (통합·수정완료) #}
 {% extends "base.html" %}
 {% load static %}
 
 {% block body %}
 <style>
-  /* ── 배경/전역 ─────────────────────────────── */
-  #galaxy{position:fixed;top:0;left:0;z-index:0;width:100%;height:100vh;pointer-events:none;}
+  /* ── ① 커스텀 폰트 (옵션) ─────────────────────── */
+  @font-face {
+       font-family: 'MyCustom';
+       src: url("{% static 'fonts/RiaSans-ExtraBold.ttf' %}") format('opentype');
+       font-display: swap;
+     }
+
+  /* ── ② 좌·우 배경 이미지 ─────────────────────── */
+  body{
+    background-image: url("{% static 'left.png' %}"),
+                      url("{% static 'right.png' %}");
+    background-repeat: no-repeat, no-repeat;
+    background-position: center bottom, right bottom;
+    background-size: 420px auto, 320px auto;   /* 데스크톱 */
+    background-attachment: fixed, fixed;
+  }
+  @media (max-width:768px){
+    body{background-size:180px auto, 180px auto;} /* 모바일 */
+  }
+
+  /* ── ③ 공통 레이아웃 ─────────────────────────── */
+  #galaxy{position:fixed;top:0;left:0;width:100%;height:100vh;z-index:0;pointer-events:none;}
   #galaxy circle{pointer-events:auto;}
   .home-overlay{position:relative;z-index:10;text-align:center;padding-top:10vh;color:#111827;}
   .home-tooltip{position:absolute;display:none;padding:6px 10px;background:rgba(0,0,0,.75);color:#fff;
@@ -12,26 +33,35 @@
   @keyframes twinkle{0%,100%{filter:brightness(1);}50%{filter:brightness(1.5);}}
   circle.twinkle{animation:twinkle 2s infinite ease-in-out;}
   circle{shape-rendering:geometricPrecision;}
+
+  /* ── ④ Law Radar 전용 ───────────────────────── */
+  .law-title{font-family:'MyCustom',sans-serif;}
 </style>
 
-<!-- ── SVG 갤럭시 ─────────────────────────────── -->
+<!-- ── SVG 갤럭시 캔버스 ───────────────────────── -->
 <svg id="galaxy">
   <defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <!-- 글로우 효과 -->
+    <!-- <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"> -->
       <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
+    <!-- 행성 패턴은 JS에서 삽입 -->
   </defs>
 </svg>
 <div id="tooltip" class="home-tooltip"></div>
-<!-- ── 콘텐츠 박스 ─────────────────────────────── -->
+
+<!-- ── 메인 콘텐츠 박스 ────────────────────────── -->
 <div id="home-content"
      class="home-overlay px-6 max-w-3xl mx-auto relative text-gray-800"
      style="backdrop-filter:blur(8px);background:rgba(255,255,255,.75);
             border-radius:12px;padding:3rem 2rem;opacity:0;transition:opacity 1s;">
 
-  <div class="inline-flex items-end gap-3 mb-4" style="margin: 0 auto; width: max-content;">
-    <h1 class="text-5xl font-extrabold relative" style="left: 40px;">Law Radar</h1>
+  <div class="inline-flex items-end gap-3 mb-4" style="margin:0 auto;width:max-content;">
+    <h1 class="text-6xl font-extrabold relative law-title" style="left:40px;">Law Radar</h1>
     <button class="explain-btn text-sm flex items-center gap-1"
             style="margin-left: 50px;"
             data-title="🍅홈 화면의 기능을 소개합니다!"
@@ -44,9 +74,9 @@
                 </span>
               </li>
               <li>
-                키워드를 모르겠다면 <span class="font-semibold text-blue-600">점</span>들을 클릭해보세요!<br>
+                키워드를 모르겠다면 <span class="font-semibold text-blue-600">꽃잎</span>들을 클릭해보세요!<br>
                 <span class="text-gray-500 text-xs">
-                  점 크기는 법안 수에 비례하며, 클릭하면 카드뉴스로 이동합니다.
+                  무궁화의 크기는 법안 수에 비례하며, 클릭하면 카드뉴스로 이동합니다.
                 </span>
               </li>
             </ul>
@@ -59,26 +89,25 @@
   <p class="text-lg leading-relaxed mb-8">
     국회의 표결은 우리의 삶과 직결됩니다<br>
     각 정당은 어떤 법안에 찬성하고, 지역구 국회의원들은 어떤 주제에 집중하고 있을까요?<br>
-    정당별·지역별 표결 정보와 관심 키워드를 한눈에 살펴보세요.<br>
+    정당별·지역별 표결 현황과 관심 키워드를 한눈에 살펴보세요.<br>
   </p>
-  <br>
+
   <p class="text-sm mb-12 opacity-75 text-gray-900">
-    점 위에 마우스를 가까이 대보세요<br>
-    점을 클릭하면 다양한 법안 주제를 확인할 수 있습니다
+    국회를 상징하는 무궁화에 마우스를 가까이 해보세요!
+    <br>
+    클릭하면 다양한 법안 주제를 확인할 수 있습니다
   </p>
 
   <!-- ── 검색창 + 자동완성 ──────────────────────── -->
-   <div class="max-w-xl mx-auto">
+  <div class="max-w-xl mx-auto">
     <form method="GET" action="{% url 'search' %}" class="relative">
       <input id="search-input" name="q" type="text"
              placeholder="법안명이나 키워드로 검색해보세요"
              class="w-full text-lg font-medium rounded-3xl border border-gray-300
                     px-4 py-2 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition"/>
-      <!-- 자동완성 드롭다운 -->
       <ul id="ac-box"
           class="absolute left-0 top-full mt-1 w-full bg-white border border-gray-300
                  rounded-md shadow-lg z-50 hidden text-left"></ul>
-      <!-- 제출 버튼 -->
       <button type="submit"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 font-semibold rounded-lg">
         검색
@@ -89,178 +118,179 @@
 {% endblock %}
 
 {% block script %}
-<!-- ── D3 갤럭시 스크립트 ──────────────────────── -->
+<!-- ── D3.js 갤럭시 스크립트 ───────────────────── -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
+/* ── ① SVG & 패턴 준비 ───────────────────────── */
 const width  = window.innerWidth;
 const height = 1000;
 const svg    = d3.select("#galaxy").attr("width", width).attr("height", height);
+const defs   = svg.select("defs");
 const tooltip= d3.select("#tooltip");
 
-d3.json("/api/cluster_keywords/").then(data => {
-  const simulation = d3.forceSimulation(data)
-        .force("charge", d3.forceManyBody().strength(-50))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.num_bills) * 4 + 10))
-        .on("tick", ticked);
+/* 행성 PNG 10종 */
+const planetImgs = [
+  "{% static 'planets/001.png' %}",
+  "{% static 'planets/002.png' %}",
+  "{% static 'planets/003.png' %}",
+  "{% static 'planets/004.png' %}",
+  "{% static 'planets/005.png' %}",
+  "{% static 'planets/006.png' %}",
+  "{% static 'planets/007.png' %}",
+  "{% static 'planets/008.png' %}",
+  "{% static 'planets/009.png' %}",
+  "{% static 'planets/010.png' %}"
+];
+
+/* 패턴 정의 */
+planetImgs.forEach((url,i)=>{
+  defs.append("pattern")
+      .attr("id",`planet-${i}`)
+      .attr("patternUnits","objectBoundingBox")
+      .attr("patternContentUnits","objectBoundingBox")
+      .attr("width",1).attr("height",1)
+    .append("image")
+      .attr("href",url)
+      .attr("width",1).attr("height",1)
+      .attr("preserveAspectRatio","xMidYMid meet");
+});
+
+/* 반지름 함수 */
+const baseR = d => Math.sqrt(d.num_bills) * 5;
+
+/* ── ② 데이터 로드 & 시뮬레이션 ────────────────── */
+d3.json("/api/cluster_keywords/").then(data=>{
+  const sim = d3.forceSimulation(data)
+        .force("charge",   d3.forceManyBody().strength(-50))
+        .force("center",   d3.forceCenter(width/2, height/2))
+        .force("collision",d3.forceCollide().radius(d=>baseR(d)+10))
+        .on("tick",ticked);
 
   const node = svg.selectAll("circle")
       .data(data)
       .enter().append("circle")
-      .attr("r", d => Math.sqrt(d.num_bills) * 3)
-      .attr("fill", () => d3.interpolateCool(Math.random()))
-      .attr("filter", "url(#glow)")
-      .on("mouseover", function (event, d) {
-          d._r = Math.sqrt(d.num_bills) * 3;
-          tooltip.style("display", "block")
+        .attr("r", d=>baseR(d))
+        .attr("fill",(d,i)=>`url(#planet-${i%planetImgs.length})`)
+        .attr("filter","url(#glow)")
+        .on("mouseover",function(e,d){
+          d._r = baseR(d);
+          tooltip.style("display","block")
                  .html(`<strong>#${d.keyword}</strong><br>법안 ${d.num_bills}건`)
-                 .style("left", (event.pageX + 10) + "px")
-                 .style("top",  (event.pageY - 20) + "px");
-          d3.select(this).transition().duration(200).attr("r", d._r * 1.5);
-      })
-      .on("mousemove", event => {
-          tooltip.style("left", (event.pageX + 10) + "px")
-                 .style("top",  (event.pageY - 20) + "px");
-      })
-      .on("mouseout", function (event, d) {
-          tooltip.style("display", "none");
+                 .style("left",(e.pageX+10)+"px")
+                 .style("top",(e.pageY-20)+"px");
+          d3.select(this).transition().duration(200).attr("r", d._r*1.5);
+        })
+        .on("mousemove",e=>{
+          tooltip.style("left",(e.pageX+10)+"px").style("top",(e.pageY-20)+"px");
+        })
+        .on("mouseout",function(e,d){
+          tooltip.style("display","none");
           d3.select(this).transition().duration(200).attr("r", d._r);
-      })
-      .on("click", (event, d) => window.location.href = d.url);
+        })
+        .on("click",(e,d)=>window.location.href=d.url);
 
+  /* 등장 애니메이션 */
   node.transition().duration(1500)
-      .attr("r", d => Math.sqrt(d.num_bills) * 4.3)
-      .attr("opacity", 1)
-      .on("end", (d, i, nodes) => {
-        if (i === nodes.length - 1) {
-          d3.select("#home-content").style("opacity", 1);
-        }
-      });
+      .attr("r", d=>baseR(d)*1.3)
+      .attr("opacity",1)
+      .on("end",(d,i,n)=>{ if(i===n.length-1) d3.select("#home-content").style("opacity",1); });
 
-  function ticked() {
-    node.attr("cx", d => d.x).attr("cy", d => d.y);
-  }
+  function ticked(){ node.attr("cx",d=>d.x).attr("cy",d=>d.y); }
 });
 </script>
 
-<!-- 팝업(모달) 영역 ------------------------------------------------------------------------------>
- <div id="popupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+<!-- ── 팝업(모달) ───────────────────────────────── -->
+<div id="popupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
   <div id="popupOverlay" class="absolute inset-0 bg-black opacity-50"></div>
+
   <div class="relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 z-10">
     <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
-    <div id="modalContent" class="text-gray-700">모달 콘텐츠</div>
-    <div class="mt-6 text-right">
-      <button id="closeModalBtn" class="absolute top-4 right-4 z-10 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
+    <div id="modalContent" class="text-gray-700"></div>
+    <button id="closeModalBtn"
+            class="absolute top-4 right-4 bg-white rounded-full text-2xl font-bold px-3 py-1 shadow">
       &times;
-      </button>
-    </div>
+    </button>
   </div>
 </div>
 
 <script>
-  const popupModal = document.getElementById("popupModal");
-  const popupOverlay = document.getElementById("popupOverlay");
-  const closeModalBtn = document.getElementById("closeModalBtn");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalContent = document.getElementById("modalContent");
-  const mainContent = document.getElementById("home-content");
+const popupModal   = document.getElementById("popupModal");
+const popupOverlay = document.getElementById("popupOverlay");
+const closeModalBtn= document.getElementById("closeModalBtn");
+const modalTitle   = document.getElementById("modalTitle");
+const modalContent = document.getElementById("modalContent");
+const mainContent  = document.getElementById("home-content");
 
-
-// 팝업 열기
-  function openPopup(title, contentHtml) {
-    modalTitle.textContent = title;
-    modalContent.innerHTML = contentHtml;
-    popupModal.classList.remove("hidden");
-    mainContent.classList.add("opacity-70", "blur-sm");
-  }
-
-  // 팝업 닫기
-  function closePopup() {
-    popupModal.classList.add("hidden");
-    mainContent.classList.remove("opacity-70", "blur-sm");
-  }
-
-  // 닫기/오버레이 클릭 시 팝업 닫기
-  closeModalBtn.addEventListener("click", closePopup);
-  popupOverlay.addEventListener("click", closePopup);
-
-  // explain-btn 클릭 시 팝업 열기 이벤트 연결
-  document.querySelectorAll(".explain-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const title = btn.dataset.title;
-    const content = btn.dataset.content;
-    openPopup(title, content);
-  });
+function openPopup(title, html){
+  modalTitle.textContent = title;
+  modalContent.innerHTML = html;
+  popupModal.classList.remove("hidden");
+  mainContent.classList.add("opacity-70","blur-sm");
+}
+function closePopup(){
+  popupModal.classList.add("hidden");
+  mainContent.classList.remove("opacity-70","blur-sm");
+}
+closeModalBtn.addEventListener("click", closePopup);
+popupOverlay.addEventListener("click", closePopup);
+document.querySelectorAll(".explain-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>openPopup(btn.dataset.title, btn.dataset.content));
 });
-  
 </script>
 
 <!-- ── 커스텀 자동완성 스크립트 ──────────────────── -->
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded",()=>{
   const inp = document.getElementById("search-input");
   const box = document.getElementById("ac-box");
-  let selected = -1;
+  let sel = -1;
 
-  /* 결과 표시 */
-  function render(list) {
-    box.innerHTML = "";
-    selected = -1;
-    if (!list.length) { box.classList.add("hidden"); return; }
-    list.forEach((txt, idx) => {
+  /* 결과 렌더링 */
+  function render(list){
+    box.innerHTML = ""; sel = -1;
+    if(!list.length){ box.classList.add("hidden"); return; }
+    list.forEach((t,i)=>{
       const li = document.createElement("li");
-      li.textContent = txt;
+      li.textContent = t;
       li.className = "px-4 py-2 cursor-pointer hover:bg-gray-100 text-left";
-      li.addEventListener("mousedown", () => {
-        inp.value = txt;
-        box.classList.add("hidden");
-      });
+      li.addEventListener("mousedown",()=>{ inp.value = t; box.classList.add("hidden"); });
       box.appendChild(li);
     });
     box.classList.remove("hidden");
   }
 
   /* 선택 하이라이트 */
-  function highlight() {
-    [...box.children].forEach((li, i) =>
-      li.classList.toggle("bg-cyan-100", i === selected));
+  function highlight(){
+    [...box.children].forEach((li,i)=>li.classList.toggle("bg-cyan-100",i===sel));
   }
 
   /* 입력 감지 */
-  inp.addEventListener("input", () => {
+  inp.addEventListener("input",()=>{
     const term = inp.value.trim();
-    if (term.length < 2) { render([]); return; }
+    if(term.length < 2){ render([]); return; }
     fetch(`/api/autocomplete/?term=${encodeURIComponent(term)}`)
-      .then(r => r.json())
+      .then(r=>r.json())
       .then(render)
-      .catch(err => console.error("Autocomplete error:", err));
+      .catch(err=>console.error("Autocomplete error:",err));
   });
 
-  /* 화살표/엔터 처리 */
-  inp.addEventListener("keydown", e => {
+  /* 화살표 / 엔터 처리 */
+  inp.addEventListener("keydown",e=>{
     const cnt = box.children.length;
-    if (!cnt) return;
-    if (e.key === "ArrowDown") {
+    if(!cnt) return;
+    if(e.key==="ArrowDown"){ e.preventDefault(); sel = (sel+1)%cnt; highlight(); }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); sel = (sel-1+cnt)%cnt; highlight(); }
+    else if(e.key==="Enter" && sel>-1){
       e.preventDefault();
-      selected = (selected + 1) % cnt;
-      highlight();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      selected = (selected - 1 + cnt) % cnt;
-      highlight();
-    } else if (e.key === "Enter" && selected > -1) {
-      e.preventDefault();
-      inp.value = box.children[selected].textContent;
+      inp.value = box.children[sel].textContent;
       box.classList.add("hidden");
       inp.form.submit();
     }
   });
 
   /* 외부 클릭 시 닫기 */
-  document.addEventListener("click", e => {
-    if (!inp.contains(e.target) && !box.contains(e.target)) {
-      box.classList.add("hidden");
-    }
+  document.addEventListener("click",e=>{
+    if(!inp.contains(e.target) && !box.contains(e.target)){ box.classList.add("hidden"); }
   });
 });
 </script>
