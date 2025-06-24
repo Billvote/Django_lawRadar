@@ -93,15 +93,14 @@ def member_vote_summary_api(request):
             '기권': top_summary.기권,
             '불참': top_summary.불참,
         }
+        total_votes = sum(counts.values()) or 1  # 0 나눗셈 방지
 
-        # 비율 계산 (최대 100%)
-        ratios = {}
-        for k in counts:
-            ratio = (counts[k] / bill_count) * 100
-            ratios[k] = round(min(ratio, 100.0), 2)
+        ratios = {k: round(counts[k] / total_votes * 100, 2) for k in counts}
 
-        # cluster_keyword를 VoteSummary 필드에서 직접 가져오기
-        cluster_keyword = top_summary.cluster_keyword or "알 수 없음"
+
+        # 클러스터 키워드를 Bill 테이블에서 가져오기
+        bill = Bill.objects.filter(cluster=top_summary.cluster).first()
+        cluster_keyword = bill.cluster_keyword if bill and bill.cluster_keyword else "알 수 없음"
 
         max_clusters[vote_type] = {
             'cluster_keyword': cluster_keyword,

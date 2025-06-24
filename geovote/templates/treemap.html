@@ -15,45 +15,49 @@
                   <div class="text-gray-700 text-[15px] font-medium leading-snug">
                     트리맵에서는 내가 뽑은 <span class="text-blue-600 font-semibold">우리 지역구 의원</span>이 어떤 주제에 <span class="text-blue-600 font-semibold">찬성, 반대, 기권</span> 표를 던졌는지 확인할 수 있어요!
                   </div>
-                  <ul class="list-none pl-0 space-y-3">
-                    <br>
+                  <ul class="list-none pl-0 space-y-5">
+
                     <li class="flex items-start gap-2">
                       <div>
-                        <span class="font-semibold text-gray-800">내가 살고 있는 지역을 찾아보세요!</span><br>
-                        선거구가 많을수록 트리맵의 크기도 <span class="font-semibold text-blue-500">UP!</span>
+                        <p class="font-semibold text-gray-800">내가 살고 있는 지역을 찾아보세요!</p>
+                        <p class="text-gray-700">
+                          선거구가 많을수록 트리맵의 크기도 <span class="font-semibold text-blue-500">UP!</span>
+                        </p>
                       </div>
                     </li>
-                    <br>
+
                     <li class="flex items-start gap-2">
                       <span class="text-lg">🧑</span>
                       <div>
-                        <span class="font-semibold text-gray-800">우리 지역의 의원카드를 클릭해보세요!</span><br>
-                        해당 의원의 투표 정보를 확인할 수 있어요.<br>
-                        <span class="text-gray-600 text-sm">우리 지역을 대표하는 의원은 어떤 법안에 관심이 많을까요?</span>
+                        <p class="font-semibold text-gray-800">우리 지역의 의원 카드를 클릭해보세요!</p>
+                        <p class="text-gray-700">해당 의원의 투표 정보를 확인할 수 있어요.</p>
+                        <p class="text-gray-600 text-sm">우리 지역을 대표하는 의원은 어떤 법안에 관심이 많을까요?</p>
                       </div>
                     </li>
 
                     <li class="flex items-start gap-2">
                       <span class="text-lg">📅</span>
                       <div>
-                        <span class="font-semibold text-gray-800">국회의 세 회기 (20·21·22대)만 제공돼요!</span><br>
-                        <span class="text-gray-600 text-sm">
+                        <p class="font-semibold text-gray-800">국회의 세 회기 (20·21·22대)만 제공돼요!</p>
+                        <p class="text-gray-600 text-sm">
                           모든 의원이 모든 법안에 표결을 참여하진 않았을 수도 있어요.
-                        </span>
+                        </p>
                       </div>
                     </li>
-                  </ul>
 
-                  <hr style="border: none; height: 1px; background-color: #ccc;">
-                  <li class="flex items-start gap-2">
-                    <span class="text-lg">❔</span>
+                    <li class="flex items-start gap-2">
+                      <span class="text-lg">❔</span>
                       <div>
-                        <span class="font-semibold text-gray-800">각 의원의 표결정보는 이렇게 계산했어요!</span><br>
-                        <span class="text-gray-600 text-sm">
-                          모든 의원이 모든 법안에 표결을 참여하진 않았을 수도 있어요.
-                        </span>
+                        <p class="font-semibold text-gray-800 mb-1">표결 정보는 이렇게 계산했어요!</p>
+                        <ul class="list-disc list-inside text-gray-600 text-sm space-y-1">
+                          <li>의원이 참여한 모든 표결을 클러스터(주제)별로 분류해 집계합니다.</li>
+                          <li>찬성·반대 등에서 가장 두드러진 클러스터 1개씩을 대표로 보여드립니다.</li>
+                          <li>각 클러스터에서 찬성·반대·기권·불참 수를 계산해 비율을 구합니다.</li>
+                        </ul>
                       </div>
-                  </li>
+                    </li>
+                    
+                  </ul>
                 '>
           <i class="fi fi-rr-info text-lg text-gray-700 hover:text-blue-800 transform transition-transform duration-200 hover:scale-125"></i>
         </button>
@@ -178,11 +182,11 @@ function renderSummary(data) {
   //정당과의 일치정도
   if (data.alignment_rate !== undefined && data.party) {
     html += `
-      <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded">
-        <div class="text-xl font-semibold">
+      <div class="p-2 bg-white border border-gray-300 border-l-4 border-l-cyan-400 text-gray-700 rounded shadow-sm text-center">
+        <div class="text-lg font-semibold">
           ${data.party}과의 표결 일치율 💡
         </div>
-        <div class="text-3xl font-bold mt-2 text-blue-800">
+        <div class="text-2xl font-bold mt-2 text-cyan-400">
           ${data.alignment_rate.toFixed(1)}%
         </div>
         <div class="text-sm text-gray-600 mt-1">

@@ -259,7 +259,7 @@ def calculate_votesummary(member_name: str, age: Age = None):
         print(f"❌ {member_name} ({age})에 해당하는 Member가 없습니다.")
         return 0
 
-    # 2. 투표 데이터 필터링: member 객체로 필터링
+    # 2. 투표 데이터 필터링
     votes = (
         Vote.objects
             .filter(member=member)
