@@ -106,7 +106,7 @@ class PartyConcentration(models.Model):
 # 의원 표결 정보 계산
 
 class VoteSummary(models.Model):
-    member_name = models.CharField(max_length=100)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
     cluster = models.CharField(max_length=100)
     cluster_keyword = models.CharField(max_length=255, blank=True)
     bill_count = models.IntegerField(default=0)
@@ -117,7 +117,7 @@ class VoteSummary(models.Model):
     불참 = models.IntegerField(default=0)
 
     class Meta:
-        unique_together = ('member_name', 'cluster')
+        unique_together = ('member', 'cluster')
 
     def __str__(self):
         return f"{self.member_name} - {self.cluster}"

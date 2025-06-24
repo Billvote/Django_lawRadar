@@ -247,22 +247,30 @@ def cluster_index(request, cluster_number: int):
     return redirect(url)
 
 # ───────────────────────── 6. 의원별 표결 통계 저장 ───────────────────────
+from django.views.decorators.http import require_GET
+from django.http import JsonResponse
+from collections import defaultdict
+
 def calculate_votesummary(member_name: str, age: Age = None):
-    votes_query = Vote.objects.filter(member__name=member_name)
-    if age is not None:
-        votes_query = votes_query.filter(age=age)
-    # 1) 투표 집계
+    # 1. Member 객체 조회 (age도 필터링)
+    try:
+        member = Member.objects.get(name=member_name, age=age)
+    except Member.DoesNotExist:
+        print(f"❌ {member_name} ({age})에 해당하는 Member가 없습니다.")
+        return 0
+
+    # 2. 투표 데이터 필터링: member 객체로 필터링
     votes = (
         Vote.objects
-            .filter(member__name=member_name)
-            .values("bill_id", "result")
+            .filter(member=member)
+            .values("bill_id", "bill__cluster", "result")
             .annotate(count=Count("id"))
             .order_by("bill_id")
     )
 
-    clusters = {v["bill__cluster"] for v in votes if v["bill__cluster"] is not None}
+    clusters = {v["bill__cluster"] for v in votes if v["bill__cluster"]}
 
-    # 2) cluster → 대표 키워드
+    # 3. cluster → 대표 키워드 조회
     cluster_keywords = {}
     for b in (
         Bill.objects
@@ -277,38 +285,41 @@ def calculate_votesummary(member_name: str, age: Age = None):
     for cid in clusters:
         cluster_keywords.setdefault(cid, "알 수 없음")
 
-    # 3) 클러스터별 전체 법안 수
+    # 4. 클러스터별 법안 수
     cluster_bill_counts = {
         cid: Bill.objects.filter(cluster=cid).count() for cid in clusters
     }
 
-    # 4) 투표 결과 집계
-    summary = {
-        cid: {"찬성": 0, "반대": 0, "기권": 0, "불참": 0}
-        for cid in clusters
-    }
+    # 5. 투표 결과 집계
+    summary = {cid: {"찬성":0, "반대":0, "기권":0, "불참":0} for cid in clusters}
     for v in votes:
-        cid    = v["bill__cluster"]
+        cid = v["bill__cluster"]
         result = v["result"] if v["result"] in summary[cid] else "기권"
         summary[cid][result] += v["count"]
 
-    # 5) 저장
-    VoteSummary.objects.filter(member_name=member_name).delete()
+    # 6. 기존 VoteSummary 삭제
+    VoteSummary.objects.filter(member=member).delete()
+
+    # 7. VoteSummary bulk 생성 준비
+    summaries = []
+    total_vote_count = 0
     for cid in clusters:
         s = summary[cid]
-        VoteSummary.objects.create(
-            member_name    = member_name,
-            cluster        = cid,
-            cluster_keyword= cluster_keywords[cid],
-            bill_count     = cluster_bill_counts.get(cid, 1),
-            찬성            = s["찬성"],
-            반대            = s["반대"],
-            기권            = s["기권"],
-            불참            = s["불참"],
-        )
-        # total_vote_count += sum(s.values())
+        summaries.append(VoteSummary(
+            member=member,
+            cluster=cid,
+            cluster_keyword=cluster_keywords[cid],
+            bill_count=cluster_bill_counts.get(cid, 1),
+            찬성=s["찬성"],
+            반대=s["반대"],
+            기권=s["기권"],
+            불참=s["불참"],
+        ))
+        total_vote_count += sum(s.values())
 
-    # return total_vote_count
+    VoteSummary.objects.bulk_create(summaries)
+
+    return total_vote_count
 
 # ═════════════ 5. 자동완성 JSON (공통 모듈 사용) ═════════════
 @require_GET

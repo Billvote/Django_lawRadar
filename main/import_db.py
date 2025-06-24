@@ -258,41 +258,42 @@ def import_votesummary(congress_num=None, member_name=None):
     - congress_num이 주어지면 해당 대수의 모든 의원 처리
     """
     if member_name:
-        member_names = [member_name]
+        members = Member.objects.filter(name=member_name)
     elif congress_num:
-        member_names = Member.objects.filter(age__number=congress_num).values_list('name', flat=True).distinct()
+        members = Member.objects.filter(age__number=congress_num)
     else:
         print("member_name 또는 congress_num 둘 중 하나는 필요합니다.")
         return
 
-    for name in member_names:
+    for member in members:
         try:
-            votes = Vote.objects.filter(member__name=name)\
-                .values('bill__cluster', 'result')\
+            votes = (
+                Vote.objects.filter(member=member)
+                .values('bill__cluster', 'result')
                 .annotate(count=Count('id'))
+            )
 
             if not votes:
-                print(f"{name} 의원의 표결 데이터가 없습니다.")
+                print(f"{member.name} 의원의 표결 데이터가 없습니다.")
                 continue
 
             clusters = {v['bill__cluster'] for v in votes if v['bill__cluster']}
             if not clusters:
                 continue
 
-            # 🔸 클러스터 키워드 및 법안 수 한번에 조회
+            # 클러스터 키워드 및 법안 수
             bill_info = (
                 Bill.objects
                 .filter(cluster__in=clusters)
                 .values('cluster')
                 .annotate(
-                    keyword=Count('cluster_keyword'),  # 그냥 1개 대표값으로 봄
+                    keyword=Count('cluster_keyword'),  # 대표 키워드 개수
                     bill_count=Count('id')
                 )
             )
             cluster_keywords = {b['cluster']: b.get('keyword', '알 수 없음') for b in bill_info}
             cluster_bill_counts = {b['cluster']: b.get('bill_count', 0) for b in bill_info}
 
-            # 🔸 표결 결과 요약
             cluster_summary = defaultdict(lambda: {'찬성': 0, '반대': 0, '기권': 0, '불참': 0})
             for vote in votes:
                 cluster = vote['bill__cluster']
@@ -303,14 +304,14 @@ def import_votesummary(congress_num=None, member_name=None):
                     result = '기권'
                 cluster_summary[cluster][result] += vote['count']
 
-            # 🔸 기존 데이터 삭제
-            VoteSummary.objects.filter(member_name=name).delete()
+            # 기존 데이터 삭제
+            VoteSummary.objects.filter(member=member).delete()
 
-            # 🔸 bulk insert
+            # bulk insert
             summaries = []
             for cluster, summary in cluster_summary.items():
                 summaries.append(VoteSummary(
-                    member_name=name,
+                    member=member,
                     cluster=cluster,
                     cluster_keyword=cluster_keywords.get(cluster, '알 수 없음'),
                     bill_count=cluster_bill_counts.get(cluster, 0),
@@ -321,10 +322,11 @@ def import_votesummary(congress_num=None, member_name=None):
                 ))
             VoteSummary.objects.bulk_create(summaries)
 
-            print(f"{name} 의원 VoteSummary 저장 완료 (총 {len(summaries)}개).")
+            print(f"{member.name} 의원 VoteSummary 저장 완료 (총 {len(summaries)}개).")
 
         except Exception as e:
-            print(f"{name} 처리 중 오류 발생: {e}")
+            print(f"{member.name} 처리 중 오류 발생: {e}")
+
 
 # 데이터 import
 

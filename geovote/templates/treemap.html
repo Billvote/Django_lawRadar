@@ -43,6 +43,17 @@
                       </div>
                     </li>
                   </ul>
+
+                  <hr style="border: none; height: 1px; background-color: #ccc;">
+                  <li class="flex items-start gap-2">
+                    <span class="text-lg">❔</span>
+                      <div>
+                        <span class="font-semibold text-gray-800">각 의원의 표결정보는 이렇게 계산했어요!</span><br>
+                        <span class="text-gray-600 text-sm">
+                          모든 의원이 모든 법안에 표결을 참여하진 않았을 수도 있어요.
+                        </span>
+                      </div>
+                  </li>
                 '>
           <i class="fi fi-rr-info text-lg text-gray-700 hover:text-blue-800 transform transition-transform duration-200 hover:scale-125"></i>
         </button>
@@ -169,7 +180,7 @@ function renderSummary(data) {
     html += `
       <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded">
         <div class="text-xl font-semibold">
-          소속 정당 (${data.party})과의 표결 일치율 💡
+          ${data.party}과의 표결 일치율 💡
         </div>
         <div class="text-3xl font-bold mt-2 text-blue-800">
           ${data.alignment_rate.toFixed(1)}%
@@ -336,15 +347,15 @@ function renderSummary(data) {
               if (!res.ok) throw new Error("API 호출 실패");
               const summary = await res.json();
 
-              // // [2] 정당 일치율 API 호출
-              // const alignmentRes = await fetch(`/api/member-alignment/?member_name=${encodeURIComponent(memberName)}&congress_num=${selectedAge}`);
-              // if (alignmentRes.ok) {
-              //   const alignment = await alignmentRes.json();
-              //   // 정당 정보와 일치율 데이터를 요약에 병합
-              //   summary.party = alignment.party;
-              //   summary.alignment_rate = alignment.alignment_rate;
-              //   summary.deviation_rate = alignment.deviation_rate;
-              // }
+              // [2] 정당 일치율 API 호출
+              const alignmentRes = await fetch(`/api/member-alignment/?member_name=${encodeURIComponent(memberName)}&congress_num=${selectedAge}`);
+              if (alignmentRes.ok) {
+                const alignment = await alignmentRes.json();
+                // 정당 정보와 일치율 데이터를 요약에 병합
+                summary.party = alignment.party;
+                summary.alignment_rate = alignment.alignment_rate;
+                summary.deviation_rate = alignment.deviation_rate;
+              }
               
               const summaryHtml = renderSummary(summary);
               openPopup(memberName + " 의원은 이렇게 투표했네요 📝🗳️", summaryHtml);

@@ -266,13 +266,13 @@ def run_all():
 
     csv_path = settings.BASE_DIR / 'geovote' / 'data'
     
-    import_ages(csv_path / f'age.csv')
-    import_parties(csv_path / f'party.csv')
-    import_districts(csv_path / f'district.csv')
+    import_ages(csv_path / f'age.csv') # 대수
+    import_parties(csv_path / f'party.csv') # 정당
+    import_districts(csv_path / f'district.csv') # 지역구
     check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
-    import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'bill.csv')
-    import_votes(csv_path / f'vote.csv')
+    import_members(csv_path / f'member.csv') # 의원
+    import_bills(csv_path / f'bill.csv') # 의안
+    import_votes(csv_path / f'vote.csv') # 표결
 
     print(f"✅ 데이터 임포트 완료")
 
