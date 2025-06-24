@@ -14,6 +14,9 @@ from django.db import transaction
 from django.conf import settings
 from geovote.models import District, Member, Party, Age, Vote
 from billview.models import Bill
+from pathlib import Path
+
+import glob
 
 # ---------- Helper Functions ----------
 def safe_str(val):
@@ -197,30 +200,32 @@ def import_bills(csv_path):
     print(f"[BILL] 신규 {created}개, 업데이트 {skipped}개")
 
 # ---------- 6. Vote ----------
-def import_votes(csv_path):
-    df = pd.read_csv(csv_path)
+def import_votes(df, member_dict, bill_dict):
 
-    # 필요 객체 캐싱
-    member_dict = {
-        (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
+    keys = [
+        (int(row.age), safe_str(row.member_id), safe_str(row.bill_number))
+        for row in df.itertuples()
+    ]
+    # DB에서 이 chunk에 해당하는 기존 Vote만 조회
+    existing_votes_qs = Vote.objects.filter(
+        age__number__in=[k[0] for k in keys],
+        member__member_id__in=[k[1] for k in keys],
+        bill__bill_number__in=[k[2] for k in keys]
+    ).select_related('member', 'age', 'bill')
+
+    vote_lookup = {
+        (v.age.number, v.member.member_id, v.bill.bill_number): v for v in existing_votes_qs
     }
-    bill_dict = {b.bill_number: b for b in Bill.objects.all()}
 
     to_create = []
     to_update = []
     skipped = 0
 
-    # 미리 기존 Vote들 불러와서 캐싱
-    existing_votes = Vote.objects.all().select_related('member', 'age', 'bill')
-    vote_lookup = {
-        (v.age_id, v.member_id, v.bill_id): v for v in existing_votes
-    }
-
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Importing votes"):
+    for row in df.itertuples():
         try:
-            age_number = int(row['age'])
-            member_id = safe_str(row['member_id'])
-            bill_number = safe_str(row['bill_number'])
+            age_number = int(row.age)
+            member_id = safe_str(row.member_id)
+            bill_number = safe_str(row.bill_number)
 
             member = member_dict.get((age_number, member_id))
             bill = bill_dict.get(bill_number)
@@ -229,9 +234,9 @@ def import_votes(csv_path):
                 skipped += 1
                 continue
 
-            key = (member.age_id, member.id, bill.id)
-            result = safe_str(row['result'])
-            date = pd.to_datetime(row['date']).date()
+            key = (age_number, member_id, bill_number)
+            result = safe_str(row.result)
+            date = pd.to_datetime(row.date).date()
 
             if key in vote_lookup:
                 vote = vote_lookup[key]
@@ -248,15 +253,18 @@ def import_votes(csv_path):
                 )
                 to_create.append(vote)
         except Exception as e:
-            print(f"[ERROR] 표결 처리 실패: {e}, row={row.to_dict()}")
             skipped += 1
+            continue
 
     # 한 번에 업데이트 및 생성
     with transaction.atomic():
-        Vote.objects.bulk_update(to_update, ['result', 'date'], batch_size=1000)
-        Vote.objects.bulk_create(to_create, batch_size=1000)
+        if to_update:
+            Vote.objects.bulk_update(to_update, ['result', 'date'], batch_size=10000)
+        if to_create:
+            Vote.objects.bulk_create(to_create, batch_size=10000)
 
     print(f"[VOTE] 신규 {len(to_create)}개, 업데이트 {len(to_update)}개, 실패 {skipped}개")
+
 
 # ----------< 실행 >-------------------------
 # 사용법: geovote 폴더 이동 -> 터미널에 `python import_db.py` 입력
@@ -266,13 +274,35 @@ def run_all():
 
     csv_path = settings.BASE_DIR / 'geovote' / 'data'
     
-    import_ages(csv_path / f'age.csv')
-    import_parties(csv_path / f'party.csv')
-    import_districts(csv_path / f'district.csv')
-    check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
-    import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'bill.csv')
-    import_votes(csv_path / f'vote.csv')
+    # import_ages(csv_path / f'age.csv')
+    # import_parties(csv_path / f'party.csv')
+    # import_districts(csv_path / f'district.csv')
+    # check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
+    # import_members(csv_path / f'member.csv')
+    # import_bills(csv_path / f'bill.csv')
+    
+    # vote import하기
+    vote_csv_path = csv_path / 'vote.csv'
+    chunk_size = 1000  # 1000줄씩 읽기
+
+    # 과부화 해결 - 1회만 캐싱
+    member_dict = {
+        (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
+    }
+    bill_dict = {b.bill_number: b for b in Bill.objects.all()}
+    # existing_votes = Vote.objects.all().select_related('member', 'age', 'bill')
+    # vote_lookup = {
+    #     (v.age_id, v.member_id, v.bill_id): v for v in existing_votes
+    # }
+
+    for i, chunk in enumerate(pd.read_csv(vote_csv_path, chunksize=chunk_size)):
+        print(f'📥 importing chunk {i}')
+        import_votes(
+            chunk,
+            member_dict=member_dict,
+            bill_dict=bill_dict,
+            # vote_lookup=vote_lookup
+        )
 
     print(f"✅ 데이터 임포트 완료")
 
