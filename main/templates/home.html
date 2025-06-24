@@ -114,21 +114,21 @@ const defs   = svg.select("defs");
 const tooltip= d3.select("#tooltip");
 
 /* 행성 PNG 10종 */
-// const planetImgs = [
-//   "{% static 'planets/001.png' %}",
-//   "{% static 'planets/002.png' %}",
-//   "{% static 'planets/003.png' %}",
-//   "{% static 'planets/004.png' %}",
-//   "{% static 'planets/005.png' %}",
-//   "{% static 'planets/006.png' %}",
-//   "{% static 'planets/007.png' %}",
-//   "{% static 'planets/008.png' %}",
-//   "{% static 'planets/009.png' %}",
-//   "{% static 'planets/010.png' %}"
-// ];
+const planetImgs = [
+  "{% static 'planets/001.png' %}",
+  "{% static 'planets/002.png' %}",
+  "{% static 'planets/003.png' %}",
+  "{% static 'planets/004.png' %}",
+  "{% static 'planets/005.png' %}",
+  "{% static 'planets/006.png' %}",
+  "{% static 'planets/007.png' %}",
+  "{% static 'planets/008.png' %}",
+  "{% static 'planets/009.png' %}",
+  "{% static 'planets/010.png' %}"
+];
 
 /* 패턴 정의 */
-// planetImgs.forEach((url,i)=>{
+planetImgs.forEach((url,i)=>{
   defs.append("pattern")
       .attr("id",`planet-${i}`)
       .attr("patternUnits","objectBoundingBox")
