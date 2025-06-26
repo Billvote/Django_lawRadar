@@ -68,12 +68,25 @@ def region_tree_data(request):
 #----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
 from django.http import JsonResponse
 
+MIN_VOTE_COUNT = 3
+
+def get_ratio(summary, vote_type):
+    total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
+    return getattr(summary, vote_type) / total if total else 0
+
+def get_confidence_level(vote_count):
+    if vote_count >= 30:
+        return "High"
+    elif vote_count >= MIN_VOTE_COUNT:
+        return "Medium"
+    else:
+        return "Low"
+
 def member_vote_summary_api(request):
     member_name = request.GET.get('member_name')
     if not member_name:
         return JsonResponse({'error': 'member_name parameter is required'}, status=400)
 
-    # member_name으로 필터링 시 member FK 관계 사용
     summaries = VoteSummary.objects.filter(member__name=member_name)
     if not summaries.exists():
         return JsonResponse({'error': 'No summary data available. Please generate it first.'}, status=404)
@@ -81,11 +94,18 @@ def member_vote_summary_api(request):
     max_clusters = {}
 
     for vote_type in ['찬성', '반대', '기권', '불참']:
-        top_summary = summaries.order_by(f'-{vote_type}').first()
-        if not top_summary:
+        filtered = [
+            s for s in summaries
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT
+        ]
+
+        if not filtered:
             continue
 
-        bill_count = top_summary.bill_count if top_summary.bill_count > 0 else 1
+        top_summary = max(filtered, key=lambda s: get_ratio(s, vote_type))
+
+        vote_count = top_summary.찬성 + top_summary.반대 + top_summary.기권 + top_summary.불참
+        confidence = get_confidence_level(vote_count)
 
         counts = {
             '찬성': top_summary.찬성,
@@ -93,12 +113,9 @@ def member_vote_summary_api(request):
             '기권': top_summary.기권,
             '불참': top_summary.불참,
         }
-        total_votes = sum(counts.values()) or 1  # 0 나눗셈 방지
-
+        total_votes = sum(counts.values()) or 1
         ratios = {k: round(counts[k] / total_votes * 100, 2) for k in counts}
 
-
-        # 클러스터 키워드를 Bill 테이블에서 가져오기
         bill = Bill.objects.filter(cluster=top_summary.cluster).first()
         cluster_keyword = bill.cluster_keyword if bill and bill.cluster_keyword else "알 수 없음"
 
@@ -107,18 +124,18 @@ def member_vote_summary_api(request):
             'cluster_id': top_summary.cluster,
             'counts': counts,
             'ratios': ratios,
-            'bill_count': bill_count,
+            'bill_count': top_summary.bill_count if top_summary.bill_count > 0 else 1,
+            'confidence': confidence,
         }
 
-    # total_vote_count 합산은 루프 밖에서 한번만 처리
-    total_vote_count = 0
-    for v in max_clusters.values():
-        if isinstance(v, dict) and 'counts' in v:
-            total_vote_count += sum(v['counts'].values())
-
+    total_vote_count = sum(
+        sum(v['counts'].values()) for v in max_clusters.values() if 'counts' in v
+    )
     max_clusters['total_vote_count'] = total_vote_count
 
     return JsonResponse(max_clusters)
+
+
 
 #------------------정당과 의원의 표결 경향 분석--------------------------------
 # import logging

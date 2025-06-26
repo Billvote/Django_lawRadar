@@ -1,11 +1,4 @@
 // --- 공통 상수 및 유틸 함수 ---
-const iconMap = {
-  '찬성': { icon: '⭕️', text: '이런 법안을 지지해요!', color: 'text-blue-600' },
-  '반대': { icon: '❌', text: '이런 법안은 지지하지 않아요', color: 'text-red-600' },
-  '기권': { icon: '🚫', text: '이런 법안에는 기권이 많아요', color: 'text-gray-600' },
-  '불참': { icon: '😭', text: '이런 법안에는 불참이 많아요', color: 'text-gray-400' }
-};
-
 const exceptions = new Set([
   '종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구','노원구',
   '은평구','서대문구','마포구','양천구','강서구','구로구','금천구','영등포구','동작구','관악구',
@@ -43,18 +36,7 @@ function formatNameWithLineBreak(name) {
   return name.replace(/(.*[^\s])(시|군|구)$/g, (_, prefix, suffix) => `${prefix}${suffix}<br>`);
 }
 
-function getClusterText(type, keywords) {
-  const info = iconMap[type];
-  if (!info) return '';
-  return `
-    <div class="mb-4 flex items-start ${info.color} font-bold text-2xl mt-2">
-      <div class="whitespace-nowrap">
-        <span class="mr-2">${info.icon}</span>
-        <span>${info.text}</span>
-      </div>
-    </div>
-  `;
-}
+
 // --- DOM 요소 및 전역 변수 ---
 const container = document.getElementById("treemap");
 const backButton = d3.select("#backButton");
@@ -110,6 +92,12 @@ function updateBreadcrumb(node) {
   }
 }
 
+function getClusterText(type, keywords, ratios) {
+  // 필요하다면 이 함수는 빈 문자열만 반환하거나, 
+  // 혹은 다른 설명용 텍스트만 리턴하도록 단순화 가능
+  return '';
+}
+
 // --- 표결 요약 HTML 생성 ---
 function renderSummary(data) {
   if (!data || Object.keys(data).length === 0) {
@@ -136,65 +124,120 @@ function renderSummary(data) {
     `;
   }
 
-  voteTypes.forEach(type => {
-    const item = data[type];
-    if (!item) return;
-    if (uniqueClusters.has(item.cluster_keyword)) return;
-    uniqueClusters.add(item.cluster_keyword);
-
-    let keywords = [];
-    if (item.cluster_keyword.startsWith('[')) {
-      try {
-        keywords = JSON.parse(item.cluster_keyword.replace(/'/g, '"'));
-      } catch {
-        keywords = [];
-      }
-    } else {
-      keywords = item.cluster_keyword.split(',').map(k => k.trim());
+  function getConfidenceClass(confidence) {
+    switch(confidence) {
+      case 'High': return 'bg-green-600 text-white';
+      case 'Medium': return 'bg-yellow-500 text-black';
+      case 'Low': return 'bg-red-600 text-white';
+      default: return 'bg-gray-400 text-white';
     }
+  }
 
-    html += `
-      <div class="card rounded-lg shadow-md bg-white p-4">
-        ${getClusterText(type, keywords)}
-        <div class="flex flex-wrap gap-2 mb-4">
-          ${keywords.map(k => `
-            <a href="/cardnews/cluster/${item.cluster_id}/">
-              <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-lg font-semibold cursor-pointer hover:bg-gray-200 transition">
-                ${k}
-              </span>
-            </a>
-          `).join('')}
-        </div>
-        <div class="text-base text-gray-600 mb-4">
-          📢 이 키워드의 법안이 궁금하다면? ☝️ Click!
-        </div>
-        <hr class="my-2 border-gray-200">
-        <div class="flex gap-4">
-          <div class="flex-1 text-center">
-            <div class="text-gray-500 text-sm">찬성</div>
-            <div class="text-2xl font-bold text-indigo-600">${item.ratios.찬성.toFixed(1)}%</div>
-          </div>
-          <div class="flex-1 text-center">
-            <div class="text-gray-500 text-sm">반대</div>
-            <div class="text-2xl font-bold text-red-600">${item.ratios.반대.toFixed(1)}%</div>
-          </div>
-          <div class="flex-1 text-center">
-            <div class="text-gray-500 text-sm">기권</div>
-            <div class="text-2xl font-bold text-gray-600">${item.ratios.기권.toFixed(1)}%</div>
-          </div>
-          <div class="flex-1 text-center">
-            <div class="text-gray-500 text-sm">불참</div>
-            <div class="text-2xl font-bold text-gray-400">${item.ratios.불참.toFixed(1)}%</div>
-          </div>
-        </div>
-        <div class="mt-2 text-sm text-gray-500">법안 수: ${item.bill_count}</div>
+  // 동적 아이콘, 텍스트, 색상 반환 함수
+function getIconTextColor(type, ratios) {
+  if (type === '기권') {
+    return { icon: '🚫', text: '기권이 많은 법안이에요.', color: 'text-gray-600' };
+  }
+
+  if (type === '불참') {
+    return { icon: '😭', text: '불참이 많은 법안이에요.', color: 'text-gray-400' };
+  }
+
+  // 찬성/반대 판단
+  if (type === '찬성') {
+    if (ratios.찬성 >= 50 && ratios.반대 < 50) {
+      return { icon: '⭕️', text: '주로 찬성하는 법안이에요.', color: 'text-blue-600' };
+    } else {
+      return null;  // 조건에 안 맞으면 표시하지 않음
+    }
+  }
+
+  if (type === '반대') {
+    if (ratios.반대 >= 50 && ratios.찬성 < 50 && ratios.반대 > 0) {
+      return { icon: '❌', text: '주로 반대하는 법안이에요.', color: 'text-red-600' };
+    } else {
+      return null;  // 반대 비율이 0이거나 조건에 안 맞으면 표시하지 않음
+    }
+  }
+
+  // 그 외는 입장 불명확한 경우
+  return { icon: '➖', text: '입장이 명확하지 않은 법안이에요.', color: 'text-gray-500' };
+}
+
+
+voteTypes.forEach(type => {
+  const item = data[type];
+  if (!item) return;
+  if (uniqueClusters.has(item.cluster_keyword)) return;
+  uniqueClusters.add(item.cluster_keyword);
+
+  let keywords = [];
+  if (item.cluster_keyword.startsWith('[')) {
+    try {
+      keywords = JSON.parse(item.cluster_keyword.replace(/'/g, '"'));
+    } catch {
+      keywords = [];
+    }
+  } else {
+    keywords = item.cluster_keyword.split(',').map(k => k.trim());
+  }
+  const iconTextColor = getIconTextColor(type, item.ratios);
+  if (!iconTextColor) return;  // null이면 이번 루프 건너뜀
+  const { icon, text, color } = getIconTextColor(type, item.ratios);
+
+  html += `
+    <div class="card rounded-lg shadow-md bg-white p-4">
+
+      <!-- 1. 지지 여부 메시지 -->
+      <div class="mb-4 flex items-center gap-2 font-semibold text-lg ${color}">
+        <span>${icon}</span>
+        <span>${text}</span>
       </div>
-    `;
-  });
+
+      <!-- 2. 클러스터 키워드 -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        ${keywords.map(k => `
+          <a href="/cardnews/cluster/${item.cluster_id}/">
+            <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-lg font-semibold cursor-pointer hover:bg-gray-200 transition">
+              ${k}
+            </span>
+          </a>
+        `).join('')}
+      </div>
+
+      <div class="text-base text-gray-600 mb-4">
+        📢 이 키워드의 법안이 궁금하다면? ☝️ Click!
+      </div>
+      <hr class="my-2 border-gray-200">
+      <div class="flex gap-4">
+        <div class="flex-1 text-center">
+          <div class="text-gray-500 text-sm">찬성</div>
+          <div class="text-2xl font-bold text-indigo-600">${item.ratios.찬성.toFixed(1)}%</div>
+        </div>
+        <div class="flex-1 text-center">
+          <div class="text-gray-500 text-sm">반대</div>
+          <div class="text-2xl font-bold text-red-600">${item.ratios.반대.toFixed(1)}%</div>
+        </div>
+        <div class="flex-1 text-center">
+          <div class="text-gray-500 text-sm">기권</div>
+          <div class="text-2xl font-bold text-gray-600">${item.ratios.기권.toFixed(1)}%</div>
+        </div>
+        <div class="flex-1 text-center">
+          <div class="text-gray-500 text-sm">불참</div>
+          <div class="text-2xl font-bold text-gray-400">${item.ratios.불참.toFixed(1)}%</div>
+        </div>
+      </div>
+      <div class="mt-2 text-sm text-gray-500">법안 수: ${item.bill_count}</div>
+    </div>
+  `;
+});
+
 
   html += '</div>';
   return html;
 }
+
+
 
   // 뒤로가기 버튼
   backButton.on("click", () => {
