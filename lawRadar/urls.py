@@ -34,9 +34,7 @@ urlpatterns = [
     # about us
     path('aboutUs/', main_v.aboutUs, name='about'),
     # search
-    path('search/', main_v.search, name='search'),
-    path("galaxy/", main_v.cluster_galaxy_view, name="cluster_galaxy"),
-    path("api/cluster_keywords/", main_v.cluster_keywords_json, name="cluster_keywords_json"),
+    path('', include(('main.urls', 'main'), namespace='main')),
 
     # billview
     path('billview/', bill_v.index_bill, name='index'),
@@ -46,8 +44,7 @@ urlpatterns = [
     path('geovote/', include('geovote.urls')),
     
     # dashboard
-    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
-    path('api/cluster_chart/', dashboard_v.cluster_chart_api, name='cluster_chart_api'),
+    path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
 
     # history
     path('history/', include('history.urls')),

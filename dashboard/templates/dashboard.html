@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block body %}
-<!-- ✅ 공통 레이아웃 컨테이너 -->
+<!--  공통 레이아웃 컨테이너 -->
 <div class="max-w-8wl mx-auto px-6 py-16 relative z-10">
 
-<!-- ✅ 상단 네비게이션 바 -->
+<!--  상단 네비게이션 바 -->
 <nav class="flex-1 p-6 bg-white/30 backdrop-blur-md shadow-sm border-b flex items-center justify-between">
   <!-- 왼쪽: 타이틀 -->
   <div class="text-2xl font-bold text-gray-800">대시보드</div>
@@ -13,9 +13,9 @@
     <!-- <button data-age="20" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">20대</button>
     <button data-age="21" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">21대</button>
     <button data-age="22" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">22대</button> -->
-    <a href="{% url 'dashboard' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
-    <a href="{% url 'dashboard' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
-    <a href="{% url 'dashboard' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
+    <a href="{% url 'dashboard:dashboard' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
+    <a href="{% url 'dashboard:dashboard' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
+    <a href="{% url 'dashboard:dashboard' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
   </div>
 </nav>
 
@@ -486,7 +486,12 @@ function getSelectedParams() {
       return;
     }
 
-    const url = `/api/cluster_chart?age_num=${ageNum}&cluster_num=${clusterNum}&party=${party}&stance=${stance}`;
+    const url = "{% url 'dashboard:cluster_chart_api' %}"
+            + `?age_num=${ageNum}`
+            + `&cluster_num=${clusterNum}`
+            + `&party=${encodeURIComponent(party)}`
+            + `&stance=${stance}`;
+    
 
     fetch(url)
       .then(res => {
