@@ -14,7 +14,7 @@ class AgeStats(models.Model):
     hhi = models.FloatField(default=0.0)  # 정당 집중도
     enp = models.FloatField(default=0.0) # 정당 유효수
 
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at = models.DateTimeField(auto_now=True)
 
 # 정당별 표결 통계
 class PartyStats(models.Model):
@@ -30,7 +30,7 @@ class PartyStats(models.Model):
 
     total_votes = models.PositiveIntegerField(default=0)         # 총 투표 수 (해당 대수에서 해당 정당 투표 횟수)
 
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('age', 'party')
