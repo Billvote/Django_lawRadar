@@ -36,6 +36,7 @@ SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
 
 # 소셜 로그인 관련 설정
 AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2', # 구글 소셜 로그인 백엔드
     'social_core.backends.kakao.KakaoOAuth2',  # 카카오 소셜 로그인 백엔드
     'django.contrib.auth.backends.ModelBackend',  # 일반 로그인
 )
@@ -47,7 +48,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 # 세션 키 등 기본 세팅 (있으면 유지)
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
-# 카카오 OAuth2 설정
+# 카카오 OAuth2 설정g
 SOCIAL_AUTH_KAKAO_KEY = os.getenv('SOCIAL_AUTH_KAKAO_KEY')
 
 # (선택) 카카오에서 이메일도 받아오고 싶으면
@@ -59,6 +60,10 @@ SOCIAL_AUTH_LOGIN_ERROR_URL = '/accounts/login/'
 # (필요 시) 로그인 취소 시 이동 URL
 SOCIAL_AUTH_LOGIN_CANCEL_URL = '/accounts/login/'
 
+
+# 구글 소셜 로그인
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
 
 # API 키 가져오기
 # ASSEMBLY_API_KEY = os.environ.get("ASSEMBLY_API_KEY", "default-value")
