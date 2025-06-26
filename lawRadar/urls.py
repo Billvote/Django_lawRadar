@@ -20,7 +20,7 @@ from django.conf.urls. static import static
 from django.conf import settings
 from billview import views as bill_v
 from main import views as main_v
-from geovote import views as geovote_v
+# from geovote import views
 from dashboard import views as dashboard_v
 from history import views as history_v
 from cardnews import views as cardnews_v
@@ -43,11 +43,7 @@ urlpatterns = [
     path('billview/<int:id>/', bill_v.detail_bill, name='detail'),
 
     # tree map
-    path('treemap/', geovote_v.treemap_view, name='treemap'),
-    path('api/treemap-data/', geovote_v.region_tree_data, name='treemap_data_api'),
-    path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
-    path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
-    path('api/member-alignment/', geovote_v.member_alignment_api, name='member_alignment_api'),
+    path('geovote/', include('geovote.urls')),
     
     # dashboard
     path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
