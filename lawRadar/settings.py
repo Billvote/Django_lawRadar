@@ -25,12 +25,10 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = 'collectstatic'
 
-# 환경변수 로드
-# env = environ.Env()
-# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+AUTH_USER_MODEL = 'accounts.User'
 
 # API 키 가져오기
-# ASSEMBLY_API_KEY = env('ASSEMBLY_API_KEY')
+# ASSEMBLY_API_KEY = os.environ.get("ASSEMBLY_API_KEY", "default-value")
 
 # 개발용 캐시 끄기
 if settings.DEBUG:
@@ -70,6 +68,7 @@ INSTALLED_APPS = [
     'dashboard',
     'history',
     'cardnews',
+    'accounts',
     # 'django_extensions'
 ]
 
