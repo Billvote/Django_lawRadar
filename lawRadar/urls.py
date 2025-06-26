@@ -46,8 +46,7 @@ urlpatterns = [
     path('geovote/', include('geovote.urls')),
     
     # dashboard
-    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
-    path('api/cluster_chart/', dashboard_v.cluster_chart_api, name='cluster_chart_api'),
+    path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
 
     # history
     path('history/', include('history.urls')),
