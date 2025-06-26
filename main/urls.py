@@ -1,10 +1,17 @@
 # main/urls.py
-from django.urls import path           # Django URL 라우터[4]
-from .views import home, autocomplete  # 뷰 함수 임포트[8]
+from django.urls import path
+from . import views as main_v              # views.py 전체 임포트
 
-app_name = "main"                      # 네임스페이스 선언[4]
+app_name = "main"                          # 네임스페이스
 
 urlpatterns = [
-    path("", home, name="home"),                               # 홈 화면[4]
-    path("api/autocomplete/", autocomplete, name="autocomplete"),  # 자동완성 API[8]
+    # Home · About
+    path("",            main_v.home,     name="home"),
+    path("aboutUs/",    main_v.aboutUs,  name="about"),
+
+    # 검색
+    path("search/",                     main_v.search,                name="search"),
+    path("galaxy/",                     main_v.cluster_galaxy_view,   name="cluster_galaxy"),
+    path("api/cluster_keywords/",       main_v.cluster_keywords_json, name="cluster_keywords_json"),
+    path("api/autocomplete/",           main_v.autocomplete,          name="autocomplete"),
 ]
