@@ -25,6 +25,8 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = 'collectstatic'
 
+AUTH_USER_MODEL = 'accounts.User'
+
 # API 키 가져오기
 # ASSEMBLY_API_KEY = os.environ.get("ASSEMBLY_API_KEY", "default-value")
 
@@ -66,6 +68,7 @@ INSTALLED_APPS = [
     'dashboard',
     'history',
     'cardnews',
+    'accounts',
     # 'django_extensions'
 ]
 
