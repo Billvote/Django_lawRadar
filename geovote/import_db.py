@@ -274,29 +274,29 @@ def run_all():
 
     csv_path = settings.BASE_DIR / 'geovote' / 'data'
     
-    import_ages(csv_path / f'age.csv')
-    import_parties(csv_path / f'party.csv')
-    import_districts(csv_path / f'district.csv')
-    check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
-    import_members(csv_path / f'member.csv')
-    import_bills(csv_path / f'bill.csv')
+    # import_ages(csv_path / f'age.csv')
+    # import_parties(csv_path / f'party.csv')
+    # import_districts(csv_path / f'district.csv')
+    # check_missing_sido_sgg(csv_path / f'member.csv') # 매칭 실패한 지역구 찾기
+    # import_members(csv_path / f'member.csv')
+    # import_bills(csv_path / f'bill.csv')
     
     # vote import하기
-    # vote_csv_path = csv_path / 'vote.csv'
-    # chunk_size = 1000  # 1000줄씩 읽기
-    # member_dict = {
-    #     (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
-    # }
-    # bill_dict = {b.bill_number: b for b in Bill.objects.all()}
-    # for i, chunk in enumerate(pd.read_csv(vote_csv_path, chunksize=chunk_size)):
-    #     print(f'📥 importing chunk {i}')
-    #     import_votes(
-    #         chunk,
-    #         member_dict=member_dict,
-    #         bill_dict=bill_dict,
-    #         # vote_lookup=vote_lookup
-    #     )
-    # print(f"✅ 데이터 임포트 완료")
+    vote_csv_path = csv_path / 'vote.csv'
+    chunk_size = 5000  # 1000줄씩 읽기
+    member_dict = {
+        (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
+    }
+    bill_dict = {b.bill_number: b for b in Bill.objects.all()}
+    for i, chunk in enumerate(pd.read_csv(vote_csv_path, chunksize=chunk_size)):
+        print(f'📥 importing chunk {i}')
+        import_votes(
+            chunk,
+            member_dict=member_dict,
+            bill_dict=bill_dict,
+            # vote_lookup=vote_lookup
+        )
+    print(f"✅ 데이터 임포트 완료")
 
 if __name__ == "__main__":
     run_all()

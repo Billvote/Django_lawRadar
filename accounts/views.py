@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from collections import Counter, defaultdict
 from django.db.models import Q
 from billview.models import Bill
+from main.models import ClusterKeyword
 
 
 
@@ -36,6 +37,10 @@ def login(request):
 def logout(request):
     auth_logout(request)
     return redirect('home')
+
+# 유사 클러스터
+def jaccard_score(set1, set2):
+    return len(set1 & set2) / len(set1 | set2) if set1 | set2 else 0
 
 # my_page 화면
 @login_required
@@ -66,14 +71,43 @@ def my_page(request):
     for cluster, keywords in cluster_keywords.items():
         cluster_keywords[cluster] = ", ".join(sorted(keywords))
 
-    # 3) 추천할 법안: 내가 좋아요한 클러스터를 포함하거나 키워드가 유사한 법안 추천
-    # 예를 들어, 같은 클러스터 법안 중 좋아요 안 한 것 추천
-    # recommended_bills = Bill.objects.filter(
-    #     Q(cluster__in=cluster_counts.keys()) |
-    #     Q(cluster_keyword__in=cluster_keywords.values())
-    # ).exclude(id__in=liked_ids).distinct()[:5]
+    # 유사도 기반 추천 클러스터
+    # 모든 클러스터 키워드 불러오기 (특정 age에 한정 가능)
+    all_cluster_keywords = ClusterKeyword.objects.all()
 
-     # 페이지네이션
+    # 클러스터번호: 키워드 set 딕셔너리
+    full_cluster_keywords = {
+        ck.cluster_num: set(ck.get_keywords())
+        for ck in all_cluster_keywords
+        if ck.get_keywords()
+    }
+    user_clusters = set(cluster_counts.keys())
+
+    user_keywords = set()
+    for cid in user_clusters:
+        user_keywords.update(full_cluster_keywords.get(cid, set()))
+
+    similar_clusters = []
+    for cid, keywords in full_cluster_keywords.items():
+        if cid in user_clusters:
+            continue
+        score = jaccard_score(user_keywords, keywords)
+        if score > 0:
+            similar_clusters.append((cid, score))
+
+    similar_clusters.sort(key=lambda x: x[1], reverse=True)
+    top_similar_clusters = similar_clusters[:3]
+
+    recommended_bills = Bill.objects.filter(
+        cluster__in=[cid for cid, _ in top_similar_clusters]
+    ).exclude(id__in=liked_ids)[:10]
+
+    print("user_clusters:", user_clusters)
+    print("top_similar_clusters:", top_similar_clusters)
+    print("추천 bill 개수:", recommended_bills.count())
+    print("user_keywords:", user_keywords)
+
+    # 페이지네이션
     paginator = Paginator(bill_list, 5)
     page_obj = paginator.get_page(request.GET.get("page"))
     current = page_obj.number
@@ -83,6 +117,8 @@ def my_page(request):
     page_range = range(start, end + 1)
 
     context = {
+        'username': request.user.username,
+
         'liked_bills': page_obj,
         'liked_ids': list(liked_ids),
 
@@ -92,5 +128,9 @@ def my_page(request):
         # 클러스터
         'cluster_counts': cluster_counts,
         'cluster_keywords': cluster_keywords, 
+
+        # 추천 법안 리스트 (유사 클러스터 기반)
+        'recommended_bills': recommended_bills,
+        'top_similar_clusters': top_similar_clusters,
     }
     return render(request, 'my_page.html', context)
