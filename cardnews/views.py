@@ -5,6 +5,11 @@ from django.core.cache import cache
 from django.db.models import Count, Max
 from billview.models import Bill
 from geovote.models import Vote
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from accounts.models import BillLike
+
 import random, logging, urllib.parse
 
 logger = logging.getLogger(__name__)
@@ -168,6 +173,21 @@ def _generate_label_color_map(labels: list[str]) -> dict[str, str]:
     ]
     return {label: color_palette[i % len(color_palette)] for i, label in enumerate(labels)}
 
+# 좋아요 기능
+@login_required
+def toggle_like(request, bill_id):
+    user = request.user
+    try:
+        bill = Bill.objects.get(id=bill_id)
+    except Bill.DoesNotExist:
+        return JsonResponse({'error': 'Bill not found'}, status=404)
+    liked, created = BillLike.objects.get_or_create(user=user, bill=bill)
+
+    if not created:
+        liked.delete()
+        return JsonResponse({'liked': False})
+    return JsonResponse({'liked': True})
+
 # 카드 뉴스
 # @cache_page(60 * 5)                       # 5분 캐시
 def cardnews_index(request, cluster_number):
@@ -193,7 +213,7 @@ def cardnews_index(request, cluster_number):
 
     sorted_keywords = sorted(keyword_set)
 
-    # 🔥 추가: 뉴스 검색용 키워드 조합
+    # 추가: 뉴스 검색용 키워드 조합
     if sorted_keywords:
         # 2개 글자인 keyword 필터링
         # sorted_keywords = [kw for kw in sorted_keywords if len(kw) > 2]
@@ -225,6 +245,11 @@ def cardnews_index(request, cluster_number):
     # 의안 개수
     cluster_bill_count = bills.count()
 
+    # 좋아요 버튼
+    liked_ids = []
+    if request.user.is_authenticated:
+        liked_ids = BillLike.objects.filter(user=request.user).values_list('bill_id', flat=True)
+
     context = {
         'cluster_number'    : cluster_number,
         'keywords'          : sorted_keywords,
@@ -232,5 +257,6 @@ def cardnews_index(request, cluster_number):
         'label_color_map': label_color_map,
         'cluster_bill_count': bills.count(),
         'google_news_url': google_news_url,
+        'liked_ids': list(liked_ids),
     }
     return render(request, 'cardnews.html', context)

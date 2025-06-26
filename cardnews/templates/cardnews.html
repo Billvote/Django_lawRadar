@@ -92,6 +92,21 @@
               <div class="relative h-[280px] overflow-hidden flex items-center justify-center p-8"
                    style="background: linear-gradient(135deg, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}dd);">
                 
+
+                <!-- Like Button -->
+                {% if user.is_authenticated %}
+                  <button type="button"
+                          class="like-btn text-2xl absolute top-4 right-4"
+                          data-bill-id="{{ bill.id }}"
+                          data-csrf-token="{{ csrf_token }}">
+                    {% if bill.id in liked_ids %}
+                      ❤️
+                    {% else %}
+                      🤍
+                    {% endif %}
+                  </button>
+                {% endif %}
+
                 <!-- 오른쪽 하단 PNG 이미지 -->
                 <img src="{% static 'images/law_rader_logo.png' %}" alt="로고" 
                     class="absolute bottom-2 right-2 w-18 h-16 opacity-40" />
@@ -323,6 +338,38 @@ document.querySelectorAll('article').forEach(card => {
     this.style.transform = 'translateY(0) scale(1)';
   });
 });
+
+// 좋아요 기능
+document.querySelectorAll('.like-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+
+    const billId = this.dataset.billId;
+    const csrfToken = this.dataset.csrfToken;
+
+    fetch(`/cardnews/toggle_like/${billId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin',
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.liked) {
+        this.textContent = '❤️';  // 좋아요 상태면 빨간 하트
+      } else {
+        this.textContent = '🤍';  // 좋아요 안 된 상태면 흰 하트
+      }
+    })
+    .catch(() => {
+      alert("좋아요 요청 중 오류가 발생했습니다.");
+    });
+  });
+});
+
+
 </script>
 
 {% endblock %}

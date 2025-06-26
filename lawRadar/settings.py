@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'history',
     'cardnews',
     'accounts',
+    'widget_tweaks',
     # 'django_extensions'
 ]
 
