@@ -8,8 +8,9 @@ from django.core.paginator import Paginator
 from collections import Counter, defaultdict
 from django.db.models import Q
 from billview.models import Bill
-from main.models import ClusterKeyword
-
+from geovote.models import Age
+from main.models import ClusterKeyword, PartyClusterStats
+import json
 
 
 def signup(request):
@@ -38,9 +39,76 @@ def logout(request):
     auth_logout(request)
     return redirect('home')
 
-# 유사 클러스터
+# 유사 클러스터 계산
 def jaccard_score(set1, set2):
     return len(set1 & set2) / len(set1 | set2) if set1 | set2 else 0
+
+def get_user_cluster_stats(user):
+    liked_bills = BillLike.objects.filter(user=user).select_related('bill')
+    liked_clusters = set(bill.bill.cluster for bill in liked_bills if bill.bill.cluster is not None)
+    if not liked_clusters:
+        return {
+            'cluster_data': [],
+            'party_names': [],
+            'party_colors': [],
+            'result_types': [],
+        }
+    
+    # Age 조건은 필요에 따라 조절 가능
+    age = Age.objects.first()
+
+    # 클러스터 키워드 조회
+    keywords_raw = ClusterKeyword.objects.filter(cluster_num__in=liked_clusters)
+    cluster_keywords = {}
+    for ck in keywords_raw:
+        try:
+            kw_list = json.loads(ck.keyword_json)
+            cluster_keywords[ck.cluster_num] = ', '.join(kw_list)
+        except Exception:
+            cluster_keywords[ck.cluster_num] = ck.keyword_json
+
+    # 통계 조회 (PartyClusterStats 모델을 기준으로, 필요에 따라 조정)
+    stats = PartyClusterStats.objects.filter(
+        cluster_num__in=liked_clusters,
+        # age=age,  # 필요하면 age 조건 추가
+    ).select_related('party')
+
+    party_names = sorted({stat.party.party for stat in stats})
+    party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
+
+    result_types = ['찬성', '반대', '기권', '불참']
+    cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
+
+    for row in stats:
+        party = row.party.party
+        cluster = row.cluster_num
+        cluster_data[cluster][party] = {
+            '찬성': round(row.support_ratio),
+            '반대': round(row.oppose_ratio),
+            '기권': round(row.abstain_ratio),
+            '불참': round(row.absent_ratio),
+        }
+
+    # 누락된 정당 0 초기화
+    for cluster in cluster_data:
+        for party in party_names:
+            cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
+
+    cluster_vote_data_dict = {
+        cluster_num: {
+            'cluster_num': cluster_num,
+            'cluster_keywords': cluster_keywords.get(cluster_num, ''),
+            'party_stats': party_stats,
+        }
+        for cluster_num, party_stats in cluster_data.items()
+    }
+
+    return {
+        'cluster_data': cluster_vote_data_dict,
+        'party_names': party_names,
+        'party_colors': party_colors,
+        'result_types': result_types,
+    }
 
 # my_page 화면
 @login_required
@@ -75,12 +143,13 @@ def my_page(request):
     # 모든 클러스터 키워드 불러오기 (특정 age에 한정 가능)
     all_cluster_keywords = ClusterKeyword.objects.all()
 
-    # 클러스터번호: 키워드 set 딕셔너리
-    full_cluster_keywords = {
-        ck.cluster_num: set(ck.get_keywords())
-        for ck in all_cluster_keywords
-        if ck.get_keywords()
-    }
+    # keyword_json 직접 파싱해서 set 생성
+    full_cluster_keywords = {}
+    for ck in all_cluster_keywords:
+        if ck.keyword_json:
+            # 문자열을 콤마 기준으로 분리하고 공백 제거
+            keywords = [kw.strip() for kw in ck.keyword_json.split(',')]
+            full_cluster_keywords[ck.cluster_num] = set(keywords)
     user_clusters = set(cluster_counts.keys())
 
     user_keywords = set()
@@ -102,10 +171,8 @@ def my_page(request):
         cluster__in=[cid for cid, _ in top_similar_clusters]
     ).exclude(id__in=liked_ids)[:10]
 
-    print("user_clusters:", user_clusters)
-    print("top_similar_clusters:", top_similar_clusters)
-    print("추천 bill 개수:", recommended_bills.count())
-    print("user_keywords:", user_keywords)
+    # 차트 그리기
+    cluster_stats_data = get_user_cluster_stats(request.user)
 
     # 페이지네이션
     paginator = Paginator(bill_list, 5)
@@ -132,5 +199,8 @@ def my_page(request):
         # 추천 법안 리스트 (유사 클러스터 기반)
         'recommended_bills': recommended_bills,
         'top_similar_clusters': top_similar_clusters,
+
+        # 통계 데이터
+        'cluster_stats_data': cluster_stats_data,
     }
     return render(request, 'my_page.html', context)

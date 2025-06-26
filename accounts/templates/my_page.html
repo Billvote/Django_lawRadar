@@ -3,96 +3,118 @@
 {% load static %}
 {% block body %}
 
-<h2 class="text-xl font-bold mb-8">🍀{{username}}님의 요즘 관심사는?</h2>
+<h2 class="text-xl font-bold mb-8">🍀{{ username }}님의 요즘 관심사는?</h2>
 
-<div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-6">
-<!-- 내가 좋아요한 법안 클러스터 분석 카드 -->
-<section class="w-full md:flex-1 max-w-md my-8 p-4 bg-white rounded-xl shadow border border-gray-200">
-  <h3 class="text-lg font-bold mb-4">🧠 관심 법안 클러스터 분석</h3>
-  
+<!-- 1열: 관심 법안 클러스터 분석 (full width) -->
+<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
+  <h3 class="text-lg font-bold mb-6">🧠 관심 법안 클러스터 분석</h3>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {% for cluster, count in cluster_counts.items %}
-      <div class="p-4 border rounded-md">
-        <h4 class="font-semibold">클러스터 {{ cluster }} ({{ count }}건)</h4>
-        <p class="text-gray-600 text-sm mt-1">주요 키워드: <strong>{{ cluster_keywords|dict_get:cluster }}</strong></p>
-      </div>
+    <div class="p-4 border rounded-md">
+      <h4 class="font-semibold">클러스터 {{ cluster }} ({{ count }}건)</h4>
+      <p class="text-gray-600 text-sm mt-1">주요 키워드: <strong>{{ cluster_keywords|dict_get:cluster }}</strong></p>
+    </div>
     {% empty %}
-      <p>아직 관심 법안이 없습니다.</p>
+    <p>아직 관심 법안이 없습니다.</p>
     {% endfor %}
   </div>
 </section>
 
-{% if recommended_bills %}
-<section class="mt-8">
-    <h3 class="text-lg font-bold mb-4">🤖 이런 법안도 관심 있으실까요?</h3>
-    <ul class="space-y-2">
-    {% for bill in recommended_bills %}
-        <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
-            onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-        <h4 class="font-semibold">{{ bill.title }}</h4>
-        <p class="text-sm text-gray-500">📃 {{ bill.bill_number }} / 📅 {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-</section>
-{% endif %}
+<!-- 2열 레이아웃: 관심 법안 리스트 & 추천 법안 -->
+<div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
 
+  <!-- 좌측: 관심 법안 리스트 -->
+  <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
+    <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
+      <h2 class="text-xl font-bold text-white">❤️ 관심 있는 법안 리스트</h2>
+    </div>
+    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+      {% for bill in liked_bills %}
+      <div class="relative group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
+                  hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
+           onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
 
+        {% if user.is_authenticated %}
+        <button type="button"
+                class="like-btn text-2xl absolute top-4 right-4 z-10"
+                data-bill-id="{{ bill.id }}"
+                data-csrf-token="{{ csrf_token }}"
+                onclick="event.stopPropagation();">
+          {% if bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
+        </button>
+        {% endif %}
 
-<section>
-  <div class="w-full md:flex-2 max-w-full mx-auto my-8">
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div style="background:#38bdf8;" class="p-4 rounded-md ">
-        <h2 class="text-xl font-bold text-white">❤️ 관심 있는 법안 리스트</h2>
-        <!-- <p class="text-cyan-100 text-sm mt-1">관심 있게 본 법안 리스트</p> -->
-      </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          {% for bill in liked_bills %}
-          <div class="relative group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                      hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-               onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+        <h3 class="font-semibold text-gray-900 mb-2 pr-12 line-clamp-2 transition-colors duration-200 group-hover:text-cyan-600">
+          {{ bill.title }}
+        </h3>
 
-            <!-- 좋아요 버튼 (항상 보이게) -->
-            {% if user.is_authenticated %}
-            <button type="button"
-                    class="like-btn text-2xl absolute top-4 right-4 z-10"
-                    data-bill-id="{{ bill.id }}"
-                    data-csrf-token="{{ csrf_token }}"
-                    onclick="event.stopPropagation();">
-              {% if bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
-            </button>
-            {% endif %}
-
-            <!-- 제목 -->
-            <h3 class="font-semibold text-gray-900 mb-2 pr-12 line-clamp-2 transition-colors duration-200 group-hover:text-cyan-600">
-              {{ bill.title }}
-            </h3>
-
-            <!-- 메타 정보 -->
-            <div class="flex flex-wrap items-center text-sm text-gray-600 font-semibold gap-x-4">
-              <div class="flex items-center gap-x-1">
-                <span>📃</span>
-                <span>{{ bill.bill_number }}</span>
-              </div>
-              <div class="flex items-center gap-x-1">
-                <span>📅</span>
-                <span>{{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span>
-              </div>
-            </div>
-
+        <div class="flex flex-wrap items-center text-sm text-gray-600 font-semibold gap-x-4">
+          <div class="flex items-center gap-x-1">
+            <span>📃</span>
+            <span>{{ bill.bill_number }}</span>
           </div>
-          {% empty %}
-          <p>아직 좋아요한 법안이 없습니다 😢</p>
-          <a href="{% url 'cardnews:home' %}" class="inline-block mt-4 px-4 py-2 bg-cyan-100 rounded hover:bg-cyan-200 transition">
-            관심 법안 둘러보기
-          </a>
-          {% endfor %}
+          <div class="flex items-center gap-x-1">
+            <span>📅</span>
+            <span>{{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span>
+          </div>
         </div>
       </div>
+      {% empty %}
+      <p>아직 좋아요한 법안이 없습니다 😢</p>
+      <a href="{% url 'cardnews:home' %}" class="inline-block mt-4 px-4 py-2 bg-cyan-100 rounded hover:bg-cyan-200 transition">
+        관심 법안 둘러보기
+      </a>
+      {% endfor %}
     </div>
-  </div>
-  <!-- 페이징 -->
+  </section>
+
+  <!-- 우측: 추천 법안 리스트 -->
+  {% if recommended_bills %}
+  <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
+    <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3>
+    <ul class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+      {% for bill in recommended_bills %}
+      <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
+          onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+        <h4 class="font-semibold">{{ bill.title }}</h4>
+        <p class="text-sm text-gray-500">📃 {{ bill.bill_number }} / 📅 {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+
+<!-- 클러스터별 투표 통계 차트 영역 -->
+<section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow border border-gray-200">
+  <h3 class="text-lg font-bold mb-6">📊 관심 클러스터별 정당별 투표 통계</h3>
+  <label for="clusterSelect" class="font-bold block mb-2">🧠 클러스터 선택</label>
+  <select id="clusterSelect" class="p-2 border rounded w-full md:w-1/2">
+    {% for cluster_num, data in cluster_data.items %}
+      <option value="{{ cluster_num }}">Cluster {{ cluster_num }}: {{ data.cluster_keywords }}</option>
+    {% endfor %}
+  </select>
+  <div id="clusterVoteChart"></div>
+
+  <!-- JSON 데이터를 숨겨서 JS에서 사용 -->
+<script type="application/json" id="cluster-vote-data">
+  {{ cluster_data|safe|json_script:"cluster-vote-data" }}
+</script>
+<script type="application/json" id="cluster-categories">
+  {{ result_types|safe|json_script:"cluster-categories" }}
+</script>
+<script type="application/json" id="cluster-party-names">
+  {{ party_names|safe|json_script:"cluster-party-names" }}
+</script>
+<script type="application/json" id="cluster-party-colors">
+  {{ party_colors|safe|json_script:"cluster-party-colors" }}
+</script>
+</section>
+
+{{ cluster_stats_data|json_script:"cluster-stats-data" }}
+
+
+<!-- 페이지네이션 -->
 <div class="pagination mt-12 mb-12 flex justify-center">
   <nav class="flex items-center space-x-2">
     
@@ -166,6 +188,89 @@ document.querySelectorAll('.like-btn').forEach(btn => {
       .then(data => {
         this.textContent = data.liked ? '❤️' : '🤍';
       });
+  });
+});
+
+// 클러스터별 통계 차트
+// const clusterStatsData = JSON.parse(document.getElementById('cluster-stats-data').textContent);
+document.addEventListener('DOMContentLoaded', () => {
+  const clusterSelect = document.getElementById('clusterSelect');
+  const clusterVoteData = JSON.parse(document.getElementById("cluster-vote-data").textContent);
+  const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
+  const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
+  const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
+
+  let clusterChart = null;
+
+  function drawClusterChart(clusterNum) {
+    const clusterObj = clusterVoteData[clusterNum];
+    if (!clusterObj) {
+      document.getElementById('clusterVoteChart').innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
+      if (clusterChart) clusterChart.destroy();
+      return;
+    }
+
+    const partyStats = clusterObj.party_stats;
+
+    const series = resultTypes.map(type => {
+      return {
+        name: type,
+        data: partyNames.map(party => partyStats[party]?.[type] || 0)
+      };
+    });
+
+    const options = {
+      chart: {
+        type: 'bar',
+        stacked: true,
+        stackType: '100%',
+        height: 400,
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          barHeight: '70%',
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+          return val > 0 ? val.toFixed(1) + '%' : '';
+        }
+      },
+      series: series,
+      xaxis: {
+        categories: partyNames,
+        title: { text: '정당' },
+        labels: { formatter: val => val.toFixed(0) + '%' }
+      },
+      yaxis: {
+        title: { text: '정당' }
+      },
+      colors: partyColors,
+      legend: { position: 'top' },
+      tooltip: {
+        y: {
+          formatter: val => val + '%'
+        }
+      }
+    };
+
+    const chartContainer = document.querySelector("#clusterVoteChart");
+    if (clusterChart) {
+      clusterChart.updateOptions(options, true, true);
+    } else {
+      clusterChart = new ApexCharts(chartContainer, options);
+      clusterChart.render();
+    }
+  }
+
+  // 초기 렌더링
+  drawClusterChart(clusterSelect.value);
+
+  // 클러스터 선택 변경 시 다시 그리기
+  clusterSelect.addEventListener('change', e => {
+    drawClusterChart(e.target.value);
   });
 });
 </script>
