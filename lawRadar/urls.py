@@ -58,4 +58,6 @@ urlpatterns = [
     # 로그인
     path('accounts/', include('accounts.urls')),
 
+    path('oauth/', include('social_django.urls', namespace='social')),
+
 ]

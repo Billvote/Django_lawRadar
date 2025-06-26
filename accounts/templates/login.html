@@ -31,11 +31,14 @@
             Google로 계속하기
           </button>
           
-          <button type="button" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
-            <svg class="w-5 h-5 mr-3" fill="#1877f2" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          <button type="button"
+                  onclick="location.href='{% url 'social:begin' 'kakao' %}'"
+                  class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+            <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#FFCD00" d="M12 2C6.48 2 2 6.13 2 11.75c0 3.31 2.69 6 6 6h2v4l3.5-4h2.5c5.52 0 10-4.13 10-9.75S17.52 2 12 2z"/>
+              <path fill="#3C1E1E" d="M16.5 11.75c0 2.07-1.68 3.75-3.75 3.75S9 13.82 9 11.75 10.68 8 12.75 8s3.75 1.68 3.75 3.75z"/>
             </svg>
-            Facebook으로 계속하기
+            Kakao로 빠른 가입
           </button>
         </div>
 

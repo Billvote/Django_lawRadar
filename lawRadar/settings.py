@@ -12,6 +12,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from django.conf import settings
+
+from dotenv import load_dotenv
+import os
+load_dotenv()
+# from decouple import config
+
 # import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,6 +32,33 @@ STATICFILES_DIRS = [
 STATIC_ROOT = 'collectstatic'
 
 AUTH_USER_MODEL = 'accounts.User'
+SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
+
+# 소셜 로그인 관련 설정
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.kakao.KakaoOAuth2',  # 카카오 소셜 로그인 백엔드
+    'django.contrib.auth.backends.ModelBackend',  # 일반 로그인
+)
+# 로그인 후 리다이렉트 URL (로그인 성공 후 이동할 곳)
+LOGIN_REDIRECT_URL = '/accounts/myPage/'  # 네가 원하는 페이지 경로로 바꿔도 됨
+
+# 로그아웃 후 이동할 URL
+LOGOUT_REDIRECT_URL = '/'
+
+# 세션 키 등 기본 세팅 (있으면 유지)
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+# 카카오 OAuth2 설정
+SOCIAL_AUTH_KAKAO_KEY = os.getenv('SOCIAL_AUTH_KAKAO_KEY')
+
+# (선택) 카카오에서 이메일도 받아오고 싶으면
+# SOCIAL_AUTH_KAKAO_SCOPE = ['account_email', 'profile_nickname']
+# (선택) 이메일이 없으면 회원가입 불가하게 하고 싶으면
+# SOCIAL_AUTH_USER_FIELDS = ['username', 'email', 'first_name', 'last_name']
+# (필요 시) 로그인 실패 시 이동 URL
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/accounts/login/'
+# (필요 시) 로그인 취소 시 이동 URL
+SOCIAL_AUTH_LOGIN_CANCEL_URL = '/accounts/login/'
+
 
 # API 키 가져오기
 # ASSEMBLY_API_KEY = os.environ.get("ASSEMBLY_API_KEY", "default-value")
@@ -70,6 +103,7 @@ INSTALLED_APPS = [
     'cardnews',
     'accounts',
     'widget_tweaks',
+    'social_django',
     # 'django_extensions'
 ]
 
