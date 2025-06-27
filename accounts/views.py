@@ -16,9 +16,9 @@ from geovote.models    import Age
 from main.models       import ClusterKeyword, PartyClusterStats
 
 from collections import Counter, defaultdict
-from django.db.models import Q
+from django.db.models import Q, Max
 from billview.models import Bill
-from geovote.models import Age, Member
+from geovote.models import Age, Member, Party
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 from geovote.models import Age, Member
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
@@ -195,6 +195,7 @@ def recommend_party_by_interest(user, age_num=None):
 
     party_summary = defaultdict(lambda: {
         'party': None,
+        'color': None,
         'support': [],
         'oppose': [],
         'abstain': [],
@@ -204,6 +205,7 @@ def recommend_party_by_interest(user, age_num=None):
     for row in stats:
         p = row.party.party
         party_summary[p]['party'] = p
+        party_summary[p]['color'] = row.party.color
         party_summary[p]['support'].append(row.support_ratio)
         party_summary[p]['oppose'].append(row.oppose_ratio)
         party_summary[p]['abstain'].append(row.abstain_ratio)
@@ -218,6 +220,7 @@ def recommend_party_by_interest(user, age_num=None):
 
         results.append({
             'party': party,
+            'color': data['color'],
             'support': avg_support,
             'oppose': avg_oppose,
             'abstain': avg_abstain,
@@ -275,9 +278,12 @@ def get_recommended_members_from_max_clusters(max_clusters, limit=2):
 @login_required
 def my_page(request):
     # 좋아요 버튼
-    liked_bills = BillLike.objects.filter(user=request.user).select_related('bill')
-    liked_ids = liked_bills.values_list('bill_id', flat=True)
-    bill_list = [like.bill for like in liked_bills]
+    liked_ids = list(BillLike.objects.filter(user=request.user).values_list('bill_id', flat=True))
+    bill_list = (
+        Bill.objects.filter(id__in=liked_ids)
+        .annotate(latest_vote_date=Max('vote__date'))
+        .prefetch_related('vote_set')
+    )
     liked_clusters = set(bill.cluster for bill in bill_list if bill.cluster is not None)
 
     # 클러스터 선택: GET 파라미터에서 받되, 기본값은 좋아요 클러스터 중 첫 번째

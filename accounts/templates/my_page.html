@@ -11,20 +11,26 @@
   <h3 class="text-2xl font-bold">나와 어울리는 정당은?</h3>
   <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
   
-  <div class="bg-white p-6 rounded-xl shadow-lg border hover:shadow-xl transition max-w-3xl mx-auto mt-6">
+  <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition max-w-3xl mx-auto mt-6">
     <div class="flex justify-between mb-6">
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
-        <p class="text-2xl font-semibold mb-3">{{ most_similar_party.party }}</p>
+        <p class="text-2xl font-semibold mb-3"
+            style="color: {{ most_similar_party.color }}">
+          {{ most_similar_party.party }}
+        </p>
         <p class="text-sm text-gray-500">
-          찬성률 {{ most_similar_party.support|floatformat:1 }}% · 반대율 {{ most_similar_party.oppose|floatformat:1 }}%
+          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong> · 반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">⚠️ 추구미가 다른</h4>
-        <p class="text-2xl font-semibold mb-3">{{ most_opposite_party.party }}</p>
+        <p class="text-2xl font-semibold mb-3"
+            style="color: {{ most_opposite_party.color }}">
+            {{ most_opposite_party.party }}
+        </p>
         <p class="text-sm text-gray-500">
-          찬성률 {{ most_opposite_party.support|floatformat:1 }}% · 반대율 {{ most_opposite_party.oppose|floatformat:1 }}%
+          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong> · 반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
     </div>
@@ -33,25 +39,39 @@
 
 <!-- 1행 2열 어울리는 의원-->
 
-<!-- 1열: 관심 법안 클러스터 분석 (full width) -->
-<section class="max-w-lg mx-auto px-4 p-6 mb-10">
-  <h3 class="text-2xl font-bold">내 법안 모음</h3>
-  <h4 class="text-sm mb-3">{{username}}님이 관심 있는 법을 모아놨어요!</h4>
-  
+
+<!-- 법안 모음 -->
+<div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 items-start justify-between">
+  <section class="flex-1 flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="mb-6 p-4 bg-pink-400">
+      <h2 class="text-xl font-bold text-white">📚 내 법안 모음</h2>
+    </div>
+
+<!-- <h3 class="text-2xl font-bold mb-4">📚 내 법안 모음</h3>
+<div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 items-stretch">
+<section class="flex-1 flex flex-col px-4 p-6">
+  <div class="bg-pink-400 rounded-2xl px-6 py-3 border-b cursor-pointer"
+      onclick="toggleCluster('{{ cluster }}')">
+    <h4 class="text-xl font-semibold text-white">
+      {{ username }}님이 관심 있는 법
+    </h4>
+  </div> -->
   <!-- 스크롤 영역 -->
-  <div class="scrollbar-custom gap-4 max-h-[600px] overflow-y-auto pr-2 space-y-4">
+  <div class="scrollbar-custom gap-2 max-h-[600px] overflow-y-auto p-6 bg-white shadow-lg">
+    <!-- 카드 본문 -->
+    <div class="space-y-6">
     {% for cluster, count in cluster_counts.items %}
-    <div class="bg-white rounded-xl shadow">
+    <div class="bg-white rounded-xl">
       <!-- 안 접히는 카드 영역 -->
-      <div class="group overflow-hidden rounded bg-white/80 shadow-md hover:shadow-xl transition-all duration-300 group-hover:border-blue-300 cursor-pointer"
+      <div class="group overflow-hidden rounded bg-white/80 shadow-xs hover: transition-all duration-300 cursor-pointer"
           onclick="toggleCluster('{{ cluster }}')">
 
-        <div class="p-4">
-          <h4 class="text-base font-semibold flex justify-between items-center">
+        <div class="px-3 py-7 space-y-6 shadow-lg">
+          <h4 class="text-base font-semibold flex justify-between items-center mb-2">
             키워드 {{ cluster }} ({{ count }}건)
             <!-- 토글 아이콘 -->
              <svg id="arrow-{{ cluster }}"
-                class="w-6 h-6 text-zinc-400 transition-transform duration-300"
+                class="w-5 h-5 text-zinc-400 transition-transform duration-300"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -59,14 +79,14 @@
             </svg>
           </h4>
 
-          <h3 class="text-gray-600 text-lg inline-block max-x-full mt-2">
+          <h3 class="text-gray-600 text-lg inline-block max-x-full mt-2 overflow-hidden whitespace-nowrap text-ellipsis">
             {% with cluster_keywords|dict_get:cluster as keywords_str %}
             {% if keywords_str %}
               {% with keywords_str|split_by_comma as keywords_list %}
                 {% random_color_for_cluster cluster as color %}
                 {% for kw in keywords_list %}
-                  <span class="inline-block px-2.5 py-0.5 rounded-full text-sm text-white font-medium"
-                        style="background-color: {{ color }};">
+                  <span class="inline-block px-3 py-1 rounded-full text-md text-white font-medium"
+                        style="background-color: {{ color }}; white-space: nowrap;">
                     #{{ kw }}
                   </span>
                 {% endfor %}
@@ -80,14 +100,14 @@
 
         <!-- 접히는 콘텐츠 -->
         <div id="cluster-bills-{{ cluster }}"
-            class="scrollbar-custom max-h-[600px] overflow-y-auto pr-1 mt-2 hidden space-y-3">
+            class="scrollbar-custom max-h-[600px] overflow-y-auto pr-1 mt-4 hidden space-y-3">
           {% for bill in liked_bills %}
             {% if bill.cluster == cluster %}
-              <div class="bg-gray-50 hover:bg-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-3 cursor-pointer"
+              <div class="bg-gray-50 rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 p-3 cursor-pointer"
                   onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
                 
                 <div class="flex justify-between items-start gap-2">
-                  <h3 class="text-base font-medium text-gray-800 truncate">
+                  <h3 class="text-base font-medium text-gray-800 truncate hover:text-cyan-600 transition-all duration-300">
                     {{ bill.title }}
                   </h3>
                   <!-- 좋아요 버튼 -->
@@ -102,9 +122,9 @@
                   {% endif %}
                 </div>
 
-                <div class="mt-1 text-xs text-gray-500 flex items-center justify-between">
+                <div class="mt-1 text-xs text-gray-500 space-x-3">
                   <span class="truncate">의안번호 {{ bill.bill_number }}</span>
-                  {# <span>{{ bill.vote.date|date:"Y-m-d" }}</span> #}
+                  <!-- <span>📅 표결일 {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span> -->
                 </div>
                 
               </div>
@@ -119,7 +139,29 @@
       <p class="text-sm text-gray-400">좋아요한 클러스터가 없습니다.</p>
     {% endfor %}
     </div>
+    </div>
 </section>
+
+  <!-- 우측: 추천 법안 리스트 -->
+  {% if recommended_bills %}
+  <section class="flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div style="background:#38bdf8;" class="mb-6 p-4">
+      <h2 class="text-xl font-bold text-white">관심 있을 만한 법</h2>
+    </div>
+    <!-- <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3> -->
+    <ul class="max-h-[600px] space-y-3 overflow-y-auto pr-0 scrollbar-custom">
+      {% for bill in recommended_bills %}
+      <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
+          onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+        <h4 class="font-semibold">{{ bill.title }}</h4>
+        <p class="text-sm text-gray-500 mt-1">의안번호 {{ bill.bill_number }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+</div>
 
 <!-- 추천 의원 섹션 -->
 <section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
@@ -152,74 +194,6 @@
     <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
   {% endif %}
 </section>
-
-<!-- 2열 레이아웃: 관심 법안 리스트 & 추천 법안 -->
-<div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
-
-  <!-- 좌측: 관심 법안 리스트 -->
-  <!-- <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
-    <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
-      <h2 class="text-xl font-bold text-white">관심 있는 법안 리스트</h2>
-    </div>
-    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
-      {% for bill in liked_bills %}
-      <div class="relative group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                  hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-           onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-
-        {% if user.is_authenticated %}
-        <button type="button"
-                class="like-btn text-2xl absolute top-4 right-4 z-10"
-                data-bill-id="{{ bill.id }}"
-                data-csrf-token="{{ csrf_token }}"
-                onclick="event.stopPropagation();">
-          {% if bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
-        </button>
-        {% endif %}
-
-        <h3 class="font-semibold text-gray-900 mb-2 pr-12 line-clamp-2 transition-colors duration-200 group-hover:text-cyan-600">
-          {{ bill.title }}
-        </h3>
-
-        <div class="flex flex-wrap items-center text-sm text-gray-600 font-semibold gap-x-4">
-          <div class="flex items-center gap-x-1">
-            <span>📃</span>
-            <span>{{ bill.bill_number }}</span>
-          </div>
-          <div class="flex items-center gap-x-1">
-            <span>📅</span>
-            <span>{{ bill.date|default:"-"|date:"Y-m-d" }}</span>
-          </div>
-        </div>
-      </div>
-      {% empty %}
-      <p class="none-data" style="font-family: HSSanTokki20;">텅~</p>
-      <a href="{% url 'cardnews:home' %}" class="inline-block mt-4 px-4 py-2 bg-cyan-100 rounded hover:bg-cyan-200 transition">
-        관심 법안 둘러보기
-      </a>
-      {% endfor %}
-    </div>
-  </section> -->
-
-  <!-- 우측: 추천 법안 리스트 -->
-  {% if recommended_bills %}
-  <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
-    <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
-      <h2 class="text-xl font-bold text-white">이런 법안은 어때요?</h2>
-    </div>
-    <!-- <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3> -->
-    <ul class="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
-      {% for bill in recommended_bills %}
-      <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
-          onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-        <h4 class="font-semibold">{{ bill.title }}</h4>
-        <p class="text-sm text-gray-500">📃 {{ bill.bill_number }} / 📅 {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</p>
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
-</div>
 
 <!-- 클러스터별 투표 통계 차트 영역 -->
 <section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow border border-gray-200">
