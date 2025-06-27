@@ -8,6 +8,8 @@ from geovote.models import Vote
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+
 from accounts.models import BillLike
 
 import random, logging, urllib.parse
@@ -174,14 +176,14 @@ def _generate_label_color_map(labels: list[str]) -> dict[str, str]:
     return {label: color_palette[i % len(color_palette)] for i, label in enumerate(labels)}
 
 # 좋아요 기능
+@require_POST
 @login_required
 def toggle_like(request, bill_id):
-    user = request.user
     try:
         bill = Bill.objects.get(id=bill_id)
     except Bill.DoesNotExist:
         return JsonResponse({'error': 'Bill not found'}, status=404)
-    liked, created = BillLike.objects.get_or_create(user=user, bill=bill)
+    liked, created = BillLike.objects.get_or_create(user=request.user, bill=bill)
 
     if not created:
         liked.delete()

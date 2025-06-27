@@ -6,23 +6,23 @@
 
 <h2 class="text-xl font-bold mb-8">🍀{{ username }}님의 요즘 관심사는?</h2>
 
-<!-- 유사 정당/다른 정당 -->
-<section class="my-5">
-  <h3 class="text-lg font-bold">나와 어울리는 정당은?</h3>
-  <p class="text-sm">{{ username }}님이 관심 있어 하는 법에 따라 결과가 달라져요!</p>
+<!-- 1행 1열: 유사 정당/다른 정당 -->
+<section class="max-w-lg mx-auto px-4 p-6 mb-10">
+  <h3 class="text-2xl font-bold">나와 어울리는 정당은?</h3>
+  <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
   
-  <div class="bg-white p-6 rounded-xl shadow-lg border hover:shadow-2xl transition max-w-3xl mx-auto mt-6">
+  <div class="bg-white p-6 rounded-xl shadow-lg border hover:shadow-xl transition max-w-3xl mx-auto mt-6">
     <div class="flex justify-between mb-6">
       <div class="text-center flex-1">
-        <h4 class="text-lg font-bold mb-2">✅ 추구미가 같은</h4>
-        <p class="text-xl font-semibold">{{ most_similar_party.party }}</p>
+        <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
+        <p class="text-2xl font-semibold mb-3">{{ most_similar_party.party }}</p>
         <p class="text-sm text-gray-500">
           찬성률 {{ most_similar_party.support|floatformat:1 }}% · 반대율 {{ most_similar_party.oppose|floatformat:1 }}%
         </p>
       </div>
       <div class="text-center flex-1">
-        <h4 class="text-lg font-bold mb-2">⚠️ 추구미가 다른</h4>
-        <p class="text-xl font-semibold">{{ most_opposite_party.party }}</p>
+        <h4 class="text-xl font-bold my-3">⚠️ 추구미가 다른</h4>
+        <p class="text-2xl font-semibold mb-3">{{ most_opposite_party.party }}</p>
         <p class="text-sm text-gray-500">
           찬성률 {{ most_opposite_party.support|floatformat:1 }}% · 반대율 {{ most_opposite_party.oppose|floatformat:1 }}%
         </p>
@@ -31,13 +31,17 @@
   </div>
 </section>
 
+<!-- 1행 2열 어울리는 의원-->
 
 <!-- 1열: 관심 법안 클러스터 분석 (full width) -->
-<section class="max-w-lg mx-auto px-4 bg-white rounded-xl shadow p-6 mb-10">
-  <h3 class="text-lg font-bold mb-6">🧠 관심 법안 리스트</h3>
-  <div class="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
+<section class="max-w-lg mx-auto px-4 p-6 mb-10">
+  <h3 class="text-2xl font-bold">내 법안 모음</h3>
+  <h4 class="text-sm mb-3">{{username}}님이 관심 있는 법을 모아놨어요!</h4>
+  
+  <!-- 스크롤 영역 -->
+  <div class="scrollbar-custom gap-4 max-h-[600px] overflow-y-auto pr-2 space-y-4">
     {% for cluster, count in cluster_counts.items %}
-
+    <div class="bg-white rounded-xl shadow">
       <!-- 안 접히는 카드 영역 -->
       <div class="group overflow-hidden rounded bg-white/80 shadow-md hover:shadow-xl transition-all duration-300 group-hover:border-blue-300 cursor-pointer"
           onclick="toggleCluster('{{ cluster }}')">
@@ -45,7 +49,6 @@
         <div class="p-4">
           <h4 class="text-base font-semibold flex justify-between items-center">
             키워드 {{ cluster }} ({{ count }}건)
-            <!-- <span id="arrow-{{ cluster }}" class="transition-transform">&#9660;</span> -->
             <!-- 토글 아이콘 -->
              <svg id="arrow-{{ cluster }}"
                 class="w-6 h-6 text-zinc-400 transition-transform duration-300"
@@ -115,7 +118,7 @@
     {% empty %}
       <p class="text-sm text-gray-400">좋아요한 클러스터가 없습니다.</p>
     {% endfor %}
-  </div>
+    </div>
 </section>
 
 <!-- 추천 의원 섹션 -->

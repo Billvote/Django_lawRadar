@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from cardnews import views as cardnews_v
 
 app_name = 'accounts'
 common_tmpl = 'login.html'   # login·비번재설정·완료 화면을 모두 담은 단일 템플릿

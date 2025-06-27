@@ -94,18 +94,13 @@
                 
 
                 <!-- 좋아요 버튼 -->
-                {% if user.is_authenticated %}
                   <button type="button"
                           class="like-btn text-2xl absolute top-4 right-4"
                           data-bill-id="{{ bill.id }}"
-                          data-csrf-token="{{ csrf_token }}">
-                    {% if bill.id in liked_ids %}
-                      ❤️
-                    {% else %}
-                      🤍
-                    {% endif %}
+                          data-csrf-token="{{ csrf_token }}"
+                          data-authenticated="{{ user.is_authenticated|yesno:"true,false" }}">
+                    {% if user.is_authenticated and bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
                   </button>
-                {% endif %}
 
                 <!-- 오른쪽 하단 PNG 이미지 -->
                 <img src="{% static 'images/law_rader_logo.png' %}" alt="로고" 
@@ -340,31 +335,55 @@ document.querySelectorAll('article').forEach(card => {
 });
 
 // 좋아요 기능
-document.querySelectorAll('.like-btn').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+  const likeButtons = document.querySelectorAll('.like-btn');
+  const toggleLikeUrlTemplate = "{% url 'cardnews:toggle_like' 0 %}";
 
-    const billId = this.dataset.billId;
-    const csrfToken = this.dataset.csrfToken;
+  likeButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    fetch(`/cardnews/toggle_like/${billId}/`, {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': csrfToken,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.liked) {
-        this.textContent = '❤️';  // 좋아요 상태면 빨간 하트
-      } else {
-        this.textContent = '🤍';  // 좋아요 안 된 상태면 흰 하트
+      const isAuthenticated = button.dataset.authenticated === 'true';
+      const billId = button.dataset.billId;
+      const csrfToken = button.dataset.csrfToken;
+      const url = toggleLikeUrlTemplate.replace('0', billId);
+
+      if (!isAuthenticated) {
+        const goLogin = confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?");
+        if (goLogin) {
+          window.location.href = '/accounts/login/?next=' + window.location.pathname;
+        }
+        return;
       }
-    })
-    .catch(() => {
-      alert("좋아요 요청 중 오류가 발생했습니다.");
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error('서버 오류 발생');
+        }
+
+        const result = await response.json();
+
+        if (result.liked) {
+          button.innerHTML = '❤️';
+          button.classList.add('text-red-500');
+        } else {
+          button.innerHTML = '🤍';
+          button.classList.remove('text-red-500');
+        }
+      } catch (err) {
+        console.error('좋아요 요청 실패:', err);
+        alert('좋아요 처리 중 문제가 발생했습니다.');
+      }
     });
   });
 });
