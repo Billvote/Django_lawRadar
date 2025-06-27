@@ -52,7 +52,7 @@ SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_KAKAO_KEY = os.getenv('SOCIAL_AUTH_KAKAO_KEY')
 
 # (선택) 카카오에서 이메일도 받아오고 싶으면
-# SOCIAL_AUTH_KAKAO_SCOPE = ['account_email', 'profile_nickname']
+SOCIAL_AUTH_KAKAO_SCOPE = ['profile_nickname']
 # (선택) 이메일이 없으면 회원가입 불가하게 하고 싶으면
 # SOCIAL_AUTH_USER_FIELDS = ['username', 'email', 'first_name', 'last_name']
 # (필요 시) 로그인 실패 시 이동 URL
