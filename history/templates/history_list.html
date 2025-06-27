@@ -5,8 +5,8 @@
 {# ───────────────────────────────────────────
    ▷ HEAD: jQuery-UI CSS                     #}
 {% block head_extra %}
-  <link rel="stylesheet"
-        href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet"
+      href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 {% endblock %}
 
 {% block body %}
@@ -30,254 +30,191 @@
 </div>
 
 <!--────────── Main ──────────-->
-  <!-- 검색창 & 통계 -->
-  <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
-    <div class="flex flex-col lg:flex-row gap-6 items-center">
-
-      <!-- 검색 -->
-      <div class="flex-1 w-full">
-        <form action="{% url 'main:search' %}" method="get" class="h-full">
-          <div class="relative h-full">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-              </svg>
-            </div>
-            <input name="q" id="id_keyword" value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
-                   class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
-            {% if selected_cluster %}
-              <input type="hidden" name="cluster" value="{{ selected_cluster }}">
-            {% endif %}
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 text-cyan-500 rounded-lg hover:text-cyan-600 transition font-semibold">
-              검색
-            </button>
+<!-- 검색창 & 통계 -->
+<div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
+  <div class="flex flex-col lg:flex-row gap-6 items-center">
+    <!-- 검색 -->
+    <div class="flex-1 w-full">
+      <form action="{% url 'main:search' %}" method="get" class="h-full">
+        <div class="relative h-full">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
           </div>
-        </form>
-      </div>
-
-      <!-- 통계 -->
-      <div class="flex gap-8 text-center">
-        <div>
-          <div class="text-2xl font-bold text-gray-900">{{ total_results_count }}</div>
-          <div class="text-sm text-gray-600">총 법안</div>
+          <input name="q" id="id_keyword" value="{{ query }}" placeholder="법안명, 키워드로 검색하세요..."
+                 class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
+          {% if selected_cluster %}
+            <input type="hidden" name="cluster" value="{{ selected_cluster }}">
+          {% endif %}
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 text-cyan-500 rounded-lg hover:text-cyan-600 transition font-semibold">
+            검색
+          </button>
         </div>
-        <div>
-          <div class="text-2xl font-bold text-gray-900">{{ total_cluster_count }}</div>
-          <div class="text-sm text-gray-600">총 키워드</div>
-        </div>
-      </div>
+      </form>
     </div>
-  </div>
-
-  {% if not total_results_count and query %}
-  <!-- 결과 없음 -->
-  <div class="text-center py-20">
-    <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-      <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.084-2.329"/>
-      </svg>
-    </div>
-    <h3 class="text-2xl font-bold text-gray-900 mb-2">검색 결과가 없습니다</h3>
-    <p class="text-gray-600 mb-6">다른 키워드로 다시 검색해보세요</p>
-    <a href="{% url 'history:history_list' %}"
-       class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-      전체 목록 보기
-    </a>
-  </div>
-
-  {% else %}
-  <!--────────── 3-섹션 레이아웃 ──────────-->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-    <!-- ① 최근 개정 -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div style="background:#4fc1af;" class="p-4 rounded-md">
-        <h2 class="text-xl font-bold text-white">✅ 최근 개정</h2>
-         <p class="text-green-100 text-sm mt-1">최근 표결한 법안들</p>
+    <!-- 통계 -->
+    <div class="flex gap-8 text-center">
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ total_results_count }}</div>
+        <div class="text-sm text-gray-600">총 법안</div>
       </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          {% for bill in recent_bills|slice:":8" %}
-          <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                      hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-               onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-            <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
-              {{ bill.title_custom|safe|default:bill.title }}
-            </h3>
-            <div class="flex items-center text-xs text-gray-600 font-semibold">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-              <div style="color: #4fc1af;">
-                {{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-900">{{ total_cluster_count }}</div>
+        <div class="text-sm text-gray-600">총 키워드</div>
       </div>
-    </div>
-
-    <!-- ② 개정 최다 (related_count DESC, 라벨별 1건) -->
-    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div style="background:#fdba74;" class="px-6 py-4">
-        <h2 class="text-xl font-bold text-white">🔁 개정 최다</h2>
-        <p class="text-orange-100 text-sm mt-1">가장 많이 개정된 법안들</p>
-      </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          {% for bill in amended_bills %}
-          <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                      hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-               onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-            <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
-              {{ bill.title_custom|safe|default:bill.title }}
-            </h3>
-            <div class="flex items-center text-xs text-gray-600">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-              <span class="font-semibold"
-                    style="color: #fdba74;">{{ bill.related_count }}회 개정</span>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- ③ 반대 최다 -->
-    <!-- <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div style="background:#fca5a5;" class="px-6 py-4">
-        <h2 class="text-xl font-bold text-white">❌ 반대 최다</h2>
-         <p class="text-rose-100 text-sm mt-1">반대 표가 많았던 최신 법안</p>
-      </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          {% for bill in opposed_bills %}
-          <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                      hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-               onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-            <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
-              {{ bill.title_custom|safe|default:bill.title }}
-            </h3>
-            <div class="flex items-center text-xs text-gray-600">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M18 12H6M7 12l5 5m0 0l5-5m-5 5V6"/>
-              </svg>
-              <span class="font-semibold text-red-600">{{ bill.against|default:0 }}표 반대</span>
-            </div>
-          </div>
-          {% empty %}
-          <p class="text-sm text-gray-500">데이터가 없습니다.</p>
-          {% endfor %}
-        </div>
-      </div>
-    </div> -->
-
-    <!-- 랜덤 법안 -->
-<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-  <div style="background:#fca5a5;" class="px-6 py-4">
-      <h2 class="text-xl font-bold text-cyan-900 text-white">
-        <span class="cursor-pointer hover:text-2xl transition-all duration-200" onclick="window.location.reload()">🎲</span> 랜덤 법안 추천
-      </h2>
-      <!-- <p class="text-sm mt-1 text-white">랜덤으로 추출된 키워드별 최신 법안</p> -->
-      <p class="text-sm mt-1 text-rose-100">주사위를 눌러 랜덤 법안을 확인하세요</p>
-      <!-- 랜덤 버튼 -->
-      <!-- <div class="flex justify-end mb-4">
-        <button onclick="window.location.reload()"
-                class="text-sm font-medium text-white bg-rose-400 hover:bg-rose-500 px-3 py-1.5 rounded-lg shadow transition-all duration-200">
-          🕹️ 새로 추천받기
-        </button>
-      </div> -->
-  </div>
-  <div class="p-6">
-    <div class="space-y-4">
-      {% for bill in cluster_random_latest_bills %}
-      <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
-                  hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
-           onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
-        <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
-          {{ bill.title_custom|safe|default:bill.title }}
-        </h3>
-        <div class="flex items-center justify-between text-xs text-gray-600">
-          <div class="flex items-center gap-2 mt-1">
-            {% if bill.hashtag %}
-              <span class="inline-block text-xs font-semibold bg-gray-100 px-2 py-1 rounded-full"
-                    style="color: #b91c1c; color: #fca5a5;">
-                {{ bill.hashtag}}
-              </span>
-            {% endif %}
-          </div>
-          <!-- {% if bill.last_vote_date %}
-          <span class="text-gray-400">{{ bill.last_vote_date|date:"Y.m.d" }}</span>
-          {% endif %} -->
-        </div>
-      </div>
-      {% empty %}
-      <p class="text-sm text-gray-500">추천 가능한 법안이 없습니다.</p>
-      {% endfor %}
     </div>
   </div>
 </div>
 
+{% if not total_results_count and query %}
+<!--────────── 결과 없음 ──────────-->
+<div class="text-center py-20">
+  <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.084-2.329"/>
+    </svg>
+  </div>
+  <h3 class="text-2xl font-bold text-gray-900 mb-2">검색 결과가 없습니다</h3>
+  <p class="text-gray-600 mb-6">다른 키워드로 다시 검색해보세요</p>
+  <a href="{% url 'history:history_list' %}"
+     class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+    전체 목록 보기
+  </a>
+</div>
 
-  </div>  <!-- /grid -->
-  {% endif %}
+{% else %}
+<!--────────── 3-섹션 레이아웃 ──────────-->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
+  <!-- ① 최근 개정 -->
+  <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div style="background:#4fc1af;" class="p-4 rounded-md">
+      <h2 class="text-xl font-bold text-white">✅ 최근 개정</h2>
+      <p class="text-green-100 text-sm mt-1">최근 표결한 법안들</p>
+    </div>
+    <div class="p-6">
+      <div class="space-y-4">
+        {% for bill in recent_bills|slice:":8" %}
+        <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
+                    hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
+             onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+          <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
+            {{ bill.title_custom|safe|default:bill.title }}
+          </h3>
+          <div class="flex items-center text-xs text-gray-600 font-semibold">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span style="color:#4fc1af;">{{ bill.last_vote_date|default:"-"|date:"Y-m-d" }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 
-  <!-- 위로 올라가기 버튼 -->
+  <!-- ② 개정 최다 -->
+  <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div style="background:#fdba74;" class="px-6 py-4">
+      <h2 class="text-xl font-bold text-white">🔁 개정 최다</h2>
+      <p class="text-orange-100 text-sm mt-1">가장 많이 개정된 법안들</p>
+    </div>
+    <div class="p-6">
+      <div class="space-y-4">
+        {% for bill in amended_bills %}
+        <div class="group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
+                    hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
+             onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+          <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-1 transition-colors duration-200 group-hover:text-cyan-600">
+            {{ bill.title_custom|safe|default:bill.title }}
+          </h3>
+          <div class="flex items-center text-xs text-gray-600">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span class="font-semibold" style="color:#fdba74;">{{ bill.related_count }}회 개정</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 카드뉴스 키워드 -->
+  <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div style="background:#38bdf8;" class="px-6 py-4">
+      <h2 class="text-xl font-bold text-white">📰 카드뉴스 키워드</h2>
+      <p class="text-sm mt-1 text-sky-100">클러스터를 눌러 카드뉴스를 확인하세요</p>
+    </div>
+
+    <div class="p-6">
+      {% if top_clusters %}
+        <div class="flex flex-col gap-3">
+          {% for cid, kw in top_clusters|slice:":7" %}
+            <a href="{% url 'cardnews:card' cid %}"
+               class="group relative block p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1 overflow-hidden">
+
+              <!-- overlay -->
+              <div class="absolute inset-0 opacity-0 group-hover:opacity-10 transition"
+                   style="background:linear-gradient(135deg,
+                          {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }},
+                          {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }}88);"></div>
+
+              <!-- 첫째 줄 : 아이콘 + 키워드 -->
+              <div class="relative z-10 flex items-center">
+                <div class="inline-flex items-center justify-center w-8 h-8 rounded-lg mr-2"
+                     style="background-color: {{ cluster_color_map|dict_get:cid|default:'#67e8f9' }};">
+                  <span class="text-white text-sm font-bold">#</span>
+                </div>
+                <span class="text-sm font-semibold text-gray-800 group-hover:text-cyan-600 transition-colors duration-200">
+                  {{ kw }}
+                </span>
+              </div>
+
+              <!-- 둘째 줄 : 자세히 보기 -->
+              <div class="relative z-10 flex items-center text-xs text-gray-500 group-hover:text-cyan-500 transition-colors duration-200 mt-1">
+                <span class="mr-1">자세히 보기</span>
+                <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform duration-200"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-gray-500">표시할 키워드가 없습니다.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>  <!-- /grid -->
+{% endif %}
+
+<!--────────── 위로 올라가기 버튼 ──────────-->
 <div class="fixed bottom-8 right-8 z-50">
-  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+  <button onclick="window.scrollTo({top:0,behavior:'smooth'})"
           class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
     </svg>
   </button>
 </div>
-
-<!-- ────────── Pagination ──────────
-{% if page_obj.has_other_pages %}
-<div class="mt-16 flex justify-center">
-  <nav class="flex items-center space-x-2">
-    {% if page_obj.has_previous %}
-      <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.previous_page_number }}"
-         class="px-4 py-2 rounded hover:bg-gray-50 transition flex items-center">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg> 이전
-      </a>
-    {% endif %}
-    {% for num in page_range %}
-      {% if num == page_obj.number %}
-        <span class="px-4 py-2 bg-cyan-400 text-white rounded-lg font-semibold">{{ num }}</span>
-      {% else %}
-        <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ num }}"
-           class="px-4 py-2 rounded hover:bg-gray-200 transition">{{ num }}</a>
-      {% endif %}
-    {% endfor %}
-    {% if page_obj.has_next %}
-      <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page_obj.next_page_number }}"
-         class="px-4 py-2 rounded hover:bg-gray-50 transition flex items-center">
-        다음 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </a>
-    {% endif %}
-  </nav>
-</div>
-{% endif %} -->
-
 {% endblock %}
 
 {% block extra_css %}
 <style>
-.line-clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.line-clamp-1{
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
 .ui-autocomplete{z-index:10000;}
 </style>
 {% endblock %}
@@ -289,7 +226,8 @@
 $(function(){
   $("#id_keyword").autocomplete({
     source:"{% url 'history:autocomplete' %}",
-    minLength:1,delay:200,
+    minLength:1,
+    delay:200,
     focus:()=>false,
     select:(e,ui)=>{$("#id_keyword").val(ui.item.value);return false;},
     open:()=>$('.ui-autocomplete').addClass('shadow-lg border-0 rounded-lg mt-2')
