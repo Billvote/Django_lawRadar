@@ -225,7 +225,7 @@ def recommend_party_by_interest(user, age_num=None):
         })
 
     most_similar = max(results, key=lambda x: x['support'], default=None)
-    most_oppose = max(results, key=lambda x: x['oppose'], default=None)
+    most_opposite = max(results, key=lambda x: x['oppose'], default=None)
     most_abstain = max(results, key=lambda x: x['abstain'], default=None)
     most_absent = max(results, key=lambda x: x['absent'], default=None)
 
@@ -240,20 +240,21 @@ def extract_cluster_ids_from_max_clusters(max_clusters):
         if vt in ['찬성', '반대', '기권', '불참'] and 'cluster_id' in v
     }
 
-def get_top_members_for_user_clusters(user_clusters, limit=5):
+def get_top_members_for_user_clusters(user_clusters, vote_type='찬성', limit=2):
     """사용자 관심 클러스터 리스트를 받아서 각 클러스터별 추천 의원 반환"""
     recommended = {}
 
     for cluster_id in user_clusters:
         summaries = VoteSummary.objects.filter(cluster=cluster_id)\
             .select_related('member')\
-            .order_by('-bill_count')[:limit]
+            .order_by(f'-{vote_type}')[:limit]
 
         members = [{
             'id': s.member.id,
             'name': s.member.name,
             'party': s.member.party.party if s.member.party else '소속없음',
             'bill_count': s.bill_count,
+            vote_type: getattr(s, vote_type, 0),
         } for s in summaries]
 
         recommended[cluster_id] = members
@@ -261,11 +262,11 @@ def get_top_members_for_user_clusters(user_clusters, limit=5):
     return recommended
 
 
-def get_recommended_members_from_max_clusters(max_clusters, limit=5):
+def get_recommended_members_from_max_clusters(max_clusters, limit=2):
     """여러 클러스터에서 활동량 높은 의원들 추천"""
     cluster_ids = extract_cluster_ids_from_max_clusters(max_clusters)
     return {
-        cluster_id: get_top_members_by_cluster(cluster_id, limit)
+        cluster_id: get_top_members_for_user_clusters(cluster_id, limit)
         for cluster_id in cluster_ids
     }
 
@@ -334,9 +335,8 @@ def my_page(request):
     # 관심 법안 표결 차트
     cluster_stats_data = get_user_cluster_stats(request.user, cluster_num)
     # 관심사 비슷한 정당 추천
-    most_similar_party, most_opposite_party = recommend_party_by_interest(request.user)
+    most_similar, most_opposite = recommend_party_by_interest(request.user)
 
-    
 
     # 차트 그리기
     # cluster_stats_data = get_user_cluster_stats(request.user)
@@ -345,6 +345,8 @@ def my_page(request):
     # ages =  Age.objects.all().order_by('id')
 
     # 의원 - 클러스터 추천 연결
+    member_name = request.user.username
+    max_clusters = get_max_clusters_for_member(member_name)
     recommended_members = get_top_members_for_user_clusters(liked_clusters, limit=5)
 
 
@@ -373,13 +375,13 @@ def my_page(request):
 
         # 해시태그 색
         'palette_colors': PALETTE,
-        'most_similar_party': most_similar_party,
-        'most_opposite_party': most_opposite_party,
-        'ages': ages,
+        'most_similar_party': most_similar,
+        'most_opposite_party': most_opposite,
+        # 'ages': ages,
 
         # 의원 매칭
+        'max_clusters': max_clusters,
         'recommended_members': recommended_members,
-        'max_clusters': user_clusters,
     }
     
 
