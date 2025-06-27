@@ -54,12 +54,12 @@ let selectedAge = null;
 let defaultAgeBtn = null;
 
 // --- 색상 팔레트 정의 ---
-const freshColors = [
-  "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
-  "#6ee7b7", "#7dd3fc", "#c4b5fd", "#fda4af", "#5eead4"
+const calmPastels = [
+  "#A5C8E1", "#F2D7D9", "#D2E3C8", "#F6EAC2", "#D9CFE2",
+  "#CDE4B3", "#FFE5B4", "#C8D8E4", "#E8C4C4", "#D7E9F7"
 ];
-const sidoColors = d3.scaleOrdinal(freshColors);
-const sigunguColors = d3.scaleOrdinal(freshColors);
+const sidoColors = d3.scaleOrdinal(calmPastels);
+const sigunguColors = d3.scaleOrdinal(calmPastels);
 
 // --- 팝업 함수 ---
 function openPopup(title, contentHtml) {
@@ -135,34 +135,54 @@ function renderSummary(data) {
 
   // 동적 아이콘, 텍스트, 색상 반환 함수
 function getIconTextColor(type, ratios) {
-  if (type === '기권') {
-    return { icon: '🚫', text: '기권이 많은 법안이에요.', color: 'text-gray-600' };
-  }
-
+  // 불참
   if (type === '불참') {
-    return { icon: '😭', text: '불참이 많은 법안이에요.', color: 'text-gray-400' };
+    if (ratios.불참 >= 20) {
+      return { icon: '😭', text: '불참이 많은 법안이에요.', color: 'text-gray-400' };
+    } else {
+      return { icon: '🙂', text: '대체로 출석했어요.', color: 'text-gray-300' };
+    }
   }
 
-  // 찬성/반대 판단
+  // 기권
+  if (type === '기권') {
+    if (ratios.기권 >= 20) {
+      return { icon: '🚫', text: '기권이 많은 법안이에요.', color: 'text-gray-500' };
+    } else {
+      return { icon: '✔️', text: '기권은 적은 편이에요.', color: 'text-gray-300' };
+    }
+  }
+
+  // 찬성
   if (type === '찬성') {
-    if (ratios.찬성 >= 50 && ratios.반대 < 50) {
-      return { icon: '⭕️', text: '주로 찬성하는 법안이에요.', color: 'text-blue-600' };
+    if (ratios.찬성 >= 70 && ratios.반대 <= 20) {
+      return { icon: '🟦', text: '강하게 찬성하는 법안이에요.', color: 'text-blue-700' };
+    } else if (ratios.찬성 >= 50) {
+      return { icon: '⭕️', text: '주로 찬성하는 법안이에요.', color: 'text-blue-500' };
+    } else if (ratios.찬성 >= 30) {
+      return { icon: '🔹', text: '찬성 경향이 조금 있어요.', color: 'text-blue-300' };
     } else {
-      return null;  // 조건에 안 맞으면 표시하지 않음
+      return null;
     }
   }
 
+  // 반대
   if (type === '반대') {
-    if (ratios.반대 >= 50 && ratios.찬성 < 50 && ratios.반대 > 0) {
-      return { icon: '❌', text: '주로 반대하는 법안이에요.', color: 'text-red-600' };
+    if (ratios.반대 >= 70 && ratios.찬성 <= 20) {
+      return { icon: '🟥', text: '강하게 반대하는 법안이에요.', color: 'text-red-700' };
+    } else if (ratios.반대 >= 50) {
+      return { icon: '❌', text: '주로 반대하는 법안이에요.', color: 'text-red-500' };
+    } else if (ratios.반대 >= 30) {
+      return { icon: '🔻', text: '반대 경향이 조금 있어요.', color: 'text-red-300' };
     } else {
-      return null;  // 반대 비율이 0이거나 조건에 안 맞으면 표시하지 않음
+      return null;
     }
   }
 
-  // 그 외는 입장 불명확한 경우
-  return { icon: '➖', text: '입장이 명확하지 않은 법안이에요.', color: 'text-gray-500' };
+  // 기본
+  return { icon: '➖', text: '입장이 명확하지 않은 법안이에요.', color: 'text-gray-400' };
 }
+
 
 
 voteTypes.forEach(type => {
@@ -423,8 +443,8 @@ function render(node, width, height, selectedMemberName = null) {
       .style("align-items", "center")
       .style("justify-content", "center")
       .style("text-align", "center")
-      .style("font-family", "'Cafe24Ssurround', 'Pretendard', 'Noto Sans KR', 'Nanum Gothic', sans-serif")
-      .style("font-weight", "600")
+      .style("font-family", "'SUIT-Regular', sans-serif")
+      .style("font-weight", "400")
       .style("letter-spacing", "0.02em")
       .style("color", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";

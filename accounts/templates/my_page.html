@@ -20,6 +20,40 @@
   </div>
 </section>
 
+<div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
+  <!-- 추천 의원 섹션 -->
+  <section class="mt-8">
+    <h2 class="text-xl font-semibold mb-4">📌 관심 클러스터 기반 추천 의원</h2>
+
+    {% if recommended_members %}
+      {% for cluster_id, members in recommended_members.items %}
+        <div class="mb-6 p-4 border rounded-lg shadow-sm bg-white">
+          <h3 class="text-lg font-bold mb-2 text-indigo-700">
+            관심 클러스터 #{{ cluster_id }}
+            {% if max_clusters and max_clusters.cluster_id == cluster_id %}
+              ({{ max_clusters.cluster_keyword }})
+            {% elif max_clusters|get_item:cluster_id %}
+              ({{ max_clusters|get_item:cluster_id.cluster_keyword }})
+            {% endif %}
+          </h3>
+          
+          <ul class="divide-y divide-gray-200">
+            {% for member in members %}
+              <li class="py-2">
+                <span class="font-semibold">{{ member.name }}</span>
+                <span class="text-sm text-gray-600">({{ member.party }})</span>
+                <span class="text-sm text-gray-500 ml-2">법안 수: {{ member.bill_count }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
+    {% endif %}
+  </section>
+</div>
+
 <!-- 2열 레이아웃: 관심 법안 리스트 & 추천 법안 -->
 <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
 

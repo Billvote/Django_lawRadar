@@ -82,31 +82,21 @@ def get_confidence_level(vote_count):
     else:
         return "Low"
 
-def member_vote_summary_api(request):
-    member_name = request.GET.get('member_name')
-    if not member_name:
-        return JsonResponse({'error': 'member_name parameter is required'}, status=400)
-
+def get_max_clusters_for_member(member_name):
     summaries = VoteSummary.objects.filter(member__name=member_name)
     if not summaries.exists():
-        return JsonResponse({'error': 'No summary data available. Please generate it first.'}, status=404)
+        return {}
 
     max_clusters = {}
-
     for vote_type in ['찬성', '반대', '기권', '불참']:
         filtered = [
             s for s in summaries
             if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT
         ]
-
         if not filtered:
             continue
 
         top_summary = max(filtered, key=lambda s: get_ratio(s, vote_type))
-
-        vote_count = top_summary.찬성 + top_summary.반대 + top_summary.기권 + top_summary.불참
-        confidence = get_confidence_level(vote_count)
-
         counts = {
             '찬성': top_summary.찬성,
             '반대': top_summary.반대,
@@ -118,20 +108,30 @@ def member_vote_summary_api(request):
 
         bill = Bill.objects.filter(cluster=top_summary.cluster).first()
         cluster_keyword = bill.cluster_keyword if bill and bill.cluster_keyword else "알 수 없음"
+        confidence = get_confidence_level(total_votes)
 
         max_clusters[vote_type] = {
             'cluster_keyword': cluster_keyword,
             'cluster_id': top_summary.cluster,
             'counts': counts,
             'ratios': ratios,
-            'bill_count': top_summary.bill_count if top_summary.bill_count > 0 else 1,
+            'bill_count': top_summary.bill_count,
             'confidence': confidence,
         }
 
-    total_vote_count = sum(
+    max_clusters['total_vote_count'] = sum(
         sum(v['counts'].values()) for v in max_clusters.values() if 'counts' in v
     )
-    max_clusters['total_vote_count'] = total_vote_count
+    return max_clusters
+
+def member_vote_summary_api(request):
+    member_name = request.GET.get('member_name')
+    if not member_name:
+        return JsonResponse({'error': 'member_name parameter is required'}, status=400)
+
+    max_clusters = get_max_clusters_for_member(member_name)
+    if not max_clusters:
+        return JsonResponse({'error': 'No summary data available. Please generate it first.'}, status=404)
 
     return JsonResponse(max_clusters)
 
