@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load custom_filters %}
+{% load account_custom_filters %}
 {% load static %}
 {% block body %}
 
@@ -12,7 +12,7 @@
     {% for cluster, count in cluster_counts.items %}
     <div class="p-4 border rounded-md">
       <h4 class="font-semibold">클러스터 {{ cluster }} ({{ count }}건)</h4>
-      <p class="text-gray-600 text-sm mt-1">주요 키워드: <strong>{{ cluster_keywords|dict_get:cluster }}</strong></p>
+      <p class="text-gray-600 text-sm mt-1">주요 키워드: <strong>{{ cluster_keywords|get_item:cluster }}</strong></p>
     </div>
     {% empty %}
     <p style="font-family: HSSanTokki20;">텅~</p>
@@ -21,39 +21,37 @@
 </section>
 
 
-<div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
-  <!-- 추천 의원 섹션 -->
-  <section class="mt-8">
-    <h2 class="text-xl font-semibold mb-4">📌 관심 클러스터 기반 추천 의원</h2>
+<!-- 추천 의원 섹션 -->
+<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
+  <h2 class="text-xl font-semibold mb-4">📌 관심 클러스터 기반 추천 의원</h2>
 
-    {% if recommended_members %}
-      {% for cluster_id, members in recommended_members.items %}
-        <div class="mb-6 p-4 border rounded-lg shadow-sm bg-white">
-          <h3 class="text-lg font-bold mb-2 text-indigo-700">
-            관심 클러스터 #{{ cluster_id }}
-            {% if max_clusters and max_clusters.cluster_id == cluster_id %}
-              ({{ max_clusters.cluster_keyword }})
-            {% elif max_clusters|get_item:cluster_id %}
-              ({{ max_clusters|get_item:cluster_id.cluster_keyword }})
+  {% if recommended_members %}
+    {% for cluster_id, members in recommended_members.items %}
+      <div class="mb-6 p-4 border rounded-lg shadow-sm bg-white">
+        <h3>
+          관심 클러스터 #{{ cluster_id }}
+          {% with cluster_info=max_clusters|get_item:cluster_id %}
+            {% if cluster_info %}
+              ({{ cluster_info.cluster_keyword }})
             {% endif %}
-          </h3>
-          
-          <ul class="divide-y divide-gray-200">
-            {% for member in members %}
-              <li class="py-2">
-                <span class="font-semibold">{{ member.name }}</span>
-                <span class="text-sm text-gray-600">({{ member.party }})</span>
-                <span class="text-sm text-gray-500 ml-2">법안 수: {{ member.bill_count }}</span>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
-    {% endif %}
-  </section>
-</div>
+          {% endwith %}
+        </h3>
+
+        <ul class="divide-y divide-gray-200">
+          {% for member in members %}
+            <li class="py-2">
+              <span class="font-semibold">{{ member.name }}</span>
+              <span class="text-sm text-gray-600">({{ member.party }})</span>
+              <span class="text-sm text-gray-500 ml-2">법안 수: {{ member.bill_count }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
+  {% endif %}
+</section>
 
 <!-- 2열 레이아웃: 관심 법안 리스트 & 추천 법안 -->
 <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">

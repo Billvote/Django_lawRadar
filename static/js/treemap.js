@@ -443,7 +443,7 @@ function render(node, width, height, selectedMemberName = null) {
       .style("align-items", "center")
       .style("justify-content", "center")
       .style("text-align", "center")
-      .style("font-family", "'SUIT-Regular', sans-serif")
+      .style("font-family", "sans-serif")
       .style("font-weight", "400")
       .style("letter-spacing", "0.02em")
       .style("color", d => {

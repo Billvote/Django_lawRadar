@@ -14,6 +14,8 @@ from geovote.models import Age, Member
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 import json
 from collections import namedtuple
+from geovote.views import get_max_clusters_for_member
+import logging
 
 
 
@@ -178,6 +180,44 @@ def recommend_party_by_interest(user, age_num=None):
 
     return most_similar, most_opposite
 
+# 개인별 관심 클러스터 - 의원 클러스터 매칭
+def extract_cluster_ids_from_max_clusters(max_clusters):
+    """max_clusters에서 cluster_id만 추출"""
+    return {
+        v['cluster_id']
+        for vt, v in max_clusters.items()
+        if vt in ['찬성', '반대', '기권', '불참'] and 'cluster_id' in v
+    }
+
+def get_top_members_for_user_clusters(user_clusters, limit=5):
+    """사용자 관심 클러스터 리스트를 받아서 각 클러스터별 추천 의원 반환"""
+    recommended = {}
+
+    for cluster_id in user_clusters:
+        summaries = VoteSummary.objects.filter(cluster=cluster_id)\
+            .select_related('member')\
+            .order_by('-bill_count')[:limit]
+
+        members = [{
+            'id': s.member.id,
+            'name': s.member.name,
+            'party': s.member.party.party if s.member.party else '소속없음',
+            'bill_count': s.bill_count,
+        } for s in summaries]
+
+        recommended[cluster_id] = members
+
+    return recommended
+
+
+def get_recommended_members_from_max_clusters(max_clusters, limit=5):
+    """여러 클러스터에서 활동량 높은 의원들 추천"""
+    cluster_ids = extract_cluster_ids_from_max_clusters(max_clusters)
+    return {
+        cluster_id: get_top_members_by_cluster(cluster_id, limit)
+        for cluster_id in cluster_ids
+    }
+
 
 # my_page 화면
 @login_required
@@ -265,8 +305,8 @@ def my_page(request):
     ages =  Age.objects.all().order_by('id')
 
     # 의원 - 클러스터 추천 연결
-    max_clusters = get_max_clusters_for_member(request.user.username)
-    recommended_members = get_recommended_members_from_max_clusters(max_clusters, limit=5)
+    recommended_members = get_top_members_for_user_clusters(liked_clusters, limit=5)
+
 
     context = {
         'username': request.user.username,
@@ -295,38 +335,8 @@ def my_page(request):
 
         # 의원 매칭
         'recommended_members': recommended_members,
-        'max_clusters': max_clusters,
+        'max_clusters': user_clusters,
     }
     
 
     return render(request, 'my_page.html', context)
-
-# 개인별 관심 클러스터 - 의원 클러스터 매칭-------------------------------------------------
-def extract_cluster_ids_from_max_clusters(max_clusters):
-    """max_clusters에서 cluster_id만 추출"""
-    return {
-        v['cluster_id']
-        for vt, v in max_clusters.items()
-        if vt in ['찬성', '반대', '기권', '불참'] and 'cluster_id' in v
-    }
-
-def get_top_members_by_cluster(cluster_id, limit=5):
-    """특정 클러스터에서 활동량(bill_count) 많은 의원 추천"""
-    summaries = VoteSummary.objects.filter(cluster=cluster_id)\
-        .select_related('member')\
-        .order_by('-bill_count')[:limit]
-
-    return [{
-        'id': s.member.id,
-        'name': s.member.name,
-        'party': s.member.party.name if s.member.party else '소속없음',
-        'bill_count': s.bill_count,
-    } for s in summaries]
-
-def get_recommended_members_from_max_clusters(max_clusters, limit=5):
-    """여러 클러스터에서 활동량 높은 의원들 추천"""
-    cluster_ids = extract_cluster_ids_from_max_clusters(max_clusters)
-    return {
-        cluster_id: get_top_members_by_cluster(cluster_id, limit)
-        for cluster_id in cluster_ids
-    }
