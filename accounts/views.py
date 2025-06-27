@@ -10,8 +10,12 @@ from django.db.models import Q
 from billview.models import Bill
 from geovote.models import Age, Member
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
+from geovote.models import Age, Member
+from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 import json
 from collections import namedtuple
+from geovote.views import get_max_clusters_for_member
+import logging
 
 
 PALETTE = [
@@ -181,9 +185,45 @@ def recommend_party_by_interest(user, age_num=None):
     most_abstain = max(results, key=lambda x: x['abstain'], default=None)
     most_absent = max(results, key=lambda x: x['absent'], default=None)
 
+    return most_similar, most_opposite
+
+# 개인별 관심 클러스터 - 의원 클러스터 매칭
+def extract_cluster_ids_from_max_clusters(max_clusters):
+    """max_clusters에서 cluster_id만 추출"""
+    return {
+        v['cluster_id']
+        for vt, v in max_clusters.items()
+        if vt in ['찬성', '반대', '기권', '불참'] and 'cluster_id' in v
+    }
+
+def get_top_members_for_user_clusters(user_clusters, limit=5):
+    """사용자 관심 클러스터 리스트를 받아서 각 클러스터별 추천 의원 반환"""
+    recommended = {}
+
+    for cluster_id in user_clusters:
+        summaries = VoteSummary.objects.filter(cluster=cluster_id)\
+            .select_related('member')\
+            .order_by('-bill_count')[:limit]
+
+        members = [{
+            'id': s.member.id,
+            'name': s.member.name,
+            'party': s.member.party.party if s.member.party else '소속없음',
+            'bill_count': s.bill_count,
+        } for s in summaries]
+
+        recommended[cluster_id] = members
+
+    return recommended
 
 
-    return most_similar, most_oppose
+def get_recommended_members_from_max_clusters(max_clusters, limit=5):
+    """여러 클러스터에서 활동량 높은 의원들 추천"""
+    cluster_ids = extract_cluster_ids_from_max_clusters(max_clusters)
+    return {
+        cluster_id: get_top_members_by_cluster(cluster_id, limit)
+        for cluster_id in cluster_ids
+    }
 
 
 # my_page 화면
@@ -261,9 +301,20 @@ def my_page(request):
     # 관심 법안 표결 차트
     cluster_stats_data = get_user_cluster_stats(request.user, cluster_num)
     # 관심사 비슷한 정당 추천
-    most_similar, most_opposite = recommend_party_by_interest(request.user)
+    most_similar_party, most_opposite_party = recommend_party_by_interest(request.user)
 
     
+
+    # 차트 그리기
+    # cluster_stats_data = get_user_cluster_stats(request.user)
+
+    # # 대수 드롭박스
+    # ages =  Age.objects.all().order_by('id')
+
+    # 의원 - 클러스터 추천 연결
+    recommended_members = get_top_members_for_user_clusters(liked_clusters, limit=5)
+
+
     context = {
         'username': request.user.username,
 
@@ -289,6 +340,13 @@ def my_page(request):
 
         # 해시태그 색
         'palette_colors': PALETTE,
+        'most_similar_party': most_similar_party,
+        'most_opposite_party': most_opposite_party,
+        'ages': ages,
+
+        # 의원 매칭
+        'recommended_members': recommended_members,
+        'max_clusters': user_clusters,
     }
     
 
