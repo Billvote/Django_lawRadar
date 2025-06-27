@@ -181,7 +181,7 @@ def recommend_party_by_interest(user, age_num=None):
         })
 
     most_similar = max(results, key=lambda x: x['support'], default=None)
-    most_oppose = max(results, key=lambda x: x['oppose'], default=None)
+    most_opposite = max(results, key=lambda x: x['oppose'], default=None)
     most_abstain = max(results, key=lambda x: x['abstain'], default=None)
     most_absent = max(results, key=lambda x: x['absent'], default=None)
 
@@ -301,9 +301,8 @@ def my_page(request):
     # 관심 법안 표결 차트
     cluster_stats_data = get_user_cluster_stats(request.user, cluster_num)
     # 관심사 비슷한 정당 추천
-    most_similar_party, most_opposite_party = recommend_party_by_interest(request.user)
+    most_similar, most_opposite = recommend_party_by_interest(request.user)
 
-    
 
     # 차트 그리기
     # cluster_stats_data = get_user_cluster_stats(request.user)
@@ -340,9 +339,9 @@ def my_page(request):
 
         # 해시태그 색
         'palette_colors': PALETTE,
-        'most_similar_party': most_similar_party,
-        'most_opposite_party': most_opposite_party,
-        'ages': ages,
+        'most_similar_party': most_similar,
+        'most_opposite_party': most_opposite,
+        # 'ages': ages,
 
         # 의원 매칭
         'recommended_members': recommended_members,

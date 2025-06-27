@@ -93,7 +93,7 @@
                    style="background: linear-gradient(135deg, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}, {{ label_color_map|dict_get:bill.label|default:'#67e8f9' }}dd);">
                 
 
-                <!-- Like Button -->
+                <!-- 좋아요 버튼 -->
                 {% if user.is_authenticated %}
                   <button type="button"
                           class="like-btn text-2xl absolute top-4 right-4"
