@@ -26,9 +26,9 @@
   <!-- 좌측: 관심 법안 리스트 -->
   <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
     <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
-      <h2 class="text-xl font-bold text-white">❤️ 관심 있는 법안 리스트</h2>
+      <h2 class="text-xl font-bold text-white">관심 있는 법안 리스트</h2>
     </div>
-    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
       {% for bill in liked_bills %}
       <div class="relative group bill-card border-b border-gray-100 pb-4 last:border-b-0 last:pb-0 p-3 rounded-lg cursor-pointer
                   hover:bg-gray-50 hover:-translate-y-[2px] hover:shadow-lg transition-all duration-200"
@@ -44,10 +44,12 @@
         </button>
         {% endif %}
 
+        <!-- 제목 -->
         <h3 class="font-semibold text-gray-900 mb-2 pr-12 line-clamp-2 transition-colors duration-200 group-hover:text-cyan-600">
           {{ bill.title }}
         </h3>
 
+        <!-- 서브 정보 -->
         <div class="flex flex-wrap items-center text-sm text-gray-600 font-semibold gap-x-4">
           <div class="flex items-center gap-x-1">
             <span>📃</span>
@@ -55,7 +57,7 @@
           </div>
           <div class="flex items-center gap-x-1">
             <span>📅</span>
-            <span>{{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span>
+            <span>{{ bill.date|default:"-"|date:"Y-m-d" }}</span>
           </div>
         </div>
       </div>
@@ -71,8 +73,11 @@
   <!-- 우측: 추천 법안 리스트 -->
   {% if recommended_bills %}
   <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
-    <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3>
-    <ul class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+    <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
+      <h2 class="text-xl font-bold text-white">이런 법안은 어때요?</h2>
+    </div>
+    <!-- <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3> -->
+    <ul class="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
       {% for bill in recommended_bills %}
       <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
           onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
@@ -87,9 +92,17 @@
 
 <!-- 클러스터별 투표 통계 차트 영역 -->
 <section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow border border-gray-200">
-  <h3 class="text-lg font-bold mb-6">📊 관심 클러스터별 정당별 투표 통계</h3>
-  <label for="clusterSelect" class="font-bold block mb-2">🧠 클러스터 선택</label>
-  <select id="clusterSelect" class="p-2 border rounded w-full md:w-1/2">
+  <h3 class="text-lg font-bold mb-6">📊 내 관심 법안에 정당은 어떤 입장일까?</h3>
+  <label for="ageSelect" class="font-bold block mb-2">📅 대수 선택</label>
+  <select id="ageSelect" class="p-2 border rounded w-full md:w-1/2 mb-4">
+    {% for age in ages %}
+      <option value="{{ age.id }}">{{ age.name }}</option>  {# name 대신 적절한 필드로 변경 #}
+    {% endfor %}
+  </select>
+
+  <label for="clusterSelect" class="font-bold block mb-2"></label>
+  <select id="clusterSelect"
+          class="w-full appearance-none border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
     {% for cluster_num, data in cluster_data.items %}
       <option value="{{ cluster_num }}">Cluster {{ cluster_num }}: {{ data.cluster_keywords }}</option>
     {% endfor %}
@@ -97,71 +110,13 @@
   <div id="clusterVoteChart"></div>
 
   <!-- JSON 데이터를 숨겨서 JS에서 사용 -->
-<script type="application/json" id="cluster-vote-data">
-  {{ cluster_data|safe|json_script:"cluster-vote-data" }}
-</script>
-<script type="application/json" id="cluster-categories">
-  {{ result_types|safe|json_script:"cluster-categories" }}
-</script>
-<script type="application/json" id="cluster-party-names">
-  {{ party_names|safe|json_script:"cluster-party-names" }}
-</script>
-<script type="application/json" id="cluster-party-colors">
-  {{ party_colors|safe|json_script:"cluster-party-colors" }}
-</script>
-</section>
+{{ cluster_data|json_script:"cluster-vote-data" }}
+{{ result_types|json_script:"cluster-categories" }}
+{{ party_names|json_script:"cluster-party-names" }}
+{{ party_colors|json_script:"cluster-party-colors" }}
 
 {{ cluster_stats_data|json_script:"cluster-stats-data" }}
 
-
-<!-- 페이지네이션 -->
-<div class="pagination mt-12 mb-12 flex justify-center">
-  <nav class="flex items-center space-x-2">
-    
-    {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}"
-         class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        이전
-      </a>
-    {% else %}
-      <span class="px-4 py-2 text-gray-400 flex items-center">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        이전
-      </span>
-    {% endif %}
-
-    {% for num in page_range %}
-      {% if num == page_obj.number %}
-        <span class="px-4 py-2 bg-cyan-400 text-white rounded font-semibold">{{ num }}</span>
-      {% else %}
-        <a href="?page={{ num }}"
-           class="px-4 py-2 rounded hover:bg-gray-200 transition-colors duration-300">{{ num }}</a>
-      {% endif %}
-    {% endfor %}
-
-    {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}"
-         class="px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-300 flex items-center">
-        다음
-        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </a>
-    {% else %}
-      <span class="px-4 py-2 text-gray-400 flex items-center">
-        다음
-        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-      </span>
-    {% endif %}
-  </nav>
-</div>
 </div>
 </section>
 
@@ -199,6 +154,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
   const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
   const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
+  const softColors = [
+  '#38bdf8', // sky
+  '#34d399', // emerald
+  '#f472b6', // pink
+  '#facc15', // yellow
+  '#a78bfa', // purple
+  '#fb923c', // orange
+];
 
   let clusterChart = null;
 
@@ -209,6 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (clusterChart) clusterChart.destroy();
       return;
     }
+    console.log("선택된 클러스터 번호:", clusterSelect.value);
+    console.log("clusterVoteData keys:", Object.keys(clusterVoteData));
+    console.log("데이터 유무 확인:", clusterVoteData[clusterSelect.value]);
+
+
 
     const partyStats = clusterObj.party_stats;
 
@@ -230,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bar: {
           horizontal: true,
           barHeight: '70%',
+          borderRadius: 6, // 둥근 막대
         }
       },
       dataLabels: {
@@ -241,13 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
       series: series,
       xaxis: {
         categories: partyNames,
-        title: { text: '정당' },
+        title: { text: '비율' },
         labels: { formatter: val => val.toFixed(0) + '%' }
       },
       yaxis: {
         title: { text: '정당' }
       },
-      colors: partyColors,
+      colors: softColors,
       legend: { position: 'top' },
       tooltip: {
         y: {

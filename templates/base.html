@@ -222,6 +222,23 @@
       text-align: center;
       width: 100%;
     }
+
+    .scrollbar-custom::-webkit-scrollbar {
+      width: 6px; /* 너비 줄이기 */
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2); /* thumb 색 */
+      border-radius: 9999px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.3);
+    }
   </style>
 
   {% block extra_css %}

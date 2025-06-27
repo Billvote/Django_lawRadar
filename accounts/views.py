@@ -54,8 +54,9 @@ def get_user_cluster_stats(user):
             'result_types': [],
         }
     
-    # Age 조건은 필요에 따라 조절 가능
-    age = Age.objects.first()
+    # Age 조건
+    if age is None:
+        age = Age.objects.first()
 
     # 클러스터 키워드 조회
     keywords_raw = ClusterKeyword.objects.filter(cluster_num__in=liked_clusters)
@@ -72,6 +73,8 @@ def get_user_cluster_stats(user):
         cluster_num__in=liked_clusters,
         # age=age,  # 필요하면 age 조건 추가
     ).select_related('party')
+
+    # 의석수 상위 8개 필터링
 
     party_names = sorted({stat.party.party for stat in stats})
     party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
@@ -95,7 +98,7 @@ def get_user_cluster_stats(user):
             cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
 
     cluster_vote_data_dict = {
-        cluster_num: {
+        str(cluster_num): {
             'cluster_num': cluster_num,
             'cluster_keywords': cluster_keywords.get(cluster_num, ''),
             'party_stats': party_stats,
@@ -173,24 +176,14 @@ def my_page(request):
 
     # 차트 그리기
     cluster_stats_data = get_user_cluster_stats(request.user)
-
-    # 페이지네이션
-    paginator = Paginator(bill_list, 5)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    current = page_obj.number
-    total = paginator.num_pages
-    start = ((current - 1) // 10) * 10 + 1
-    end = min(start + 9, total)
-    page_range = range(start, end + 1)
+    # 대수 드롭박스
+    ages =  Age.objects.all().order_by('id')
 
     context = {
         'username': request.user.username,
 
-        'liked_bills': page_obj,
+        'liked_bills': bill_list,
         'liked_ids': list(liked_ids),
-
-        'page_obj': page_obj,
-        'page_range': page_range,
 
         # 클러스터
         'cluster_counts': cluster_counts,
@@ -202,5 +195,11 @@ def my_page(request):
 
         # 통계 데이터
         'cluster_stats_data': cluster_stats_data,
+        'cluster_data': cluster_stats_data['cluster_data'],
+        'party_names': cluster_stats_data['party_names'],
+        'party_colors': cluster_stats_data['party_colors'],
+        'result_types': cluster_stats_data['result_types'],
+
+        'ages': ages,
     }
     return render(request, 'my_page.html', context)
