@@ -23,7 +23,7 @@
 
 <!-- 추천 의원 섹션 -->
 <section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
-  <h2 class="text-xl font-semibold mb-4">📌 관심 클러스터 기반 추천 의원</h2>
+  <h2 class="text-xl font-semibold mb-4">📌 내가 관심있는 주제에 가장 많이 찬성한 의원</h2>
 
   {% if recommended_members %}
     {% for cluster_id, members in recommended_members.items %}
@@ -41,7 +41,7 @@
           {% for member in members %}
             <li class="py-2">
               <span class="font-semibold">{{ member.name }}</span>
-              <span class="text-sm text-gray-600">({{ member.party }})</span>
+              <span class="text-sm text-gray-600">{{ member.party }}</span>
               <span class="text-sm text-gray-500 ml-2">법안 수: {{ member.bill_count }}</span>
             </li>
           {% endfor %}
