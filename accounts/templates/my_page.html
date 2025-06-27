@@ -6,20 +6,55 @@
 <h2 class="text-xl font-bold mb-8">🍀{{ username }}님의 요즘 관심사는?</h2>
 
 <!-- 1열: 관심 법안 클러스터 분석 (full width) -->
-<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
+<section class="max-w-xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
   <h3 class="text-lg font-bold mb-6">🧠 관심 법안 클러스터 분석</h3>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
     {% for cluster, count in cluster_counts.items %}
-    <div class="p-4 border rounded-md">
-      <h4 class="font-semibold">클러스터 {{ cluster }} ({{ count }}건)</h4>
-      <p class="text-gray-600 text-sm mt-1">주요 키워드: <strong>{{ cluster_keywords|get_item:cluster }}</strong></p>
-    </div>
+      <div class="p-4 border rounded-md cursor-pointer transition" onclick="toggleCluster('{{ cluster }}')">
+        <h4 class="font-semibold flex justify-between items-center">
+          키워드 {{ cluster }} ({{ count }}건)
+          <span id="arrow-{{ cluster }}" class="transition-transform">&#9660;</span>
+        </h4>
+        <h3 class="text-gray-600 mt-1 inline-block max-x-full">
+          {% with cluster_keywords|dict_get:cluster as keywords_str %}
+          {% if keywords_str %}
+            {% with keywords_str|split_by_comma as keywords_list %}
+              {% random_color_for_cluster cluster as color %}
+              {% for kw in keywords_list %}
+                <span class="inline-block mr-2 mb-1 px-2 py-0.5 rounded-3xl text-sm text-white font-semibold"
+                      style="background-color: {{ color }};">
+                  #{{ kw }}
+                </span>
+              {% endfor %}
+            {% endwith %}
+          {% else %}
+            없음
+          {% endif %}
+        {% endwith %}
+        </h3>
+
+        <!-- 접히는 콘텐츠 -->
+        <div id="cluster-bills-{{ cluster }}" class="scrollbar-custom max-h-[600px] overflow-y-auto pr-2 mt-4 hidden">
+          {% for bill in liked_bills %}
+            {% if bill.cluster == cluster %}
+              <div class="border-t mt-2 pt-2">
+                <p class="text-sm font-semibold cursor-pointer"
+                    onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+                    {{ bill.title }}
+                </p>
+                <!-- <p class="text-xs text-gray-500">{{ bill.bill_number }} | {{ bill.vote.date|date:"Y-m-d" }}</p> -->
+              </div>
+            {% endif %}
+          {% empty %}
+            <p class="text-sm text-gray-500">해당 클러스터에 법안이 없습니다.</p>
+          {% endfor %}
+        </div>
+      </div>
     {% empty %}
-    <p style="font-family: HSSanTokki20;">텅~</p>
+      <p class="text-sm text-gray-400">좋아요한 클러스터가 없습니다.</p>
     {% endfor %}
   </div>
 </section>
-
 
 <!-- 추천 의원 섹션 -->
 <section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
@@ -57,7 +92,7 @@
 <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-8">
 
   <!-- 좌측: 관심 법안 리스트 -->
-  <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
+  <!-- <section class="w-full md:w-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden p-6">
     <div style="background:#38bdf8;" class="p-4 rounded-md mb-6">
       <h2 class="text-xl font-bold text-white">관심 있는 법안 리스트</h2>
     </div>
@@ -77,12 +112,10 @@
         </button>
         {% endif %}
 
-        <!-- 제목 -->
         <h3 class="font-semibold text-gray-900 mb-2 pr-12 line-clamp-2 transition-colors duration-200 group-hover:text-cyan-600">
           {{ bill.title }}
         </h3>
 
-        <!-- 서브 정보 -->
         <div class="flex flex-wrap items-center text-sm text-gray-600 font-semibold gap-x-4">
           <div class="flex items-center gap-x-1">
             <span>📃</span>
@@ -101,7 +134,7 @@
       </a>
       {% endfor %}
     </div>
-  </section>
+  </section> -->
 
   <!-- 우측: 추천 법안 리스트 -->
   {% if recommended_bills %}
@@ -131,7 +164,7 @@
   <select id="clusterSelect" onchange="onClusterChange(this)"
           class="w-full appearance-none border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
     {% for cluster_num, data in cluster_data.items %}
-      <option value="{{ cluster_num }}">Cluster {{ cluster_num }}: {{ data.cluster_keywords }}</option>
+      <option value="{{ cluster_num }}">{{ data.cluster_keywords }}</option>
     {% endfor %}
   </select>
   <div id="clusterVoteChart"></div>
@@ -147,31 +180,30 @@
 </div>
 </section>
 
-<section class="mt-8 p-4 bg-white rounded shadow">
-<h3 class="text-lg font-bold mt-6">🧭 정치 성향 기반 정당 추천</h3>
-<ul class="space-y-2 mt-2">
-  <li>
-    ✅ <strong>당신의 관심사와 가장 유사한 정당:</strong><br>
-    {% if most_similar_party %}
-      {{ most_similar_party.party }}<br>
-      평균 찬성률: {{ most_similar_party.support|floatformat:1 }}%<br>
-      반대: {{ most_similar_party.oppose|floatformat:1 }}%, 기권: {{ most_similar_party.abstain|floatformat:1 }}%
-    {% else %}
-      추천 정보 없음
+<!-- 유사 정당/다른 정당 -->
+ <h3 class="text-lg font-bold">나와 어울리는 정당은?</h3>
+ <p class="text-sm">{{username}}님이 관심 있어 하는 법에 따라 결과가 달라져요!</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+  {% for party_data in party_comparisons %}
+    {% if party_data %}
+    <div class="bg-white p-6 rounded-xl shadow-lg border hover:shadow-2xl transition">
+      <h4 class="text-lg font-bold mb-2">
+        {% if forloop.first %}✅ 당신과 유사한 정당{% else %}⚠️ 당신과 다른 정당{% endif %}
+      </h4>
+      <div class="flex items-center gap-4">
+        <div>
+          <p class="text-xl font-semibold">{{ party_data.party }}</p>
+          <p class="text-sm text-gray-500">
+            찬성률 {{ party_data.support|floatformat:1 }}% · 반대율 {{ party_data.oppose|floatformat:1 }}%
+          </p>
+        </div>
+      </div>
+      <div id="chart-{{ forloop.counter }}" class="mt-4"></div>
+    </div>
     {% endif %}
-  </li>
-  <li>
-    ⚠️ <strong>당신의 관심사와 가장 다른 정당:</strong><br>
-    {% if most_opposite_party %}
-      {{ most_opposite_party.party }}<br>
-      평균 찬성률: {{ most_opposite_party.support|floatformat:1 }}%<br>
-      반대: {{ most_opposite_party.oppose|floatformat:1 }}%, 기권: {{ most_opposite_party.abstain|floatformat:1 }}
-    {% else %}
-      추천 정보 없음
-    {% endif %}
-  </li>
-</ul>
-</section>
+  {% endfor %}
+</div>
+
 
 
 {% endblock %}
@@ -317,6 +349,105 @@ document.addEventListener('DOMContentLoaded', () => {
   // select 태그의 onchange 속성과 연동됨
   window.onClusterChange = onClusterChange;
 });
+
+// 유사/다른 정당 추천
+  document.addEventListener('DOMContentLoaded', () => {
+    const partyChartsData = [
+      {% if most_similar_party %}
+      {
+        id: "chart-1",
+        name: "{{ most_similar_party.party }}",
+        data: [
+          {{ most_similar_party.support|floatformat:1 }},
+          {{ most_similar_party.oppose|floatformat:1 }},
+        ]
+      },
+      {% endif %}
+      {% if most_opposite_party %}
+      {
+        id: "chart-2",
+        name: "{{ most_opposite_party.party }}",
+        data: [
+          {{ most_opposite_party.support|floatformat:1 }},
+          {{ most_opposite_party.oppose|floatformat:1 }},
+        ]
+      }
+      {% endif %}
+    ];
+
+    function renderPartyChart(id, name, data) {
+      const options = {
+        chart: {
+          type: 'donut',
+          height: 250,
+        },
+        labels: ['찬성', '반대', '기권'],
+        series: data,
+        colors: ['#60a5fa', '#f87171', '#facc15'],
+        legend: {
+          position: 'bottom'
+        },
+        title: {
+          text: name + ' 투표 성향',
+          align: 'center',
+          style: {
+            fontWeight: 'bold',
+            fontSize: '16px',
+          }
+        },
+        tooltip: {
+          y: {
+            formatter: val => val.toFixed(1) + '%'
+          }
+        }
+      };
+
+      const chart = new ApexCharts(document.querySelector('#' + id), options);
+      chart.render();
+    }
+
+    partyChartsData.forEach(({id, name, data}) => {
+      renderPartyChart(id, name, data);
+    });
+  });
+
+  // 관심 클러스터/법안 목록
+document.addEventListener('DOMContentLoaded', () => {
+  window.toggleCluster = function(clusterId) {
+    const allSections = document.querySelectorAll('[id^="cluster-bills-"]');
+    const allArrows = document.querySelectorAll('[id^="arrow-"]');
+
+    allSections.forEach(section => {
+      if (section.id === `cluster-bills-${clusterId}`) {
+        // 현재 클릭한 클러스터 토글
+        const isHidden = section.classList.contains('hidden');
+        if (isHidden) {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+        }
+      } else {
+        // 나머지는 닫기
+        section.classList.add('hidden');
+      }
+    });
+
+    allArrows.forEach(arrow => {
+      if (arrow.id === `arrow-${clusterId}`) {
+        // 클릭한 클러스터 화살표 회전 토글
+        const parentDiv = document.getElementById(`cluster-bills-${clusterId}`);
+        if (parentDiv.classList.contains('hidden')) {
+          arrow.style.transform = 'rotate(0deg)';
+        } else {
+          arrow.style.transform = 'rotate(180deg)';
+        }
+      } else {
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+});
+
 
 </script>
 {% endblock %}

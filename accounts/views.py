@@ -18,6 +18,11 @@ from geovote.views import get_max_clusters_for_member
 import logging
 
 
+PALETTE = [
+    '#bef264', '#67e8f9', '#f9a8d4', '#fde68a', '#fdba74',
+    '#6ee7b7', '#c3b4fc', '#fda4af', '#5eead4', '#34d399',
+    '#f472b6', '#facc15', '#fb7185', '#818cf8', '#38bdf8',
+]
 
 def signup(request):
     if request.method == 'POST':
@@ -149,6 +154,7 @@ def recommend_party_by_interest(user, age_num=None):
         'support': [],
         'oppose': [],
         'abstain': [],
+        'absent': []
     })
 
     for row in stats:
@@ -157,26 +163,27 @@ def recommend_party_by_interest(user, age_num=None):
         party_summary[p]['support'].append(row.support_ratio)
         party_summary[p]['oppose'].append(row.oppose_ratio)
         party_summary[p]['abstain'].append(row.abstain_ratio)
+        party_summary[p]['absent'].append(row.absent_ratio)
 
     results = []
     for party, data in party_summary.items():
         avg_support = sum(data['support']) / len(data['support'])
         avg_oppose = sum(data['oppose']) / len(data['oppose'])
         avg_abstain = sum(data['abstain']) / len(data['abstain'])
-        oppose_abstain = avg_oppose + avg_abstain
+        avg_absent = sum(data['absent']) / len(data['absent'])
 
         results.append({
             'party': party,
             'support': avg_support,
             'oppose': avg_oppose,
             'abstain': avg_abstain,
-            'oppose_abstain': oppose_abstain,
+            'absent': avg_absent,
         })
 
-    # 유사한 정당: 찬성률 가장 높은
     most_similar = max(results, key=lambda x: x['support'], default=None)
-    # 반대/기권 비율 가장 높은 정당
-    most_opposite = max(results, key=lambda x: x['oppose_abstain'], default=None)
+    most_oppose = max(results, key=lambda x: x['oppose'], default=None)
+    most_abstain = max(results, key=lambda x: x['abstain'], default=None)
+    most_absent = max(results, key=lambda x: x['absent'], default=None)
 
     return most_similar, most_opposite
 
@@ -300,10 +307,10 @@ def my_page(request):
     
 
     # 차트 그리기
-    cluster_stats_data = get_user_cluster_stats(request.user)
+    # cluster_stats_data = get_user_cluster_stats(request.user)
 
-    # 대수 드롭박스
-    ages =  Age.objects.all().order_by('id')
+    # # 대수 드롭박스
+    # ages =  Age.objects.all().order_by('id')
 
     # 의원 - 클러스터 추천 연결
     member_name = request.user.username
@@ -332,6 +339,10 @@ def my_page(request):
         'result_types': cluster_stats_data['result_types'],
 
         # 정당 추천
+        'party_comparisons': [most_similar, most_opposite],
+
+        # 해시태그 색
+        'palette_colors': PALETTE,
         'most_similar_party': most_similar_party,
         'most_opposite_party': most_opposite_party,
         'ages': ages,
