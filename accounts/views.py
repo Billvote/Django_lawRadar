@@ -43,7 +43,7 @@ def logout(request):
 def jaccard_score(set1, set2):
     return len(set1 & set2) / len(set1 | set2) if set1 | set2 else 0
 
-def get_user_cluster_stats(user):
+def get_user_cluster_stats(user, age=None):
     liked_bills = BillLike.objects.filter(user=user).select_related('bill')
     liked_clusters = set(bill.bill.cluster for bill in liked_bills if bill.bill.cluster is not None)
     if not liked_clusters:
@@ -74,10 +74,16 @@ def get_user_cluster_stats(user):
         # age=age,  # 필요하면 age 조건 추가
     ).select_related('party')
 
-    # 의석수 상위 8개 필터링
+    # 의석수 상위 8개 정당 필터링
+    party_seat_counts = {}
+    for stat in stats:
+        party_name = stat.party.party
+        seat_count = getattr(stat.party, 'seat_count', 0)  # seat_count 필드 가정
+        party_seat_counts[party_name] = seat_count
+    top_parties = sorted(party_seat_counts, key=lambda p: party_seat_counts[p], reverse=True)[:8]
 
-    party_names = sorted({stat.party.party for stat in stats})
-    party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
+    # party_names = sorted({stat.party.party for stat in stats})
+    # party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
 
     result_types = ['찬성', '반대', '기권', '불참']
     cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
@@ -94,7 +100,7 @@ def get_user_cluster_stats(user):
 
     # 누락된 정당 0 초기화
     for cluster in cluster_data:
-        for party in party_names:
+        for party in top_parties:
             cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
 
     cluster_vote_data_dict = {
@@ -108,8 +114,8 @@ def get_user_cluster_stats(user):
 
     return {
         'cluster_data': cluster_vote_data_dict,
-        'party_names': party_names,
-        'party_colors': party_colors,
+        'party_names': top_parties,
+        # 'party_colors': party_colors,
         'result_types': result_types,
     }
 
@@ -175,9 +181,12 @@ def my_page(request):
     ).exclude(id__in=liked_ids)[:10]
 
     # 차트 그리기
-    cluster_stats_data = get_user_cluster_stats(request.user)
-    # 대수 드롭박스
-    ages =  Age.objects.all().order_by('id')
+    age_id = request.GET.get('age_id')
+    age = Age.objects.filter(id=age_id).first() if age_id else Age.objects.first()
+    ages = Age.objects.all().order_by('id')
+
+    cluster_stats_data = get_user_cluster_stats(request.user, age=age)
+
 
     context = {
         'username': request.user.username,
@@ -197,9 +206,10 @@ def my_page(request):
         'cluster_stats_data': cluster_stats_data,
         'cluster_data': cluster_stats_data['cluster_data'],
         'party_names': cluster_stats_data['party_names'],
-        'party_colors': cluster_stats_data['party_colors'],
+        # 'party_colors': cluster_stats_data['party_colors'],
         'result_types': cluster_stats_data['result_types'],
 
         'ages': ages,
+        'selected_age': age,
     }
     return render(request, 'my_page.html', context)
