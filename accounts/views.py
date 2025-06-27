@@ -10,7 +10,11 @@ from django.db.models import Q
 from billview.models import Bill
 from geovote.models import Age, Member
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
+from geovote.models import Age, Member
+from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 import json
+from collections import namedtuple
+
 
 
 def signup(request):
@@ -43,20 +47,25 @@ def logout(request):
 def jaccard_score(set1, set2):
     return len(set1 & set2) / len(set1 | set2) if set1 | set2 else 0
 
-def get_user_cluster_stats(user):
+# 관심 클러스터 차트 데이터
+def get_user_cluster_stats(user, cluster_num=None):
     liked_bills = BillLike.objects.filter(user=user).select_related('bill')
     liked_clusters = set(bill.bill.cluster for bill in liked_bills if bill.bill.cluster is not None)
-    if not liked_clusters:
-        return {
-            'cluster_data': [],
-            'party_names': [],
-            'party_colors': [],
-            'result_types': [],
-        }
     
-    # Age 조건
-    if age is None:
-        age = Age.objects.first()
+    # if cluster_num is None:
+    # else:
+    #     liked_clusters = set(cluster_num)
+
+    # if not liked_clusters:
+    #     return {
+    #         'cluster_data': [],
+    #         'party_names': [],
+    #         'party_colors': [],
+    #         'result_types': [],
+    #     }, Age.objects.none()
+
+    liked_bills = BillLike.objects.filter(user=user).select_related('bill')
+
 
     # 클러스터 키워드 조회
     keywords_raw = ClusterKeyword.objects.filter(cluster_num__in=liked_clusters)
@@ -71,13 +80,19 @@ def get_user_cluster_stats(user):
     # 통계 조회 (PartyClusterStats 모델을 기준으로, 필요에 따라 조정)
     stats = PartyClusterStats.objects.filter(
         cluster_num__in=liked_clusters,
-        # age=age,  # 필요하면 age 조건 추가
+        # age=age,
     ).select_related('party')
 
-    # 의석수 상위 8개 필터링
+    # 의석수 상위 8개 정당 필터링
+    party_seat_counts = {}
+    for stat in stats:
+        party_name = stat.party.party
+        seat_count = getattr(stat.party, 'seat_count', 0)  # seat_count 필드 가정
+        party_seat_counts[party_name] = seat_count
+    top_parties = sorted(party_seat_counts, key=lambda p: party_seat_counts[p], reverse=True)[:8]
 
-    party_names = sorted({stat.party.party for stat in stats})
-    party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
+    # party_names = sorted({stat.party.party for stat in stats})
+    # party_colors = [stat.party.color for stat in stats if stat.party.party in party_names]
 
     result_types = ['찬성', '반대', '기권', '불참']
     cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
@@ -94,7 +109,7 @@ def get_user_cluster_stats(user):
 
     # 누락된 정당 0 초기화
     for cluster in cluster_data:
-        for party in party_names:
+        for party in top_parties:
             cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
 
     cluster_vote_data_dict = {
@@ -108,10 +123,61 @@ def get_user_cluster_stats(user):
 
     return {
         'cluster_data': cluster_vote_data_dict,
-        'party_names': party_names,
-        'party_colors': party_colors,
+        'party_names': top_parties,
         'result_types': result_types,
     }
+
+# 관심 비슷한 추천 정당
+def recommend_party_by_interest(user, age_num=None):
+    # 1. 사용자 관심 클러스터 수집
+    liked_clusters = BillLike.objects.filter(user=user) \
+        .values_list('bill__cluster', flat=True).distinct()
+    liked_clusters = [c for c in liked_clusters if c is not None]
+
+    if not liked_clusters:
+        return None, None
+
+    # 2. 관심 클러스터에 대한 정당별 표결 통계 조회
+    stats = PartyClusterStats.objects.filter(cluster_num__in=liked_clusters)
+    if age_num:
+        stats = stats.filter(age__number=age_num)
+
+    party_summary = defaultdict(lambda: {
+        'party': None,
+        'support': [],
+        'oppose': [],
+        'abstain': [],
+    })
+
+    for row in stats:
+        p = row.party.party
+        party_summary[p]['party'] = p
+        party_summary[p]['support'].append(row.support_ratio)
+        party_summary[p]['oppose'].append(row.oppose_ratio)
+        party_summary[p]['abstain'].append(row.abstain_ratio)
+
+    results = []
+    for party, data in party_summary.items():
+        avg_support = sum(data['support']) / len(data['support'])
+        avg_oppose = sum(data['oppose']) / len(data['oppose'])
+        avg_abstain = sum(data['abstain']) / len(data['abstain'])
+        oppose_abstain = avg_oppose + avg_abstain
+
+        results.append({
+            'party': party,
+            'support': avg_support,
+            'oppose': avg_oppose,
+            'abstain': avg_abstain,
+            'oppose_abstain': oppose_abstain,
+        })
+
+    # 유사한 정당: 찬성률 가장 높은
+    most_similar = max(results, key=lambda x: x['support'], default=None)
+    # 반대/기권 비율 가장 높은 정당
+    most_opposite = max(results, key=lambda x: x['oppose_abstain'], default=None)
+
+    return most_similar, most_opposite
+
 
 # my_page 화면
 @login_required
@@ -120,6 +186,17 @@ def my_page(request):
     liked_bills = BillLike.objects.filter(user=request.user).select_related('bill')
     liked_ids = liked_bills.values_list('bill_id', flat=True)
     bill_list = [like.bill for like in liked_bills]
+    liked_clusters = set(bill.cluster for bill in bill_list if bill.cluster is not None)
+
+    # 클러스터 선택: GET 파라미터에서 받되, 기본값은 좋아요 클러스터 중 첫 번째
+    cluster_num = request.GET.get('cluster_num')
+    if cluster_num:
+        try:
+            cluster_num = int(cluster_num)
+        except ValueError:
+            cluster_num = None
+    if cluster_num not in liked_clusters:
+        cluster_num = next(iter(liked_clusters), None)
 
     # 1) 관심 법안의 클러스터
     cluster_ids = [bill.cluster for bill in bill_list if bill.cluster]
@@ -173,6 +250,13 @@ def my_page(request):
     recommended_bills = Bill.objects.filter(
         cluster__in=[cid for cid, _ in top_similar_clusters]
     ).exclude(id__in=liked_ids)[:10]
+    
+    # 관심 법안 표결 차트
+    cluster_stats_data = get_user_cluster_stats(request.user, cluster_num)
+    # 관심사 비슷한 정당 추천
+    most_similar_party, most_opposite_party = recommend_party_by_interest(request.user)
+
+    
 
     # 차트 그리기
     cluster_stats_data = get_user_cluster_stats(request.user)
@@ -202,15 +286,19 @@ def my_page(request):
         'cluster_stats_data': cluster_stats_data,
         'cluster_data': cluster_stats_data['cluster_data'],
         'party_names': cluster_stats_data['party_names'],
-        'party_colors': cluster_stats_data['party_colors'],
         'result_types': cluster_stats_data['result_types'],
 
+        # 정당 추천
+        'most_similar_party': most_similar_party,
+        'most_opposite_party': most_opposite_party,
         'ages': ages,
 
         # 의원 매칭
         'recommended_members': recommended_members,
         'max_clusters': max_clusters,
     }
+    
+
     return render(request, 'my_page.html', context)
 
 # 개인별 관심 클러스터 - 의원 클러스터 매칭-------------------------------------------------
