@@ -12,21 +12,21 @@
           <div>
             <div class="flex items-center space-x-4">
               <!-- Home -->
-              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">Home</a>
+              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">홈</a>
               <!-- Dashboard -->
-              <a href="{% url 'dashboard:dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Dashboard</a>
+              <a href="{% url 'dashboard:dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">입법현황</a>
               
               <!-- Card News -->
-              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Card News</a>
+              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">카드뉴스</a>
               <!-- History -->
-              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">History</a>
+              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">개정연혁</a>
               <!-- TreeMap -->
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Treemap</a>
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">지역구 의원</a>
 
               <!-- My Page Dropdown (클릭형) -->
               <div class="relative">
                 <button id="dropdownToggle" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 focus:outline-none">
-                  My Page
+                  내 정보
                 </button>
                 <!-- Dropdown Menu -->
                 <div id="dropdownMenu"
