@@ -124,7 +124,6 @@ def get_max_clusters_for_member(member_name):
     )
     return max_clusters
 
-from django.http import JsonResponse
 
 def member_vote_summary_api(request):
     member_name = request.GET.get('member_name')
@@ -136,7 +135,6 @@ def member_vote_summary_api(request):
         return JsonResponse({'error': 'No summary data available. Please generate it first.'}, status=404)
 
     return JsonResponse(max_clusters)
-
 
 
 #------------------정당과 의원의 표결 경향 분석--------------------------------
