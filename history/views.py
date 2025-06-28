@@ -33,6 +33,8 @@ from django.db.models.functions import Random
 from collections import defaultdict
 import random
 
+from accounts.models import BillLike
+
 
 
 logger = logging.getLogger(__name__)
@@ -335,6 +337,14 @@ class BillHistoryDetailView(DetailView):
             .order_by("-sort_date", "-bill_number")
         )
 
+        # 좋아요 여부 확인
+        liked_ids = set()
+        if self.request.user.is_authenticated:
+            liked_ids = set(
+                BillLike.objects.filter(user=self.request.user, bill__label=label)
+                .values_list("bill_id", flat=True)
+            )
+
         helper = BillHistoryListView()
         ctx.update(
             {
@@ -342,6 +352,7 @@ class BillHistoryDetailView(DetailView):
                 "list_page": self.request.GET.get("page", "1"),
                 "cluster_keywords_dict": helper._cluster_kw_str(),
                 "cluster_color_map": helper._color_map(),
+                "liked_ids": liked_ids,
             }
         )
         return ctx
