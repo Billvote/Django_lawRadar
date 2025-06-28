@@ -18,9 +18,8 @@ from main.models       import ClusterKeyword, PartyClusterStats
 from collections import Counter, defaultdict
 from django.db.models import Q, Max
 from billview.models import Bill
-from geovote.models import Age, Member, Party
+from geovote.models import Age, Member, Party, Vote
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
-from geovote.models import Age, Member
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 import json
 from collections import namedtuple
@@ -286,6 +285,11 @@ def my_page(request):
     )
     liked_clusters = set(bill.cluster for bill in bill_list if bill.cluster is not None)
 
+    # 표결 정보 있는지 확인
+    has_vote_results = Vote.objects.filter(
+        bill_id__in=liked_ids,
+    ).exclude(result__isnull=True).exclude(result="").exists()
+
     # 클러스터 선택: GET 파라미터에서 받되, 기본값은 좋아요 클러스터 중 첫 번째
     cluster_num = request.GET.get('cluster_num')
     if cluster_num:
@@ -357,7 +361,8 @@ def my_page(request):
         "liked_ids":   list(liked_ids),
         # 클러스터
         'cluster_counts': cluster_counts,
-        'cluster_keywords': cluster_keywords, 
+        'cluster_keywords': cluster_keywords,
+        'has_vote_results': has_vote_results,
 
         # 추천 법안 리스트 (유사 클러스터 기반)
         'recommended_bills': recommended_bills,
