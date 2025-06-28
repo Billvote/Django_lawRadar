@@ -4,7 +4,7 @@
 {% load static %}
 {% block body %}
 
-<h2 class="text-xl font-bold mb-8">🍀{{ username }}님의 요즘 관심사는?</h2>
+<h2 class="text-xl font-bold mb-8">🍀 {{ username }}님의 요즘 관심사는?</h2>
 
 <!-- 1행 1열: 유사 정당/다른 정당 -->
 <section class="max-w-lg mx-auto px-4 p-6 mb-10">
@@ -12,6 +12,7 @@
   <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
   
   <div class="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition max-w-3xl mx-auto mt-6">
+    {% if liked_ids %}
     <div class="flex justify-between mb-6">
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
@@ -34,6 +35,17 @@
         </p>
       </div>
     </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-4">
+      <p lass="text-lg text-gray-600">😥 아직 좋아하는 법안이 없어요</p>
+      <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
+      <a href="{% url 'cardnews:home' %}">
+        <button class="mt-4 bg-gray-100 rounded-full p-3 text-center font-semibold text-cyan-500">
+          ➕︎ 추가하기
+        </button>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </section>
 
@@ -130,13 +142,13 @@
               </div>
             {% endif %}
           {% empty %}
-            <p class="text-sm text-zinc-400">해당 클러스터에 법안이 없습니다.</p>
+            <p class="text-sm text-zinc-400">해당 키워드에 법안이 없습니다</p>
           {% endfor %}
         </div>
 
       </div>
     {% empty %}
-      <p class="text-sm text-gray-400">좋아요한 클러스터가 없습니다.</p>
+      <p class="text-sm text-gray-400">좋아요한 법이 없습니다</p>
     {% endfor %}
     </div>
     </div>
@@ -164,7 +176,7 @@
 </div>
 
 <!-- 추천 의원 섹션 -->
-<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow border border-gray-200 p-6 mb-10">
+<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow-lg p-6 mb-10">
   <h2 class="text-xl font-semibold mb-4">📌 내가 관심있는 주제에 가장 많이 찬성한 의원</h2>
 
   {% if recommended_members %}
@@ -191,12 +203,12 @@
       </div>
     {% endfor %}
   {% else %}
-    <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
+    <p class="text-gray-500">추천할 의원 정보가 아직 없습니다</p>
   {% endif %}
 </section>
 
 <!-- 클러스터별 투표 통계 차트 영역 -->
-<section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow border border-gray-200">
+<section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
   <h3 class="text-lg font-bold mb-6">📊 내 관심 법안에 정당은 어떤 입장일까?</h3>
 
   <label for="clusterSelect" class="font-bold block mb-2"></label>

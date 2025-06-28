@@ -65,7 +65,10 @@
       
       <div class="space-y-16">
         {% for related in related_bills %}
-        <div class="relative group timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+        <div id="history-{{ related.id }}"
+              class="relative group timeline-item"
+              data-aos="fade-up"
+              data-aos-delay="{{ forloop.counter0|add:100 }}">
           <!-- Timeline Dot -->
           <div class="absolute left-6  w-6 h-6 bg-white rounded-full transform md:-translate-x-1 shadow-md group-hover:scale-125 transition-all duration-300 z-10
                 {% if related.age.number >= 22 %}
@@ -102,8 +105,8 @@
             <div class="clear-both"></div>
             
             <!-- 개별 카드 -->
-          <a href="{{ related.url }}" target="_blank" class="block group">
-            <div class="group overflow-hidden rounded border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
+        
+            <div class="group overflow-hidden rounded bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
               <!-- 카드 헤더 -->
               <div class="bg-white p-6 border-b border-gray-100">
                 <div class="flex items-start justify-between">
@@ -118,20 +121,33 @@
               <!-- 카드 푸터 -->
               <div class="p-6">
                 <div class="flex items-center justify-between text-sm text-gray-500">
+                  <!-- 좋아요 버튼 -->
                   <div class="flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"></svg>
-                    <p class="text-gray-600 font-medium">
-                      의안번호 {{ related.bill_number }}
-                    </p>
+                    <button type="button"
+                            class="like-btn text-2xl focus:outline-none"
+                            data-bill-id="{{ related.id }}"
+                            data-csrf-token="{{ csrf_token }}"
+                            data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
+                      {% if user.is_authenticated and related.id in liked_ids %}❤️{% else %}🤍{% endif %}
+                    </button>
+
+                    <div class="flex items-center">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"></svg>
+                      <p class="text-gray-600 font-medium">의안번호 {{ related.bill_number }}</p>
+                    </div>
                   </div>
-                  <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
+
+                  <a href="{{ related.url }}" target="_blank" class="inline-flex items-center text-sm text-cyan-600 hover:text-cyan-800 transition-colors duration-300 group">
+                    <span class="mr-1">자세히 보기</span>
+                    <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300"
+                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </a>
                 </div>
               </div>
 
             </div>
-          </a>
             
           </div>
         </div>
@@ -231,6 +247,61 @@ document.addEventListener('DOMContentLoaded', function() {
     title.classList.add('text-3xl', 'md:text-4xl');
     title.classList.remove('text-4xl', 'md:text-6xl');
   }
+});
+
+
+// 좋아요 기능
+document.addEventListener('DOMContentLoaded', () => {
+  const likeButtons = document.querySelectorAll('.like-btn');
+  const toggleLikeUrlTemplate = "{% url 'cardnews:toggle_like' 0 %}";
+
+  likeButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const isAuthenticated = button.dataset.authenticated === 'true';
+      const billId = button.dataset.billId;
+      const csrfToken = button.dataset.csrfToken;
+      const url = toggleLikeUrlTemplate.replace('0', billId);
+
+      if (!isAuthenticated) {
+        const goLogin = confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?");
+        if (goLogin) {
+          window.location.href = '/accounts/login/?next=' + window.location.pathname;
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error('서버 오류 발생');
+        }
+
+        const result = await response.json();
+
+        if (result.liked) {
+          button.innerHTML = '❤️';
+          button.classList.add('text-red-500');
+        } else {
+          button.innerHTML = '🤍';
+          button.classList.remove('text-red-500');
+        }
+      } catch (err) {
+        console.error('좋아요 요청 실패:', err);
+        alert('좋아요 처리 중 문제가 발생했습니다.');
+      }
+    });
+  });
 });
 
 </script>

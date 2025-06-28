@@ -343,13 +343,6 @@ def my_page(request):
     # 관심사 비슷한 정당 추천
     most_similar, most_opposite = recommend_party_by_interest(request.user)
 
-
-    # 차트 그리기
-    # cluster_stats_data = get_user_cluster_stats(request.user)
-
-    # # 대수 드롭박스
-    # ages =  Age.objects.all().order_by('id')
-
     # 의원 - 클러스터 추천 연결
     member_name = request.user.username
     max_clusters = get_max_clusters_for_member(member_name)
