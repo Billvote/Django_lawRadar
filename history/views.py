@@ -32,6 +32,8 @@ from geovote.models import Vote
 from main.models import PartyClusterStats
 from search import search_service as ss
 
+from accounts.models import BillLike
+
 logger = logging.getLogger(__name__)
 
 # Tailwind 500 계열 10색

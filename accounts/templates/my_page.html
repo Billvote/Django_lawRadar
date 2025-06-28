@@ -14,7 +14,7 @@
   
   <div class="bg-white p-6 rounded-2xl shadow-lg max-w-3xl mx-auto mt-6 hover:scale-105 transition-all duration-300">
     {% if liked_ids %}
-    <div class="flex justify-between mb-6">
+    <div class="flex justify-between mb-6 gap-5">
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
         <p class="text-2xl font-semibold mb-3"
@@ -22,7 +22,8 @@
           {{ most_similar_party.party }}
         </p>
         <p class="text-sm text-gray-500">
-          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong> · 반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
+          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong>
+          <br> 반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
       <div class="text-center flex-1">
@@ -32,7 +33,8 @@
             {{ most_opposite_party.party }}
         </p>
         <p class="text-sm text-gray-500">
-          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong> · 반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
+          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong>
+          <br> 반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
     </div>
@@ -140,7 +142,7 @@
           {% for bill in liked_bills %}
             {% if bill.cluster == cluster %}
               <div class="bg-gray-50 rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 p-3 cursor-pointer"
-                  onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+                  onclick="location.href='{% url 'history:bill_detail' bill.pk %}#history-{{ bill.id }}'">
                 
                 <div class="flex justify-between items-start gap-2">
                   <h3 class="text-base font-medium text-gray-800 truncate hover:text-cyan-600 transition-all duration-300">
@@ -370,119 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.onClusterChange = onClusterChange;
 });
 
-// 유사/다른 정당 추천
-// document.addEventListener('DOMContentLoaded', () => {
-//   const options = {
-//     chart: {
-//       type: 'bar',
-//       height: 250,
-//       stacked: true,
-//     },
-//     plotOptions: {
-//       bar: {
-//         horizontal: true,
-//         barHeight: '60%',
-//       }
-//     },
-//     dataLabels: {
-//       enabled: true,
-//       formatter: val => val.toFixed(1) + '%',
-//       style: {
-//         colors: ['#fff']
-//       }
-//     },
-//     series: [
-//       {
-//         name: '찬성률',
-//         data: [{{ most_similar_party.support|floatformat:1 }}, {{ most_opposite_party.support|floatformat:1 }}],
-//       },
-//       {
-//         name: '반대율',
-//         data: [{{ most_similar_party.oppose|floatformat:1 }}, {{ most_opposite_party.oppose|floatformat:1 }}],
-//       }
-//     ],
-//     xaxis: {
-//       categories: ['{{ most_similar_party.party }}', '{{ most_opposite_party.party }}'],
-//       max: 100,
-//       labels: {
-//         formatter: val => val + '%'
-//       }
-//     },
-//     tooltip: {
-//       y: {
-//         formatter: val => val.toFixed(1) + '%'
-//       }
-//     },
-//     legend: {
-//       position: 'bottom',
-//     },
-//     colors: ['#3b82f6', '#ef4444'], // 파랑=찬성, 빨강=반대
-//   };
-
-//   const chart = new ApexCharts(document.querySelector("#party-compare-chart"), options);
-//   chart.render();
-// });
-
-
-  // document.addEventListener('DOMContentLoaded', () => {
-  //   const partyChartsData = [
-  //     {% if most_similar_party %}
-  //     {
-  //       id: "chart-1",
-  //       name: "{{ most_similar_party.party }}",
-  //       data: [
-  //         {{ most_similar_party.support|floatformat:1 }},
-  //         {{ most_similar_party.oppose|floatformat:1 }},
-  //       ]
-  //     },
-  //     {% endif %}
-  //     {% if most_opposite_party %}
-  //     {
-  //       id: "chart-2",
-  //       name: "{{ most_opposite_party.party }}",
-  //       data: [
-  //         {{ most_opposite_party.support|floatformat:1 }},
-  //         {{ most_opposite_party.oppose|floatformat:1 }},
-  //       ]
-  //     }
-  //     {% endif %}
-  //   ];
-
-  //   function renderPartyChart(id, name, data) {
-  //     const options = {
-  //       chart: {
-  //         type: 'donut',
-  //         height: 250,
-  //       },
-  //       labels: ['찬성', '반대', '기권'],
-  //       series: data,
-  //       colors: ['#60a5fa', '#f87171', '#facc15'],
-  //       legend: {
-  //         position: 'bottom'
-  //       },
-  //       title: {
-  //         text: name + ' 투표 성향',
-  //         align: 'center',
-  //         style: {
-  //           fontWeight: 'bold',
-  //           fontSize: '16px',
-  //         }
-  //       },
-  //       tooltip: {
-  //         y: {
-  //           formatter: val => val.toFixed(1) + '%'
-  //         }
-  //       }
-  //     };
-
-  //     const chart = new ApexCharts(document.querySelector('#' + id), options);
-  //     chart.render();
-  //   }
-
-  //   partyChartsData.forEach(({id, name, data}) => {
-  //     renderPartyChart(id, name, data);
-  //   });
-  // });
 
   // 관심 클러스터/법안 목록
 document.addEventListener('DOMContentLoaded', () => {
