@@ -54,12 +54,20 @@ let selectedAge = null;
 let defaultAgeBtn = null;
 
 // --- 색상 팔레트 정의 ---
-const calmPastels = [
-  "#A5C8E1", "#F2D7D9", "#D2E3C8", "#F6EAC2", "#D9CFE2",
-  "#CDE4B3", "#FFE5B4", "#C8D8E4", "#E8C4C4", "#D7E9F7"
+const brightPastels = [
+  "#90C7E3", // 밝은 하늘색
+  "#F5B7B1", // 코랄 핑크
+  "#AEDC95", // 밝은 연두
+  "#FCE69C", // 크림 옐로우
+  "#C4B6E7", // 연보라
+  "#BFE17D", // 라임그린
+  "#FFD59E", // 살구 오렌지
+  "#A7D0F4", // 선명한 연하늘
+  "#F5A8A8", // 인디 핑크
+  "#B0E0FA"  // 파스텔 블루
 ];
-const sidoColors = d3.scaleOrdinal(calmPastels);
-const sigunguColors = d3.scaleOrdinal(calmPastels);
+const sidoColors = d3.scaleOrdinal(brightPastels);
+const sigunguColors = d3.scaleOrdinal(brightPastels);
 
 // --- 팝업 함수 ---
 function openPopup(title, contentHtml) {
@@ -340,6 +348,67 @@ const isAuthenticated = "{{ request.user.is_authenticated|yesno:'true,false' }}"
             console.error(err);
             alert("표결 정보를 가져오지 못했습니다.");
           }
+
+          // 좋아요
+          document.addEventListener("click", async (e) => {
+            const btn = e.target.closest('.like-btn');
+            if (!btn) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isAuth = btn.dataset.authenticated === 'true';
+            if (!isAuth) {
+              if (confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?")) {
+                window.location.href = '/accounts/login/?next=' + window.location.pathname;
+              }
+              return;
+            }
+
+            const memberName = btn.dataset.memberName;
+            const csrf = getCookie("csrftoken");
+
+            try {
+              const res = await fetch("/geovote/api/member-like/", {
+                method: "POST",
+                headers: {
+                  "X-CSRFToken": csrf,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ member_name: memberName })
+              });
+
+              if (!res.ok) throw new Error("서버 오류");
+
+              const result = await res.json();
+              if (result.message === "좋아요 완료") {
+                btn.innerHTML = "❤️";
+                btn.classList.add("text-red-500");
+              } else {
+                btn.innerHTML = "🤍";
+                btn.classList.remove("text-red-500");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("좋아요 처리 중 문제가 발생했습니다.");
+            }
+          });
+
+
+          function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+              const cookies = document.cookie.split(";");
+              for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === name + "=") {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+                }
+              }
+            }
+            return cookieValue;
+          }
         });
 
       
@@ -459,7 +528,7 @@ const isAuthenticated = "{{ request.user.is_authenticated|yesno:'true,false' }}"
       .style("justify-content", "center")
       .style("text-align", "center")
       .style("font-family", "sans-serif")
-      .style("font-weight", "400")
+      .style("font-weight", "700")
       .style("letter-spacing", "0.02em")
       .style("color", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";
@@ -548,63 +617,3 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", debounce(resize, 200));
 });
    
-// 좋아요
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest('.like-btn');
-  if (!btn) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const isAuth = btn.dataset.authenticated === 'true';
-  if (!isAuth) {
-    if (confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?")) {
-      window.location.href = '/accounts/login/?next=' + window.location.pathname;
-    }
-    return;
-  }
-
-  const memberName = btn.dataset.memberName;
-  const csrf = getCookie("csrftoken");
-
-  try {
-    const res = await fetch("/geovote/api/member-like/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrf,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ member_name: memberName })
-    });
-
-    if (!res.ok) throw new Error("서버 오류");
-
-    const result = await res.json();
-    if (result.message === "좋아요 완료") {
-      btn.innerHTML = "❤️";
-      btn.classList.add("text-red-500");
-    } else {
-      btn.innerHTML = "🤍";
-      btn.classList.remove("text-red-500");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("좋아요 처리 중 문제가 발생했습니다.");
-  }
-});
-
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
