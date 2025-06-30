@@ -34,7 +34,7 @@ function togglePassword(id){
 {% comment %}
 url_name 값
   · login                       – 기본 로그인
-  · password_reset              – 이메일 + 새 비밀번호
+  · password_reset              – 아이디 + 새 비밀번호
   · password_reset_complete     – 변경 완료
 {% endcomment %}
 {% with url_name=request.resolver_match.url_name %}
@@ -83,7 +83,7 @@ url_name 값
         {# ─────── 구분선 ─────── #}
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
-          <div class="relative flex justify-center text-sm"><span class="px-4 bg-white text-gray-500">또는 이메일로 로그인</span></div>
+          <div class="relative flex justify-center text-sm"><span class="px-4 bg-white text-gray-500">또는 아이디로 로그인</span></div>
         </div>
 
         {# ─────── 로그인 필드 ─────── #}
@@ -127,7 +127,10 @@ url_name 값
             <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
             <span class="ml-2">로그인 유지</span>
           </label>
-          <a href="{% url 'accounts:password_reset' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">비밀번호를 잊으셨나요?</a>
+          <div class="flex space-x-4">
+            <a href="{% url 'accounts:password_reset' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">비밀번호 재설정</a>
+            <a href="{% url 'accounts:find_username' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">아이디 찾기</a>
+          </div>
         </div>
 
         {# ─────── 로그인 버튼 ─────── #}
@@ -153,7 +156,7 @@ url_name 값
   <div class="max-w-md w-full space-y-8">
     <div class="text-center">
       <h2 class="text-3xl font-bold text-gray-900 mb-2">비밀번호 재설정</h2>
-      <p class="text-gray-600">이메일과 새 비밀번호를 입력해 주세요</p>
+      <p class="text-gray-600">아이디와 새 비밀번호를 입력해 주세요</p>
     </div>
 
     <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
@@ -165,8 +168,8 @@ url_name 값
             <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ field.label }}</label>
 
             <div class="relative">
-              {# ── 이메일 ── #}
-              {% if field.name == 'email' %}
+              {# ── 아이디 ── #}
+              {% if field.name == 'username' %}
                 {% if field.errors %}
                   {{ field|add_class:"w-full px-4 py-3 pl-12 border border-red-500 rounded-xl outline-none focus:outline-none focus-visible:outline-none transition-all duration-200 bg-white placeholder-gray-400 shake" }}
                 {% else %}
@@ -177,8 +180,6 @@ url_name 값
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
                   </svg>
                 </div>
-
-              {# ── 새 비밀번호 & 확인 ── #}
               {% else %}
                 {% if field.errors %}
                   {{ field|add_class:"w-full px-4 py-3 pl-12 pr-12 border border-red-500 rounded-xl outline-none focus:outline-none focus-visible:outline-none transition-all duration-200 bg-white placeholder-gray-400 shake" }}

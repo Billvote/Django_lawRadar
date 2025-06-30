@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 bg-white">
+  <div class="max-w-md w-full space-y-8">
+
+    <h2 class="text-2xl font-bold text-center mb-6">아이디 찾기</h2>
+
+    {% if found_username %}
+      <p class="text-center text-green-600 font-semibold">
+        회원님의 아이디는 <span class="underline">{{ found_username }}</span> 입니다.
+      </p>
+      <div class="text-center mt-6">
+        <a href="{% url 'accounts:login' %}"
+           class="text-sm font-medium text-blue-600 hover:text-blue-500">로그인 하러 가기</a>
+      </div>
+    {% else %}
+      <form method="post"
+            class="space-y-6 bg-white/80 backdrop-blur-sm border border-gray-200
+                   rounded-2xl p-8 shadow-xl">
+        {% csrf_token %}
+        <div>
+          <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold mb-1">
+            가입 이메일
+          </label>
+          {{ form.email|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl" }}
+          {% if form.email.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ form.email.errors }}</p>
+          {% endif %}
+        </div>
+        <button type="submit"
+                class="w-full py-3 rounded-xl text-white font-medium
+                       bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
+          아이디 확인
+        </button>
+      </form>
+    {% endif %}
+
+    <p class="text-center text-sm mt-6">
+      <a href="{% url 'accounts:login' %}" class="text-blue-600 hover:text-blue-500">
+        로그인 화면으로 돌아가기
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}
