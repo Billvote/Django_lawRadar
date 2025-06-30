@@ -1,237 +1,207 @@
-<!-- 개선된 bill_detail.html -->
 {% extends "base.html" %}
 {% load history_filters %}
 
-{% block body %}  
-  <!-- Content -->
-  <div class="relative z-10 px-6 py-4 mt-16">
-    <div class="max-w-4xl mx-auto">
+{% block body %}
+<!-- ===============================  Header  ================================= -->
+<div class="relative z-10 px-6 py-4 mt-16">
+  <div class="max-w-4xl mx-auto">
+    <p class="uppercase tracking-wide text-cyan-600 font-semibold mb-2">📘 입법 요약</p>
 
-      <p class="uppercase tracking-wide text-cyan-600 font-semibold mb-2">📘 입법 요약</p>
-      
-      <!-- 의안명 -->
-      <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 mb-6 leading-tight">
-        {{ bill.title }}
-      </h1>
+    <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 mb-6 leading-tight">
+      {{ bill.title }}
+    </h1>
 
-      <!-- Meta Information -->
-      <div class="flex justify-between items-start my-10">
-        {% if bill.related_count %}
-        <div class="flex flex-nowrap items-center min-w-[140px] shrink-0 px-3 py-2 backdrop-blur-sm rounded-full text-black border border-gray-100">
-            <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-            </svg>
-            개정 {{ bill.related_count }}회
-        </div>
-        {% endif %}
+    <!-- 메타 -->
+    <div class="flex justify-between items-start my-10">
+      {% if bill.related_count %}
+      <div class="flex items-center min-w-[140px] px-3 py-2 backdrop-blur-sm rounded-full text-black border border-gray-100">
+        <svg class="w-4 h-4 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+        </svg>
+        개정 {{ bill.related_count }}회
+      </div>
+      {% endif %}
 
-          <!-- 키워드 해시태그 -->
-          <div class="flex flex-wrap gap-2 justify-end">
-            {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
-              {% if kw_str %}
-                {% with kw_list=kw_str|split_by_comma %}
-                  {% for kw in kw_list|slice:":5" %}
-                    <a href="{% url 'cardnews:card' bill.cluster %}"
-                      class="px-3 py-1 bg-gray-100 backdrop-blur-sm text-black rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
-                      #{{ kw }}
-                    </a>
-                  {% endfor %}
-                {% endwith %}
-              {% endif %}
+      <!-- 키워드 -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        {% with cluster_keywords_dict|get_item:bill.cluster as kw_str %}
+          {% if kw_str %}
+            {% with kw_list=kw_str|split_by_comma %}
+              {% for kw in kw_list|slice:":5" %}
+                <a href="{% url 'cardnews:card' bill.cluster %}"
+                   class="px-3 py-1 bg-gray-100 backdrop-blur-sm text-black rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                  #{{ kw }}
+                </a>
+              {% endfor %}
             {% endwith %}
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+    <div class="border-t border-gray-300 my-6"></div>
+  </div>
+</div>
+
+<!-- ===============================  Timeline  ================================= -->
+<div class="max-w-6xl mx-auto px-6">
+  <p class="text-lg text-gray-500 text-center mb-2">✔️ 법안이 어떻게 달라졌는지 한눈에 확인하세요</p>
+  <p class="text-base text-gray-400 text-center mb-10">개정 내용은 최근 개정안부터 차례로 정렬됩니다</p>
+
+  <div class="relative mb-32">
+    <div class="absolute left-8 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 via-yellow-300 to-pink-300 transform md:-translate-x-1/2"></div>
+
+    <div class="space-y-16">
+      {% for related in related_bills %}
+      <div id="history-{{ related.id }}"
+           class="relative group timeline-item"
+           data-aos="fade-up"
+           data-aos-delay="{{ forloop.counter0|add:100 }}">
+        <!-- Dot -->
+        <div class="absolute left-6 w-6 h-6 bg-white rounded-full md:-translate-x-1 shadow-md border-4
+          {% if related.age.number >= 22 %}border-emerald-400
+          {% elif related.age.number >= 21 %}border-yellow-400
+          {% elif related.age.number >= 20 %}border-pink-400
+          {% else %}border-gray-400{% endif %}">
+          <div class="absolute inset-1 bg-cyan-400 rounded-full"></div>
+        </div>
+
+        <!-- 카드 -->
+        <div class="ml-16 md:ml-16 {% cycle 'md:pr-1/2' 'md:pl-1/2 md:ml-1/2' %}">
+          <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mb-4
+               {% if related.age.number >= 22 %}bg-emerald-100
+               {% elif related.age.number >= 21 %}bg-yellow-100
+               {% elif related.age.number >= 20 %}bg-pink-100
+               {% else %}bg-gray-200{% endif %} text-gray-800">
+            📅 {{ related.age.number }}대 | {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
+          </div>
+
+          <div class="group overflow-hidden rounded bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
+            <div class="bg-white p-6 border-b border-gray-100">
+              <div class="mt-1 px-3">
+                <h3 class="text-lg font-medium text-gray-900 group-hover:font-bold transition-all duration-300">
+                  {{ related.summary|default:"(내용 없음)" }}
+                </h3>
+              </div>
+            </div>
+
+            <div class="p-6 flex items-center justify-between text-sm text-gray-500">
+              <div class="flex items-center">
+                <button type="button"
+                        class="like-btn text-2xl focus:outline-none"
+                        data-bill-id="{{ related.id }}"
+                        data-csrf-token="{{ csrf_token }}"
+                        data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
+                  {% if user.is_authenticated and related.id in liked_ids %}❤️{% else %}🤍{% endif %}
+                </button>
+                <p class="ml-2 text-gray-600 font-medium">의안번호 {{ related.bill_number }}</p>
+              </div>
+
+              <a href="{{ related.url }}" target="_blank"
+                 class="inline-flex items-center text-sm text-cyan-600 hover:text-cyan-800 transition-colors duration-300 group">
+                <span class="mr-1">자세히 보기</span>
+                <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
-      <div class="border-t border-gray-300 my-6"></div>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-
-<!-- Main Content -->
-<!-- <div class="bg-gray-50 min-h-screen"> -->
-  <div class="max-w-6xl mx-auto px-6">
-    <p class="text-lg text-gray-500 mb-4 text-center mb-2">
-      ✔️ 법안이 어떻게 달라졌는지 한눈에 확인하세요
-    </p>
-      <p class="text-base text-gray-400 text-center mb-10">
-        개정 내용은 최근 개정안부터 차례로 정렬됩니다
-      </p>
-
-    <!-- Enhanced Timeline -->
-    <div class="relative mb-32">
-      <!-- 타임라인 선 -->
-      <div class="absolute left-8 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 via-yellow-300 to-pink-300 transform md:-translate-x-1/2"></div>
-      
-      <div class="space-y-16">
-        {% for related in related_bills %}
-        <div class="relative group timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
-          <!-- Timeline Dot -->
-          <div class="absolute left-6  w-6 h-6 bg-white rounded-full transform md:-translate-x-1 shadow-md group-hover:scale-125 transition-all duration-300 z-10
-                {% if related.age.number >= 22 %}
-                  border-emerald-400
-                {% elif related.age.number >= 21 %}
-                  border-yellow-400
-                {% elif related.age.number >= 20 %}
-                  border-pink-400
-                {% else %}
-                  border-gray-400
-                {% endif %}
-                border-4
-                 ">
-            <div class="absolute inset-1 bg-cyan-400 rounded-full group-hover:bg-cyan-400 transition-colors duration-300"></div>
-          </div>
-          
-          <!-- Content -->
-          <div class="ml-16 md:ml-16 {% cycle 'md:pr-1/2' 'md:pl-1/2 md:ml-1/2' %}">
-            <!-- Date Badge -->
-            <div class="inline-flex items-center px-3 py-1 bg-blue-100 text-gray-900 rounded-full text-sm font-semibold mb-4 {% cycle 'md:float-left' 'md:float-left' %}
-                        {% if related.age.number >= 22 %}
-                          bg-emerald-100
-                        {% elif related.age.number >= 21 %}
-                          bg-yellow-100
-                        {% elif related.age.number >= 20 %}
-                          bg-pink-100
-                        {% else %}
-                          bg-gray-200
-                        {% endif %}
-                        text-gray-800 md:float-left">
-              📅 {{ related.age.number }}대 | {{ related.vote_date|default:"날짜 없음"|date:"Y-m-d" }}
-            </div>
-            
-            <div class="clear-both"></div>
-            
-            <!-- 개별 카드 -->
-          <a href="{{ related.url }}" target="_blank" class="block group">
-            <div class="group overflow-hidden rounded border border-gray-200 bg-white/80 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-blue-200 {% cycle 'md:ml-8' 'md:ml-8' %}">
-              <!-- 카드 헤더 -->
-              <div class="bg-white p-6 border-b border-gray-100">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1 mt-1 px-3">
-                    <h3 class="text-lg font-medium text-gray-900 group-hover:font-bold transition-all duration-300">
-                      {{ related.summary|default:"(내용 없음)" }}
-                    </h3>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 카드 푸터 -->
-              <div class="p-6">
-                <div class="flex items-center justify-between text-sm text-gray-500">
-                  <div class="flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"></svg>
-                    <p class="text-gray-600 font-medium">
-                      의안번호 {{ related.bill_number }}
-                    </p>
-                  </div>
-                  <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </div>
-              </div>
-
-            </div>
-          </a>
-            
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 위로 올라가기 버튼 -->
+<!-- 위로 버튼 -->
 <div class="fixed bottom-8 right-8 z-50">
-  <button type="button"
-          onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center"
-          id="scrollTopBtn">
+  <button type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})"
+          class="w-14 h-14 text-cyan-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
     </svg>
   </button>
 </div>
+{% endblock %}
 
+{% block script %}
 <style>
-/* Custom Variables */
-:root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --neon: {{ cluster_color_map|get_item:bill.cluster|default:'#3b82f6' }};
-  --neon-light: {{ cluster_color_map|get_item:bill.cluster|default:'#3b82f6' }}40;
-}
+html{scroll-behavior:smooth;}
+.timeline-item{scroll-margin-top:100px;} /* 고정 헤더 보정 */
 
-/* Smooth Animations */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom Animations */
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(5px) rotate(-1deg); }
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px var(--neon-light); }
-  50% { box-shadow: 0 0 40px var(--neon), 0 0 60px var(--neon-light); }
-}
-
-.timeline-item:hover .bg-blue-500 {
-  animation: glow 2s ease-in-out infinite;
-}
-
-/* Glassmorphism Effects */
-.backdrop-blur-sm {
-  backdrop-filter: blur(8px);
-}
-
-/* Enhanced Hover Effects */
-.timeline-item:hover {
-  transform: translateY(-5px);
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .timeline-item {
-    transform: none !important;
-  }
-}
+@keyframes glow{0%,100%{box-shadow:0 0 20px #67e8f940;}50%{box-shadow:0 0 40px #67e8f9,0 0 60px #67e8f940;}}
+.timeline-item:hover{transform:translateY(-5px);}
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Intersection Observer for Timeline Animation
-  const observerOptions = {
-    threshold: 0.5,
-    rootMargin: '0px 0px -50px 0px'
-  };
-
-  const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.transform = 'translateY(0)';
+document.addEventListener('DOMContentLoaded',()=>{
+  /* --------  등장 애니메이션  -------- */
+  const items=document.querySelectorAll('.timeline-item');
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.style.opacity=1;
+        e.target.style.transform='translateY(0)';
       }
     });
-  }, observerOptions);
+  },{threshold:.5,rootMargin:'0px 0px -50px 0px'});
 
-  // Observe timeline items
-  document.querySelectorAll('.timeline-item').forEach((item, index) => {
-    item.style.opacity = '0';
-    item.style.transform = 'translateY(50px)';
-    item.style.transition = `opacity 0.3s ease ${index * 0.02}s, transform 0.2s ease ${index * 0.02}s`;
-    observer.observe(item);
+  items.forEach((el,i)=>{
+    el.style.opacity=0;
+    el.style.transform='translateY(50px)';
+    el.style.transition=`opacity .4s ease ${i*0.05}s, transform .3s ease ${i*0.05}s`;
+    io.observe(el);
   });
-  
-  // Dynamic title sizing
-  const title = document.querySelector('h1');
-  if (title && title.scrollWidth > title.clientWidth) {
-    title.classList.add('text-3xl', 'md:text-4xl');
-    title.classList.remove('text-4xl', 'md:text-6xl');
-  }
-});
 
+  /* --------  카드뉴스 → 해시 스크롤  -------- */
+  const hash=window.location.hash;               //  #history-123
+  if(hash){
+    setTimeout(()=>{
+      const target=document.querySelector(hash);
+      if(target){
+        target.scrollIntoView({behavior:'smooth',block:'start'});
+        setTimeout(()=>target.classList.remove('ring-4','ring-cyan-400','ring-offset-2'),3000);
+      }
+    },150);
+  }
+
+  /* --------  좋아요  -------- */
+  const likeButtons=document.querySelectorAll('.like-btn');
+  const toggleLikeUrlTemplate="{% url 'cardnews:toggle_like' 0 %}";
+
+  likeButtons.forEach(btn=>{
+    btn.addEventListener('click',async e=>{
+      e.preventDefault();e.stopPropagation();
+      const isAuth=btn.dataset.authenticated==='true';
+      const billId=btn.dataset.billId;
+      const csrf=btn.dataset.csrfToken;
+      const url=toggleLikeUrlTemplate.replace('0',billId);
+
+      if(!isAuth){
+        if(confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?")){
+          window.location.href='/accounts/login/?next='+window.location.pathname;
+        }
+        return;
+      }
+
+      try{
+        const res=await fetch(url,{
+          method:'POST',
+          headers:{'X-CSRFToken':csrf,'Content-Type':'application/json'},
+          body:JSON.stringify({}),
+        });
+        if(!res.ok)throw new Error('server error');
+        const result=await res.json();
+        if(result.liked){
+          btn.innerHTML='❤️';btn.classList.add('text-red-500');
+        }else{
+          btn.innerHTML='🤍';btn.classList.remove('text-red-500');
+        }
+      }catch(err){
+        console.error(err);
+        alert('좋아요 처리 중 문제가 발생했습니다.');
+      }
+    });
+  });
+});
 </script>
 {% endblock %}

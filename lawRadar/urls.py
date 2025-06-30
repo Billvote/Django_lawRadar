@@ -20,7 +20,7 @@ from django.conf.urls. static import static
 from django.conf import settings
 from billview import views as bill_v
 from main import views as main_v
-from geovote import views as geovote_v
+# from geovote import views
 from dashboard import views as dashboard_v
 from history import views as history_v
 from cardnews import views as cardnews_v
@@ -34,24 +34,17 @@ urlpatterns = [
     # about us
     path('aboutUs/', main_v.aboutUs, name='about'),
     # search
-    path('search/', main_v.search, name='search'),
-    path("galaxy/", main_v.cluster_galaxy_view, name="cluster_galaxy"),
-    path("api/cluster_keywords/", main_v.cluster_keywords_json, name="cluster_keywords_json"),
+    path('', include(('main.urls', 'main'), namespace='main')),
 
     # billview
     path('billview/', bill_v.index_bill, name='index'),
     path('billview/<int:id>/', bill_v.detail_bill, name='detail'),
 
     # tree map
-    path('treemap/', geovote_v.treemap_view, name='treemap'),
-    path('api/treemap-data/', geovote_v.region_tree_data, name='treemap_data_api'),
-    path('api/region-tree/', geovote_v.region_tree_data, name='region_tree_data'),
-    path('api/member-vote-summary/', geovote_v.member_vote_summary_api, name='member_vote_summary_api'),
-    path('api/member-alignment/', geovote_v.member_alignment_api, name='member_alignment_api'),
+    path('geovote/', include('geovote.urls')),
     
     # dashboard
-    path('dashboard/<int:congress_num>', dashboard_v.dashboard, name='dashboard'),
-    path('api/cluster_chart/', dashboard_v.cluster_chart_api, name='cluster_chart_api'),
+    path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
 
     # history
     path('history/', include('history.urls')),
@@ -59,8 +52,12 @@ urlpatterns = [
     # card news
     path('cardnews/', include('cardnews.urls')),
 
-    # 검색 자동완성 -------------------------------★
+    # 검색 자동완성 -------------------------------
     path("api/autocomplete/", main_v.autocomplete, name="autocomplete"),
 
+    # 로그인
+    path('accounts/', include('accounts.urls')),
+
+    path('oauth/', include('social_django.urls', namespace='social')),
 
 ]

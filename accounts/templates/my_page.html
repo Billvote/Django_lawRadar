@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% load account_custom_filters %}
+{% load custom_filters %}
+{% load static %}
+{% block body %}
+
+<h2 class="text-xl font-bold mb-8">🍀 {{ username }}님의 요즘 관심사는?</h2>
+
+<div class="flex flex-col md:flex-row max-w-6xl mx-auto px-4 gap-6">
+<!-- 1행 1열: 유사 정당/다른 정당 -->
+<section class="max-w-lg mx-auto px-4 p-6 mb-10">
+  <h3 class="text-2xl font-bold">나와 어울리는 정당은?</h3>
+  <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
+  
+  <div class="bg-white p-6 rounded-2xl shadow-lg max-w-3xl mx-auto mt-6 hover:scale-105 transition-all duration-300">
+    {% if liked_ids %}
+    <div class="flex justify-between mb-6 gap-5">
+      <div class="text-center flex-1">
+        <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
+        <p class="text-2xl font-semibold mb-3"
+            style="color: {{ most_similar_party.color }}">
+          {{ most_similar_party.party }}
+        </p>
+        <p class="text-sm text-gray-500">
+          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong>
+          <br> 반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
+        </p>
+      </div>
+      <div class="text-center flex-1">
+        <h4 class="text-xl font-bold my-3">⚠️ 추구미가 다른</h4>
+        <p class="text-2xl font-semibold mb-3"
+            style="color: {{ most_opposite_party.color }}">
+            {{ most_opposite_party.party }}
+        </p>
+        <p class="text-sm text-gray-500">
+          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong>
+          <br> 반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
+        </p>
+      </div>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-4">
+      <p lass="text-lg text-gray-600">😥 아직 좋아하는 법안이 없어요</p>
+      <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
+      <a href="{% url 'cardnews:home' %}">
+        <button class="mt-4 bg-gray-100 rounded-full p-3 text-center font-semibold text-cyan-500">
+          ➕︎ 추가하기
+        </button>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- 1행 2열 추천 의원-->
+<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow-lg p-6 mb-10">
+  <h2 class="text-xl font-semibold mb-4">📌 내가 관심있는 주제에 가장 많이 찬성한 의원</h2>
+
+  {% if recommended_members %}
+    {% for cluster_id, members in recommended_members.items %}
+      <div class="mb-6 p-4 rounded-lg shadow-sm bg-white">
+        <h3>
+          관심 클러스터 #{{ cluster_id }}
+          {% with cluster_info=max_clusters|get_item:cluster_id %}
+            {% if cluster_info %}
+              ({{ cluster_info.cluster_keyword }})
+            {% endif %}
+          {% endwith %}
+        </h3>
+
+        <ul class="divide-y divide-gray-200">
+          {% for member in members %}
+            <li class="py-2">
+              <span class="font-semibold">{{ member.name }}</span>
+              <span class="text-sm text-gray-600">{{ member.party }}</span>
+              <span class="text-sm text-gray-500 ml-2">법안 수: {{ member.bill_count }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-gray-500">추천할 의원 정보가 아직 없습니다</p>
+  {% endif %}
+</section>
+</div>
+
+<!-- 법안 모음 -->
+<div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 items-start justify-between">
+  <section class="flex-1 flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="mb-6 p-4 bg-pink-400">
+      <h2 class="text-xl font-bold text-white">📚 내 법안 모음</h2>
+    </div>
+
+  <!-- 스크롤 영역 -->
+  <div class="scrollbar-custom gap-2 max-h-[500px] overflow-y-auto p-6 bg-white shadow-lg">
+    <!-- 카드 본문 -->
+    <div class="space-y-6">
+    {% for cluster, count in cluster_counts.items %}
+    <div class="bg-white rounded-xl">
+      <!-- 안 접히는 카드 영역 -->
+      <div class="group overflow-hidden rounded bg-white/80 shadow-xs hover: transition-all duration-300 cursor-pointer"
+          onclick="toggleCluster('{{ cluster }}')">
+
+        <div class="px-3 py-7 space-y-6 shadow-lg">
+          <h4 class="text-base font-semibold flex justify-between items-center mb-2">
+            키워드 {{ cluster }} ({{ count }}건)
+            <!-- 토글 아이콘 -->
+             <svg id="arrow-{{ cluster }}"
+                class="w-5 h-5 text-zinc-400 transition-transform duration-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 9l-7 7-7-7" />
+            </svg>
+          </h4>
+
+          <h3 class="text-gray-600 text-lg inline-block max-x-full mt-2 overflow-hidden whitespace-nowrap text-ellipsis">
+            {% with cluster_keywords|dict_get:cluster as keywords_str %}
+              {% if keywords_str %}
+                {% with keywords_str|split_by_comma as keywords_list %}
+                  {% random_color_for_cluster cluster as color %}
+                  {% for kw in keywords_list %}
+                    <a href="{% url 'cardnews:card' cluster %}"
+                      class="inline-block px-3 py-1 rounded-full text-md text-white font-medium hover:opacity-60 transition-all duration-200"
+                      style="background-color: {{ color }}; white-space: nowrap;">
+                      #{{ kw }}
+                    </a>
+                  {% endfor %}
+                {% endwith %}
+              {% else %}
+                없음
+              {% endif %}
+            {% endwith %}
+          </h3>
+
+        </div>
+
+        <!-- 접히는 콘텐츠 -->
+        <div id="cluster-bills-{{ cluster }}"
+            class="scrollbar-custom max-h-[500px] overflow-y-auto pr-1 mt-4 hidden space-y-3">
+          {% for bill in liked_bills %}
+            {% if bill.cluster == cluster %}
+              <div class="bg-gray-50 rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 p-3 cursor-pointer"
+                  onclick="location.href='{% url 'history:bill_detail' bill.pk %}#history-{{ bill.id }}'">
+                
+                <div class="flex justify-between items-start gap-2">
+                  <h3 class="text-base font-medium text-gray-800 truncate hover:text-cyan-600 transition-all duration-300">
+                    {{ bill.title }}
+                  </h3>
+                  <!-- 좋아요 버튼 -->
+                  {% if user.is_authenticated %}
+                    <button type="button"
+                            class="like-btn text-xl text-red-400 hover:scale-110 transition-transform duration-200"
+                            data-bill-id="{{ bill.id }}"
+                            data-csrf-token="{{ csrf_token }}"
+                            onclick="event.stopPropagation(); toggleLike(this);">
+                      {% if bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
+                    </button>
+                  {% endif %}
+                </div>
+
+                <div class="mt-1 text-xs text-gray-500 space-x-3">
+                  <span class="truncate">의안번호 {{ bill.bill_number }}</span>
+                  <!-- <span>📅 표결일 {{ bill.latest_vote_date|default:"-"|date:"Y-m-d" }}</span> -->
+                </div>
+                
+              </div>
+            {% endif %}
+          {% empty %}
+            <p class="text-sm text-zinc-400">해당 키워드에 법안이 없습니다</p>
+          {% endfor %}
+        </div>
+
+      </div>
+    {% empty %}
+      <p class="text-sm text-gray-400">좋아요한 법이 없습니다</p>
+    {% endfor %}
+    </div>
+    </div>
+</section>
+
+  <!-- 우측: 추천 법안 리스트 -->
+  {% if recommended_bills %}
+  <section class="flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div style="background:#38bdf8;" class="mb-6 p-4">
+      <h2 class="text-xl font-bold text-white">관심 있을 만한 법</h2>
+    </div>
+    <!-- <h3 class="text-lg font-bold mb-4">🤖 이런 법안은 어때요?</h3> -->
+    <ul class="max-h-[600px] space-y-3 overflow-y-auto pr-0 scrollbar-custom">
+      {% for bill in recommended_bills %}
+      <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
+          onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
+        <h4 class="font-semibold">{{ bill.title }}</h4>
+        <p class="text-sm text-gray-500 mt-1">의안번호 {{ bill.bill_number }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+</div>
+
+<!-- 클러스터별 투표 통계 차트 영역 -->
+{% if has_vote_results %}
+<section class="my-8 max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
+  <h3 class="text-lg font-bold mb-6">📊 내 관심 법안에 정당은 어떤 입장일까?</h3>
+
+  <label for="clusterSelect" class="font-bold block mb-2"></label>
+  <select id="clusterSelect" onchange="onClusterChange(this)"
+          class="w-full appearance-none border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+    {% for cluster_num, data in cluster_data.items %}
+      <option value="{{ cluster_num }}">{{ data.cluster_keywords }}</option>
+    {% endfor %}
+  </select>
+  <div id="clusterVoteChart"></div>
+
+{{ cluster_data|json_script:"cluster-vote-data" }}
+{{ result_types|json_script:"cluster-categories" }}
+{{ party_names|json_script:"cluster-party-names" }}
+{{ party_colors|json_script:"cluster-party-colors" }}
+{{ cluster_stats_data|json_script:"cluster-stats-data" }}
+{% endif %}
+
+</div>
+</section>
+
+
+
+
+{% endblock %}
+
+
+
+{% block script%}
+<script>
+    
+// 좋아요 기능
+document.querySelectorAll('.like-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const billId = this.dataset.billId;
+    fetch("{% url 'cardnews:toggle_like' 0 %}".replace('0', billId), {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin',
+    }).then(res => res.json())
+      .then(data => {
+        this.textContent = data.liked ? '❤️' : '🤍';
+      });
+  });
+});
+
+// 클러스터별 통계 차트
+// const clusterStatsData = JSON.parse(document.getElementById('cluster-stats-data').textContent);
+document.addEventListener('DOMContentLoaded', () => {
+  const clusterSelect = document.getElementById('clusterSelect');
+  const ageSelect = document.getElementById('ageSelect');
+
+  const clusterVoteData = JSON.parse(document.getElementById("cluster-vote-data").textContent);
+  const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
+  const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
+  const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
+
+  const softColors = [
+    '#38bdf8', // sky
+    '#34d399', // emerald
+    '#f472b6', // pink
+    '#facc15', // yellow
+    '#a78bfa', // purple
+    '#fb923c', // orange
+  ];
+
+  let clusterChart = null;
+
+  function onClusterChange(select) {
+    const clusterNum = select.value;
+    const ageId = ageSelect ? ageSelect.value : '';
+    const url = new URL(window.location.href);
+    url.searchParams.set('cluster_num', clusterNum);
+    if (ageId) url.searchParams.set('age_id', ageId);
+    url.hash = 'clusterVoteChart';
+    window.location.href = url.toString();
+  }
+
+  // 차트 그리기 함수
+  function drawClusterChart(clusterNum) {
+    const clusterObj = clusterVoteData[clusterNum];
+    const chartContainer = document.getElementById('clusterVoteChart');
+
+    if (!clusterObj) {
+      chartContainer.innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
+      if (clusterChart) {
+        clusterChart.destroy();
+        clusterChart = null;
+      }
+      return;
+    }
+
+    const partyStats = clusterObj.party_stats;
+
+    const series = resultTypes.map(type => ({
+      name: type,
+      data: partyNames.map(party => partyStats[party]?.[type] || 0)
+    }));
+
+    const options = {
+      chart: {
+        type: 'bar',
+        stacked: true,
+        stackType: '100%',
+        height: 400,
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          barHeight: '70%',
+          borderRadius: 6,
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: val => val > 0 ? val.toFixed(1) + '%' : '',
+      },
+      series: series,
+      xaxis: {
+        categories: partyNames,
+        title: { text: '비율' },
+        labels: { formatter: val => val.toFixed(0) + '%' },
+      },
+      yaxis: {
+        title: { text: '정당' }
+      },
+      colors: softColors,
+      legend: { position: 'top' },
+      tooltip: {
+        y: { formatter: val => val + '%' }
+      }
+    };
+
+    if (clusterChart) {
+      clusterChart.updateOptions(options, true, true);
+    } else {
+      clusterChart = new ApexCharts(chartContainer, options);
+      clusterChart.render();
+    }
+  }
+
+  // 초기 렌더링 (선택된 cluster 있으면 그리기)
+  if (clusterSelect && clusterSelect.value) {
+    drawClusterChart(clusterSelect.value);
+  }
+
+  // 이벤트 바인딩
+  if (clusterSelect) {
+    clusterSelect.addEventListener('change', e => {
+      drawClusterChart(e.target.value);
+    });
+  }
+
+  if (ageSelect) {
+    ageSelect.addEventListener('change', e => {
+      onAgeChange(e.target);
+    });
+  }
+
+  // window.onAgeChange, window.onClusterChange 함수를 전역에 노출시켜야 
+  // select 태그의 onchange 속성과 연동됨
+  window.onClusterChange = onClusterChange;
+});
+
+
+  // 관심 클러스터/법안 목록
+document.addEventListener('DOMContentLoaded', () => {
+  window.toggleCluster = function(clusterId) {
+    const allSections = document.querySelectorAll('[id^="cluster-bills-"]');
+    const allArrows = document.querySelectorAll('[id^="arrow-"]');
+
+    allSections.forEach(section => {
+      if (section.id === `cluster-bills-${clusterId}`) {
+        // 현재 클릭한 클러스터 토글
+        const isHidden = section.classList.contains('hidden');
+        if (isHidden) {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+        }
+      } else {
+        // 나머지는 닫기
+        section.classList.add('hidden');
+      }
+    });
+
+    allArrows.forEach(arrow => {
+      if (arrow.id === `arrow-${clusterId}`) {
+        // 클릭한 클러스터 화살표 회전 토글
+        const parentDiv = document.getElementById(`cluster-bills-${clusterId}`);
+        if (parentDiv.classList.contains('hidden')) {
+          arrow.style.transform = 'rotate(0deg)';
+        } else {
+          arrow.style.transform = 'rotate(180deg)';
+        }
+      } else {
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+});
+
+
+</script>
+{% endblock %}

@@ -284,17 +284,10 @@ def run_all():
     # vote import하기
     vote_csv_path = csv_path / 'vote.csv'
     chunk_size = 5000  # 1000줄씩 읽기
-
-    # 과부화 해결 - 1회만 캐싱
     member_dict = {
         (m.age.number, m.member_id): m for m in Member.objects.select_related('age')
     }
     bill_dict = {b.bill_number: b for b in Bill.objects.all()}
-    # existing_votes = Vote.objects.all().select_related('member', 'age', 'bill')
-    # vote_lookup = {
-    #     (v.age_id, v.member_id, v.bill_id): v for v in existing_votes
-    # }
-
     for i, chunk in enumerate(pd.read_csv(vote_csv_path, chunksize=chunk_size)):
         print(f'📥 importing chunk {i}')
         import_votes(
@@ -303,7 +296,6 @@ def run_all():
             bill_dict=bill_dict,
             # vote_lookup=vote_lookup
         )
-
     print(f"✅ 데이터 임포트 완료")
 
 if __name__ == "__main__":

@@ -12,21 +12,35 @@
           <div>
             <div class="flex items-center space-x-4">
               <!-- Home -->
-              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">Home</a>
+              <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">홈</a>
               <!-- Dashboard -->
-              <a href="{% url 'dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Dashboard</a>
+              <a href="{% url 'dashboard:dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">입법 현황</a>
               
               <!-- Card News -->
-              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Card News</a>
-
+              <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">카드 뉴스</a>
               <!-- History -->
-              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">History</a>
-
+              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">개정 연혁</a>
               <!-- TreeMap -->
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">Treemap</a>
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">의원별 표결</a>
 
-              <!-- About us -->
-              <a href="{% url 'about' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/aboutUs/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">About us</a>
+              <!-- My Page Dropdown (클릭형) -->
+              <div class="relative">
+                <button id="dropdownToggle" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400 focus:outline-none">
+                  마이페이지
+                </button>
+                <!-- Dropdown Menu -->
+                <div id="dropdownMenu"
+                    class="absolute left-1/2 transform -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded shadow-md z-50 hidden w-max text-left">
+                  {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:my_page' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">관심 법안</a>
+                    <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">로그아웃</a>
+                  {% else %}
+                    <a href="{% url 'accounts:login' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">로그인</a>
+                    <a href="{% url 'accounts:signup' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">회원가입</a>
+                  {% endif %}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -62,6 +76,24 @@
       tabs.forEach(t => t.classList.remove("active-tab"));
       tab.classList.add("active-tab");
       content.textContent = contents[tab.textContent.trim()];
+    });
+  });
+
+  // my_page 드롭박스
+    document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.getElementById("dropdownToggle");
+    const menu = document.getElementById("dropdownMenu");
+
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation(); // 다른 클릭 이벤트 막기
+      menu.classList.toggle("hidden");
+    });
+
+    // 바깥 클릭하면 드롭다운 닫힘
+    document.addEventListener("click", function (e) {
+      if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+        menu.classList.add("hidden");
+      }
     });
   });
 </script>

@@ -15,7 +15,7 @@
 
   <!-- 아이콘 라이브러리 -->
   <link href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css" rel="stylesheet">
-
+  
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -33,6 +33,7 @@
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
+  <meta name="csrf-token" content="{{ csrf_token }}">
 
   <style>
     body {
@@ -99,11 +100,11 @@
       font-style: normal;
     }
     @font-face {
-      font-family: 'Cafe24Ssurround';
-      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Cafe24Ssurround.woff') format('woff');
-      font-weight: normal;
-      font-style: normal;
-    }
+    font-family: 'SUIT-Regular';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_suit@1.0/SUIT-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
     @font-face {
     font-family: 'GangwonEduSaeeum_OTFMediumA';
     src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduSaeeum_OTFMediumA.woff') format('woff');
@@ -147,11 +148,21 @@
     font-weight: 700;
     font-style: normal;
   }
+  @font-face {
+    font-family: 'HSSanTokki20-Regular';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2405@1.0/HSSanTokki20-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+  }
 
-    .animate-gradient {
-      background-size: 200% 200%;
-      animation: gradient-x 4s ease infinite;
-    }
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-x 4s ease infinite;
+  }
+
+  .none-data {
+    font-family: 'HSSanTokki20-Regular';
+  }
 
 
 
@@ -163,6 +174,7 @@
       padding: 1rem;
     }
     .district-card {
+      
       border-radius: 1rem;
       padding: 1.25rem;
       box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
@@ -172,7 +184,7 @@
       flex-direction: row;
       align-items: center;
       gap: 0.75rem;
-      border: 4px solid #969696;
+      border: 2px solid #969696;
       opacity: 0.8;
       transition: all 0.3s ease;
     }
@@ -184,7 +196,7 @@
       opacity: 1;
     }
     .district-card img {
-      width: 8rem;
+      width: 12rem;
       height: 12rem;
       border-radius: 0 !important;
       object-fit: cover;
@@ -220,6 +232,24 @@
       display: block;
       text-align: center;
       width: 100%;
+    }
+
+    /* 예쁜 스크롤 */
+    .scrollbar-custom::-webkit-scrollbar {
+      width: 6px; /* 너비 줄이기 */
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2); /* thumb 색 */
+      border-radius: 9999px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.3);
     }
   </style>
 

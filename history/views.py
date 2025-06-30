@@ -1,9 +1,11 @@
 # history/views.py
-# Django 5.2 ― “개정 최다” 중복-제거(라벨별 1건)·관련횟수 내림차순 버전
-# ──────────────────────────────────────────────────────────
+# Django 5.2 ― “개정 최다” 중복-제거(라벨별 1건)·관련횟수 내림차순 + 카드뉴스 키워드 지원
+
 from __future__ import annotations
 
 import logging
+import random
+from collections import defaultdict
 from typing import Dict, List
 
 from django.core.cache import cache
@@ -18,7 +20,7 @@ from django.db.models import (
     Subquery,
     Value,
 )
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Random
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -29,11 +31,8 @@ from billview.models import Bill
 from geovote.models import Vote
 from main.models import PartyClusterStats
 from search import search_service as ss
-from django.db.models.functions import Random
-from collections import defaultdict
-import random
 
-
+from accounts.models import BillLike
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +88,9 @@ class BillHistoryListView(ListView):
 
     # ---------- 내부 util ---------- #
     def _cluster_kw_str(self) -> Dict[int, str]:
+        """
+        {cluster_id: '키워드1, 키워드2, ...'}
+        """
         d = cache.get("cluster_kw_str")
         if d is None:
             d = dict(
@@ -100,6 +102,9 @@ class BillHistoryListView(ListView):
         return d
 
     def _color_map(self) -> Dict[int, str]:
+        """
+        {cluster_id: '#abcdef'}
+        """
         cmap = cache.get("cluster_color_map")
         if cmap:
             return cmap
@@ -175,6 +180,7 @@ class BillHistoryListView(ListView):
         kw = self.request.GET.get("q", "").strip()
         cid = self.request.GET.get("cluster", "").strip()
 
+        # 기본 컨텍스트
         ctx.update(
             {
                 "query": kw,
@@ -210,14 +216,12 @@ class BillHistoryListView(ListView):
             related_count=Subquery(cnt_sq),
         )
 
-        # 🆕 최근 개정 (최근 표결일 → 최신 의안)
+        # ✅ 최근 개정
         ctx["recent_bills"] = base_qs.order_by(
             F("last_vote_date").desc(nulls_last=True), "-bill_number"
         )[:10]
 
-        # 🔁 개정 최다 ────────────────
-        #  - related_count DESC
-        #  - label(원 법률)별 최신 1건만
+        # 🔁 개정 최다
         if connection.vendor == "postgresql":
             amended_qs = (
                 base_qs.order_by("label", "-bill_number")
@@ -237,43 +241,20 @@ class BillHistoryListView(ListView):
             )
         ctx["amended_bills"] = amended_qs
 
-        # ❌ 반대 최다 -------------------------------------------------------
-        # current_age = self.request.GET.get("age")
-        # age_filter = {"age": current_age} if current_age else {}
-
-        # hot_clusters = PartyClusterStats.objects.filter(**age_filter).values_list(
-        #     "cluster_num", flat=True
-        # )
-
-        # ctx["opposed_bills"] = (
-        #     Bill.objects.filter(cluster__in=hot_clusters, **age_filter)
-        #     .annotate(
-        #         last_vote_date=Subquery(vote_sq),
-        #         against=Count("vote", filter=Q(vote__result="반대")),
-        #     )
-        #     .filter(against__gt=0)
-        #     .order_by("-last_vote_date")[:8]
-        # )
-
-        # 랜덤 법안-----------------------------------------------------------
+        # 🎲 랜덤 법안 (기존 로직 유지)
         hot_clusters = PartyClusterStats.objects.values_list(
             "cluster_num", flat=True
         )
-
-        # 랜덤 후보군 넉넉하게 추출 (표결 정보 포함)
         candidate_bills = (
             Bill.objects.filter(cluster__in=hot_clusters)
             .annotate(last_vote_date=Subquery(vote_sq))
-            .order_by(Random())[:100]  # 클러스터가 많으면 수 늘려도 OK
+            .order_by(Random())[:100]
         )
-
-        # 클러스터별 최대 8개씩 그룹화
         cluster_groups = defaultdict(list)
         for bill in candidate_bills:
             if bill.cluster and len(cluster_groups[bill.cluster]) < 8:
                 cluster_groups[bill.cluster].append(bill)
 
-        # 각 클러스터별로 최신 법안 1건 선택
         latest_bills = []
         for bills in cluster_groups.values():
             latest = sorted(
@@ -284,15 +265,46 @@ class BillHistoryListView(ListView):
             if latest:
                 latest_bills.append(latest[0])
 
-        # 키워드 랜덤으로 가져오기
         for b in latest_bills:
             if b.cluster_keyword:
-                keywords = [kw.strip(",.") for kw in b.cluster_keyword.split()]
+                keywords = [k.strip(",.") for k in b.cluster_keyword.split()]
                 b.hashtag = f"#{random.choice(keywords)}" if keywords else ""
             else:
                 b.hashtag = ""
 
         ctx["cluster_random_latest_bills"] = latest_bills[:7]
+
+        # 📰 카드뉴스 키워드 (top_clusters)
+        cluster_kw_dict = self._cluster_kw_str()
+
+        # 각 클러스터의 대표 키워드(첫 단어) 추출
+        all_clusters = [
+            (cid, (kw_str or "").split(",")[0].strip() or "키워드 없음")
+            for cid, kw_str in cluster_kw_dict.items()
+        ]
+
+        # 파라미터에 따라 노출 로직 분기
+        if cid:  # cluster 파라미터가 있으면 같은 키워드를 공유하는 클러스터
+            try:
+                cid_int = int(cid)
+                base_kw = (cluster_kw_dict.get(cid_int) or "").split(",")[0].strip()
+                related = [
+                    (c, w) for c, w in all_clusters
+                    if c != cid_int and base_kw and base_kw in cluster_kw_dict.get(c, "")
+                ]
+                random.shuffle(related)
+                ctx["top_clusters"] = related[:24]
+            except ValueError:
+                ctx["top_clusters"] = []
+        elif kw:  # 검색어가 있으면 해당 단어가 포함된 클러스터
+            matched = [
+                (c, w) for c, w in all_clusters if kw.lower() in w.lower()
+            ]
+            random.shuffle(matched)
+            ctx["top_clusters"] = matched[:24]
+        else:  # 기본 : 인기(빈도 상위) → 랜덤 섞기
+            random.shuffle(all_clusters)
+            ctx["top_clusters"] = all_clusters[:24]
 
         return ctx
 
@@ -335,6 +347,14 @@ class BillHistoryDetailView(DetailView):
             .order_by("-sort_date", "-bill_number")
         )
 
+        # 좋아요 여부 확인
+        liked_ids = set()
+        if self.request.user.is_authenticated:
+            liked_ids = set(
+                BillLike.objects.filter(user=self.request.user, bill__label=label)
+                .values_list("bill_id", flat=True)
+            )
+
         helper = BillHistoryListView()
         ctx.update(
             {
@@ -342,6 +362,7 @@ class BillHistoryDetailView(DetailView):
                 "list_page": self.request.GET.get("page", "1"),
                 "cluster_keywords_dict": helper._cluster_kw_str(),
                 "cluster_color_map": helper._color_map(),
+                "liked_ids": liked_ids,
             }
         )
         return ctx
