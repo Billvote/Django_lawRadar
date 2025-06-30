@@ -4,79 +4,103 @@
 {% load static %}
 {% block body %}
 
-<h2 class="text-xl font-bold mb-8">🍀 {{ username }}님의 요즘 관심사는?</h2>
+<h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 tracking-tight">
+  🍀 <span class="text-cyan-600">{{ username }}</span>님의 요즘 관심사는?
+</h2>
 
-<div class="flex flex-col md:flex-row max-w-6xl mx-auto px-4 gap-6">
-<!-- 1행 1열: 유사 정당/다른 정당 -->
-<section class="max-w-lg mx-auto px-4 p-6 mb-10">
-  <h3 class="text-2xl font-bold">나와 어울리는 정당은?</h3>
-  <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
-  
-  <div class="bg-white p-6 rounded-2xl shadow-lg max-w-3xl mx-auto mt-6 hover:scale-105 transition-all duration-300">
+
+<div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-8 items-stretch justify-between">
+
+  <!-- 1행 1열: 유사 정당/다른 정당 -->
+  <section class="flex-1 bg-white rounded-2xl shadow-lg p-6 hover:scale-105 transition-transform duration-300 text-center">
+    <h2 class="text-2xl font-bold mb-2">🍒 나와 어울리는 정당은? 🍒</h2>
+    <p class="text-sm">{{ username }}님이 <strong>좋아하는</strong> 법에 따라 결과가 달라져요!</p>
+
     {% if liked_ids %}
-    <div class="flex justify-between mb-6 gap-5">
+    <div class="flex justify-between mt-6 gap-6">
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">✅ 추구미가 같은</h4>
-        <p class="text-2xl font-semibold mb-3"
-            style="color: {{ most_similar_party.color }}">
+        <p class="text-2xl font-semibold mb-3" style="color: {{ most_similar_party.color }}">
           {{ most_similar_party.party }}
         </p>
         <p class="text-sm text-gray-500">
-          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong>
-          <br> 반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
+          찬성률 <strong>{{ most_similar_party.support|floatformat:1 }}%</strong><br>
+          반대율 <strong>{{ most_similar_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
       <div class="text-center flex-1">
         <h4 class="text-xl font-bold my-3">⚠️ 추구미가 다른</h4>
-        <p class="text-2xl font-semibold mb-3"
-            style="color: {{ most_opposite_party.color }}">
-            {{ most_opposite_party.party }}
+        <p class="text-2xl font-semibold mb-3" style="color: {{ most_opposite_party.color }}">
+          {{ most_opposite_party.party }}
         </p>
         <p class="text-sm text-gray-500">
-          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong>
-          <br> 반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
+          찬성률 <strong>{{ most_opposite_party.support|floatformat:1 }}%</strong><br>
+          반대율 <strong>{{ most_opposite_party.oppose|floatformat:1 }}%</strong>
         </p>
       </div>
     </div>
     {% else %}
-    <div class="flex flex-col items-center justify-center py-4">
-      <p lass="text-lg text-gray-600">😥 아직 좋아하는 법안이 없어요</p>
+    <div class="flex flex-col items-center justify-center py-6 text-gray-600 mt-6">
+      <p class="text-lg mb-2">😥 아직 좋아하는 법안이 없어요</p>
       <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
       <a href="{% url 'cardnews:home' %}">
-        <button class="mt-4 bg-gray-100 rounded-full p-3 text-center font-semibold text-cyan-500">
+        <button class="mt-4 bg-gray-100 rounded-full px-6 py-3 font-semibold text-cyan-500 hover:bg-gray-200 transition">
           ➕︎ 추가하기
         </button>
       </a>
     </div>
     {% endif %}
-  </div>
-</section>
+  </section>
 
-<!-- 1행 2열 추천 의원-->
-<section class="max-w-6xl mx-auto px-4 bg-white rounded-xl shadow-lg p-6 mb-10">
-  <h2 class="text-2xl font-bold mb-6 text-gray-800">📌 내가 관심있는 주제에 가장 많이 찬성한 의원</h2>
+  <!-- 1행 2열: 추천 의원 -->
+  <section class="flex-1 bg-white rounded-2xl shadow-lg p-6 hover:scale-105 transition-transform duration-300 text-center">
+    <h2 class="text-2xl font-bold mb-2">🍓 나와 어울리는 국회의원은? 🍓</h2>
+    <p class="text-sm">{{ username }}님의 <strong>관심사</strong>에 따라 결과가 달라져요!</p>
 
-  {% if recommended_members %}
-    {% for cluster_id, member in recommended_members.items %}
-      <div class="p-4 bg-gray-50 border rounded-lg shadow mb-4">
-        <div class="text-indigo-600 font-semibold mb-1">
-          관심 클러스터 #{{ cluster_id }}
-          {% with cluster_info=max_clusters|get_item:cluster_id %}
-            {% if cluster_info %} ({{ cluster_info.cluster_keyword }}) {% endif %}
-          {% endwith %}
-        </div>
-        <div class="text-lg font-bold text-gray-800">{{ member.name }}</div>
-        <div class="text-sm text-gray-600">정당: {{ member.party }}</div>
-        <div class="text-sm text-gray-500">법안 수: {{ member.bill_count }}</div>
-        <div class="text-sm text-gray-500">찬성률: {{ member.ratio }}%</div>
+  {% if recommended_support_member or recommended_oppose_member %}
+    <div class="flex flex-col md:flex-row gap-6 mt-6 text-left">
+      <!-- 찬성 추천 -->
+      <div class="flex-1 text-center">
+        <h3 class="text-lg font-semibold text-green-700 mb-2">👍 나와 찰떡콩짝 의원</h3>
+        {% if recommended_support_member %}
+          <p class="text-xl font-bold text-gray-800">{{ recommended_support_member.name }} ({{ recommended_support_member.party }})</p>
+          <p class="text-sm text-gray-600 mt-1">찬성률: <span class="font-semibold">{{ recommended_support_member.ratio }}%</span></p>
+          <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_support_member.cluster }}</p>
+        {% else %}
+          <p class="text-sm text-gray-500">찬성 기준으로 추천할 의원이 없습니다.</p>
+        {% endif %}
       </div>
-    {% endfor %}
+
+      <!-- 반대 추천 -->
+      <div class="flex-1 text-center">
+        <h3 class="text-lg font-semibold text-red-700 mb-2">👎 나와는 조금 다른 의원</h3>
+        {% if recommended_oppose_member %}
+          <p class="text-xl font-bold text-gray-800">{{ recommended_oppose_member.name }} ({{ recommended_oppose_member.party }})</p>
+          <p class="text-sm text-gray-600 mt-1">반대율: <span class="font-semibold">{{ recommended_oppose_member.ratio }}%</span></p>
+          <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_oppose_member.cluster }}</p>
+        {% else %}
+          <p class="text-sm text-gray-500">반대 기준으로 추천할 의원이 없습니다.</p>
+        {% endif %}
+      </div>
+    </div>
+
   {% else %}
-    <p class="text-gray-500">추천할 의원 정보가 아직 없습니다.</p>
+    <!-- 추천 정보가 아예 없을 경우 -->
+    <div class="flex flex-col items-center justify-center py-6 text-gray-600 mt-6">
+      <p class="text-lg mb-2">😥 아직 좋아하는 법안이 없어요</p>
+      <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
+      <a href="{% url 'cardnews:home' %}">
+        <button class="mt-4 bg-gray-100 rounded-full px-6 py-3 font-semibold text-cyan-500 hover:bg-gray-200 transition">
+          ➕︎ 추가하기
+        </button>
+      </a>
+    </div>
   {% endif %}
 </section>
 
+
 </div>
+
 
 <!-- 법안 모음 -->
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 items-start justify-between">
