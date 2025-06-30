@@ -27,7 +27,7 @@ from .forms import (
 from accounts.models import BillLike
 from billview.models import Bill
 from geovote.models import Vote
-from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
+from main.models import ClusterKeyword, PartyClusterStats, VoteSummary, PartyConcentration
 from geovote.views import get_max_clusters_for_member
 
 logger = logging.getLogger(__name__)
@@ -117,63 +117,77 @@ def jaccard_score(set1, set2):
 
 def get_user_cluster_stats(user):
     """
-    사용자가 좋아요한 클러스터별 키워드 및 정당 투표 통계 반환
+    사용자가 좋아요한 법안의 클러스터별 표결 통계·키워드
+    => 차트에서 바로 쓸 JSON 형태로 반환
     """
-    liked_clusters = (
-        BillLike.objects.filter(user=user)
-        .values_list("bill__cluster", flat=True)
-        .distinct()
-    )
-    liked_clusters = [c for c in liked_clusters if c]
+    from collections import defaultdict
 
-    # 키워드
+    liked_bills = BillLike.objects.filter(user=user).select_related("bill", "bill__age")
+    liked_clusters = {
+        bill.bill.cluster for bill in liked_bills if bill.bill.cluster is not None
+    }
+
+    # 클러스터별 age 구하기
+    cluster_to_age = {}
+    for bill_like in liked_bills:
+        bill = bill_like.bill
+        if bill.cluster is not None and bill.age:
+            cluster_to_age[bill.cluster] = bill.age
+
+    # 클러스터별 키워드
+    keywords_raw = ClusterKeyword.objects.filter(cluster_num__in=liked_clusters)
     cluster_keywords = {}
-    for ck in ClusterKeyword.objects.filter(cluster_num__in=liked_clusters):
+    for ck in keywords_raw:
         try:
             cluster_keywords[ck.cluster_num] = ", ".join(json.loads(ck.keyword_json))
         except Exception:
             cluster_keywords[ck.cluster_num] = ck.keyword_json
 
-    # 표결 통계
-    stats = (
-        PartyClusterStats.objects.filter(cluster_num__in=liked_clusters)
-        .select_related("party")
-    )
-
     result_types = ["찬성", "반대", "기권", "불참"]
-    cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
-    party_seat_counts = {}
+    cluster_data = {}
+    cluster_top_parties = {}
 
-    for row in stats:
-        party_name = row.party.party
-        party_seat_counts[party_name] = getattr(row.party, "seat_count", 0)
-        cluster_data[row.cluster_num][party_name] = {
-            "찬성": round(row.support_ratio),
-            "반대": round(row.oppose_ratio),
-            "기권": round(row.abstain_ratio),
-            "불참": round(row.absent_ratio),
+    for cluster, age in cluster_to_age.items():
+        # 상위 8개 정당 (당시 age 기준)
+        top_party_objs = PartyConcentration.objects.filter(age=age).order_by('rank')[:8]
+        top_parties = [p.party.party for p in top_party_objs]
+        top_party_ids = [p.party.id for p in top_party_objs]
+
+        # 해당 클러스터에 대한 통계
+        stats = PartyClusterStats.objects.filter(
+            cluster_num=cluster,
+            party__in=top_party_ids,
+            age=age
+        ).select_related("party")
+
+        party_stats = {}
+        for stat in stats:
+            party_name = stat.party.party
+            party_stats[party_name] = {
+                "찬성": round(stat.support_ratio),
+                "반대": round(stat.oppose_ratio),
+                "기권": round(stat.abstain_ratio),
+                "불참": round(stat.absent_ratio),
+            }
+
+        cluster_data[str(cluster)] = {
+            "cluster_num": cluster,
+            "cluster_keywords": cluster_keywords.get(cluster, ""),
+            "party_stats": party_stats,
+            "top_parties": top_parties,
         }
+        cluster_top_parties[cluster] = top_parties
 
-    # 의석수 순 상위 8개 정당
-    top_parties = sorted(party_seat_counts, key=party_seat_counts.get, reverse=True)[:8]
-
-    # 누락 0 채우기
-    for cn in cluster_data:
-        for p in top_parties:
-            cluster_data[cn].setdefault(p, {r: 0 for r in result_types})
-
-    cluster_vote_data = {
-        str(cn): {
-            "cluster_num": cn,
-            "cluster_keywords": cluster_keywords.get(cn, ""),
-            "party_stats": ps,
-        }
-        for cn, ps in cluster_data.items()
-    }
+    # 전체 클러스터에서 등장한 top_party 기준 전체 정렬
+    all_parties = {party for plist in cluster_top_parties.values() for party in plist}
+    # 일단 빈도 기반으로 정렬
+    from collections import Counter
+    party_freq = Counter(p for plist in cluster_top_parties.values() for p in plist)
+    sorted_parties = [p for p, _ in party_freq.most_common()]
 
     return {
-        "cluster_data": cluster_vote_data,
-        "party_names": top_parties,
+        "cluster_data": cluster_data,
+        "party_names": sorted_parties,
         "result_types": result_types,
     }
 
