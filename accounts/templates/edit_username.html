@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+  <div class="max-w-md w-full bg-white shadow-lg rounded-2xl p-8">
+    <h2 class="text-2xl font-bold text-center mb-6">사용자 이름 변경</h2>
+
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        <label for="{{ form.username.id_for_label }}" class="block text-sm font-semibold mb-1">
+          {{ form.username.label }}
+        </label>
+        {{ form.username|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl" }}
+        {% if form.username.errors %}
+          <p class="text-red-500 text-sm mt-1">{{ form.username.errors }}</p>
+        {% endif %}
+      </div>
+
+      <button type="submit"
+              class="w-full py-3 rounded-xl text-white font-medium
+                     bg-gradient-to-r from-cyan-500 to-teal-500 hover:opacity-90">
+        저장
+      </button>
+    </form>
+
+    <div class="text-center mt-6">
+      <a href="{% url 'accounts:my_page' %}" class="text-sm text-blue-600 hover:text-blue-500">
+        마이페이지로 돌아가기
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

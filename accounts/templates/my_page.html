@@ -54,14 +54,8 @@
 
   <!-- 1행 2열: 추천 의원 -->
   <section class="flex-1 bg-white rounded-2xl shadow-lg p-6 hover:scale-105 transition-transform duration-300 text-center">
-<<<<<<< HEAD
-    <h2 class="text-2xl font-bold mb-4">🍓 나와 어울리는 국회의원은? 🍓</h2>
-    <p class="text-sm">{{ request.user.nickname|default:request.user.username }}님의 <strong>관심사</strong>에 따라 결과가 달라져요!</p>
-=======
     <h2 class="text-2xl font-bold mb-2">🍓 나와 어울리는 국회의원은? 🍓</h2>
     <p class="text-sm">{{ username }}님의 <strong>관심사</strong>에 따라 결과가 달라져요!</p>
->>>>>>> 115d7a2effda9e3e2f0ccb18bb289e0ded80c994
-
   {% if recommended_support_member or recommended_oppose_member %}
     <div class="flex flex-col md:flex-row gap-6 mt-6 text-left">
       <!-- 찬성 추천 -->

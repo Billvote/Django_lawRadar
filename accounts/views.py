@@ -1,19 +1,22 @@
-# accounts/views.py
+# Django_lawRadar/accounts/views.py
 from collections import Counter, defaultdict
 import json
 import logging
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import get_user_model
 from django.db.models import Max
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import FormView
+from django.views.generic import FormView, UpdateView
 
 from .forms import (
     CustomUserCreationForm,
     CustomAuthenticationForm,
     DirectPasswordResetForm,
+    UpdateUsernameForm,      # ← 사용자 이름 수정 폼
 )
 
 from accounts.models import BillLike
@@ -22,25 +25,13 @@ from geovote.models import Age, Member, Party, Vote
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 from geovote.views import get_max_clusters_for_member
 
-
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 PALETTE = [
-    "#bef264",
-    "#67e8f9",
-    "#f9a8d4",
-    "#fde68a",
-    "#fdba74",
-    "#6ee7b7",
-    "#c3b4fc",
-    "#fda4af",
-    "#5eead4",
-    "#34d399",
-    "#f472b6",
-    "#facc15",
-    "#fb7185",
-    "#818cf8",
-    "#38bdf8",
+    "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
+    "#6ee7b7", "#c3b4fc", "#fda4af", "#5eead4", "#34d399",
+    "#f472b6", "#facc15", "#fb7185", "#818cf8", "#38bdf8",
 ]
 
 
@@ -79,10 +70,9 @@ class DirectPasswordResetView(FormView):
     이메일, 새 비밀번호 2칸을 받아 즉시 비밀번호를 변경한다
     (인증 메일 없이 내부에서 직접 처리)
     """
-
-    form_class = DirectPasswordResetForm
-    template_name = "login.html"  # 템플릿 하나에서 분기 처리
-    success_url = reverse_lazy("accounts:password_reset_complete")
+    form_class    = DirectPasswordResetForm
+    template_name = "login.html"               # 템플릿 하나에서 분기 처리
+    success_url   = reverse_lazy("accounts:password_reset_complete")
 
     def form_valid(self, form):
         form.save()  # 비밀번호 저장
@@ -98,7 +88,23 @@ def password_reset_complete(request):
 
 
 # ──────────────────────────────────────────────
-# 3. 통계·추천 관련 보조 함수
+# 3. 사용자 이름(username) 수정
+# ──────────────────────────────────────────────
+class UsernameUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    현재 로그인한 사용자의 username(로그인 ID)을 수정
+    """
+    model         = User
+    form_class    = UpdateUsernameForm
+    template_name = "edit_username.html"
+    success_url   = reverse_lazy("accounts:my_page")
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+
+# ──────────────────────────────────────────────
+# 4. 통계·추천 관련 보조 함수
 # ──────────────────────────────────────────────
 def jaccard_score(set1, set2):
     """두 키워드 집합의 Jaccard 유사도"""
@@ -126,15 +132,17 @@ def get_user_cluster_stats(user, cluster_num=None):
             cluster_keywords[ck.cluster_num] = ck.keyword_json
 
     # 표결 통계
-    stats = PartyClusterStats.objects.filter(cluster_num__in=liked_clusters).select_related(
-        "party"
-    )
+    stats = PartyClusterStats.objects.filter(
+        cluster_num__in=liked_clusters
+    ).select_related("party")
 
     # 의석수 상위 8개 정당
     party_seat_counts = {
         stat.party.party: getattr(stat.party, "seat_count", 0) for stat in stats
     }
-    top_parties = sorted(party_seat_counts, key=party_seat_counts.get, reverse=True)[:8]
+    top_parties = sorted(
+        party_seat_counts, key=party_seat_counts.get, reverse=True
+    )[:8]
 
     result_types = ["찬성", "반대", "기권", "불참"]
     cluster_data = defaultdict(
@@ -152,7 +160,9 @@ def get_user_cluster_stats(user, cluster_num=None):
     # 누락된 정당은 0으로 채움
     for cluster in cluster_data:
         for party in top_parties:
-            cluster_data[cluster].setdefault(party, {r: 0 for r in result_types})
+            cluster_data[cluster].setdefault(
+                party, {r: 0 for r in result_types}
+            )
 
     cluster_vote_data_dict = {
         str(cluster_num): {
@@ -233,6 +243,7 @@ def recommend_party_by_interest(user, age_num=None):
 # 의원 추천 관련 보조 함수
 MIN_VOTE_COUNT = 3
 
+
 def extract_cluster_ids_from_max_clusters(max_clusters):
     """max_clusters 딕트에서 cluster_id 만 추출"""
     return {
@@ -241,9 +252,11 @@ def extract_cluster_ids_from_max_clusters(max_clusters):
         if vt in ["찬성", "반대", "기권", "불참"] and "cluster_id" in v
     }
 
+
 def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
     return getattr(summary, vote_type) / total if total else 0
+
 
 def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=1):
     """
@@ -322,7 +335,7 @@ def get_recommended_members_from_clusters(cluster_ids):
 
 
 # ──────────────────────────────────────────────
-# 4. 마이페이지
+# 5. 마이페이지
 # ──────────────────────────────────────────────
 @login_required
 def my_page(request):
