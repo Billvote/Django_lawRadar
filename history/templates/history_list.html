@@ -44,7 +44,7 @@
             </svg>
           </div>
           <input name="q" id="id_keyword" value="{{ query }}" placeholder="법안명이나 키워드로 검색해보세요"
-                 class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
+                 class="w-full h-full pl-12 pr-32 py-3 border border-gray-300 rounded-3xl outline-none focus:outline-none focus-visible:outline-none  focus:ring-1 focus:ring-cyan-500 focus:border-transparent text-lg transition-all duration-300">
           {% if selected_cluster %}
             <input type="hidden" name="cluster" value="{{ selected_cluster }}">
           {% endif %}
