@@ -4,6 +4,7 @@ from .views import (
     signup, login, logout, my_page,
     DirectPasswordResetView, password_reset_complete,
     UsernameUpdateView,         # ← 사용자 이름 수정
+    find_username,
 )
 
 app_name = "accounts"
@@ -22,6 +23,9 @@ urlpatterns = [
     path("password-reset/complete/", password_reset_complete,          name="password_reset_complete"),
 
     # ───────── 사용자 이름 변경 ─────────
-    path("profile/username/", UsernameUpdateView.as_view(), name="username_edit")
-,
+    path("profile/username/", UsernameUpdateView.as_view(), name="username_edit"),
+    
+    # ───────── 사용자 이름 찾기 ─────────
+    path("find-username/", find_username, name="find_username"),
+
 ]
