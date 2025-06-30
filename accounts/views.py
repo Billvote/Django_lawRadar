@@ -390,10 +390,12 @@ def my_page(request):
         key=lambda x: x[1],
         reverse=True,
     )[:3]
-    recommended_bills = (
-        Bill.objects.filter(cluster__in=[cid for cid, _ in similar_clusters])
-        .exclude(id__in=liked_ids)[:10]
-    )
+    recommended_bills = []
+    if liked_ids:
+        recommended_bills = (
+            Bill.objects.filter(cluster__in=[cid for cid, _ in similar_clusters])
+            .exclude(id__in=liked_ids)[:10]
+        )
 
     # --- 통계 데이터
     cluster_stats_data = get_user_cluster_stats(request.user, cluster_num)
