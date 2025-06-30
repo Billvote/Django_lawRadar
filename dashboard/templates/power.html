@@ -10,30 +10,25 @@
 
   <!-- 오른쪽: 대수 선택 -->
   <div class="space-x-4">
-    <!-- <button data-age="20" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">20대</button>
-    <button data-age="21" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">21대</button>
-    <button data-age="22" class="age-btn text-xl font-semibold text-gray-700 hover:text-cyan-500">22대</button> -->
-    <a href="{% url 'dashboard:dashboard' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
-    <a href="{% url 'dashboard:dashboard' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
-    <a href="{% url 'dashboard:dashboard' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
+    <a href="{% url 'dashboard:power' 20 %}" class="text-xl font-semibold {% if congress_num == 20 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">20대</a>
+    <a href="{% url 'dashboard:power' 21 %}" class="text-xl font-semibold {% if congress_num == 21 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">21대</a>
+    <a href="{% url 'dashboard:power' 22 %}" class="text-xl font-semibold {% if congress_num == 22 %}text-cyan-500{% else %}text-gray-700{% endif %} hover:text-cyan-500">22대</a>
   </div>
 </nav>
 
-    <!-- 권력 집중도 -->
-    <div class="flex justify-between items-center mt-3">
-      <h1 class="text-xl sm:text-2xl font-bold leading-tight">💪​국회 권력은 얼마나 집중됐을까?</h1>
-    </div>
-    <div class="w-full flex flex-col items-center">
-    {% include '03_hhi.html' %}
-    </div>
-  
-  <!-- enp 프로그래스 바 -->
-  <div class="dashboard-section mb-8">
-    <h1 class="text-xl sm:text-2xl font-bold whitespace-nowrap">🤔실질적으로 영향력 있는 정당은?</h1>
-    {% include '02_enp.html' %}
-  </div>
+<!-- 권력 집중도 -->
+<div class="flex justify-between items-center mt-5 mb-3">
+  <h1 class="text-xl sm:text-2xl font-bold leading-tight">💪​국회 권력은 얼마나 집중됐을까?</h1>
+</div>
+<div class="w-full flex flex-col items-center">
+{% include '03_hhi.html' %}
+</div>
 
-
+<!-- enp 프로그래스 바 -->
+<div class="dashboard-section mb-8 mt-3">
+<h1 class="text-xl sm:text-2xl font-bold whitespace-nowrap">🤔실질적으로 영향력 있는 정당은?</h1>
+{% include '02_enp.html' %}
+</div>
 
 <!-- 위로 올라가기 버튼 -->
 <div class="fixed bottom-8 right-8 z-50">

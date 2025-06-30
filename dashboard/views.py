@@ -595,7 +595,7 @@ def dashboard(request, congress_num):
     return render(request, 'dashboard.html', context)
 
 # second board로 보내는 함수
-def second_board(request, congress_num):
+def power(request, congress_num):
     # 대수 필터링
     if congress_num not in [20, 21, 22]: # 유효하지 않은 링크 처리
         raise Http404("Invalid congress num")
@@ -630,4 +630,4 @@ def second_board(request, congress_num):
         'timeseries_data_top2_ratio': timeseries_data['top2_seat_shares_series'],
     }
 
-    return render(request, 'second_board.html', context)
+    return render(request, 'power.html', context)

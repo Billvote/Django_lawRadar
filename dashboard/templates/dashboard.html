@@ -21,7 +21,7 @@
 
 <!-- Main Content -->
 <div class="flex-1 p-6">
-  <div class="flex justify-between items-center mb-8">
+  <div class="flex justify-between items-center mb-6">
     <h1 class="text-xl sm:text-2xl font-bold leading-tight mt-8">☑️입법 현황</h1>
   </div>
   {% include '00_stats_cards.html' %}
@@ -31,42 +31,17 @@
 <!-- Chart Section -->
 <div class="grid grid-cols-1 gap-6">
   <!-- 정당별 법안 발의 수 -->
+  <h2 class="text-xl sm:text-2xl font-bold">💬정당별 표결 현황</h2>
   <div class="bg-white/90 backdrop-blur-sm p-6 rounded shadow">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl sm:text-2xl font-bold">💬정당별 표결 현황</h2>
       {% include '01_partyChart.html'%}
     </div>
     <div id="voteChart" class="h-64 w-full"></div>
   </div>
 
-    <!-- 권력 집중도 -->
-    <div class="flex justify-between items-center mt-3">
-      <h1 class="text-xl sm:text-2xl font-bold leading-tight">💪​국회 권력은 얼마나 집중됐을까?</h1>
-    </div>
-    <div class="w-full flex flex-col items-center">
-    {% include '03_hhi.html' %}
-    </div>
-  
-  <!-- enp 프로그래스 바 -->
-  <div class="dashboard-section mb-8">
-    <h1 class="text-xl sm:text-2xl font-bold whitespace-nowrap">🤔실질적으로 영향력 있는 정당은?</h1>
-    {% include '02_enp.html' %}
-  </div>
-
-
-  <!-- 정당/클러스터별 표결 현황 -->
-     <div class="flex justify-between items-center">
-       <h1 class="text-xl sm:text-2xl font-bold">👀최다 키워드별 표결</h1>
-     </div>
-     <div class="grid grid-cols-5 gap-4">
-       <div class="col-span-5 bg-white/90 backdrop-blur-sm p-6 rounded shadow mb-8">
-         {% include '04_clusterSelect.html' %}
-         <div id="clusterVoteChart" style="height: 400px; width: 100%;"></div>
-       </div>
-     </div>
 
 <!-- 정당별 특이 클러스터 차트 -->
-   <div class="flex justify-between items-center mt-2">
+   <div class="flex justify-between items-center mt-4">
      <h1 class="text-2xl font-bold">🔥정당별 집중 키워드</h1>
    </div>
    
