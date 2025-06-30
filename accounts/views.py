@@ -24,6 +24,8 @@ from billview.models import Bill
 from geovote.models import Age, Member, Party, Vote
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 from geovote.views import get_max_clusters_for_member
+from types import SimpleNamespace
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -136,41 +138,94 @@ def get_user_cluster_stats(user, cluster_num=None):
         cluster_num__in=liked_clusters
     ).select_related("party")
 
-    # 의석수 상위 8개 정당
-    party_seat_counts = {
-        stat.party.party: getattr(stat.party, "seat_count", 0) for stat in stats
-    }
-    top_parties = sorted(
-        party_seat_counts, key=party_seat_counts.get, reverse=True
-    )[:8]
-
     result_types = ["찬성", "반대", "기권", "불참"]
-    cluster_data = defaultdict(
-        lambda: defaultdict(lambda: {r: 0 for r in result_types})
-    )
+    cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
 
-    for row in stats:
-        cluster_data[row.cluster_num][row.party.party] = {
-            "찬성": round(row.support_ratio),
-            "반대": round(row.oppose_ratio),
-            "기권": round(row.abstain_ratio),
-            "불참": round(row.absent_ratio),
+    # 클러스터별로 실제 통계가 존재하는 정당 추리기
+    cluster_to_parties = defaultdict(set)
+    party_seat_counts = {}
+
+    for stat in stats:
+        cluster = stat.cluster_num
+        party_name = stat.party.party
+        seat_count = getattr(stat.party, 'seat_count', 0)
+
+        cluster_to_parties[cluster].add(party_name)
+        party_seat_counts[party_name] = seat_count
+
+        cluster_data[cluster][party_name] = {
+            "찬성": round(stat.support_ratio),
+            "반대": round(stat.oppose_ratio),
+            "기권": round(stat.abstain_ratio),
+            "불참": round(stat.absent_ratio),
         }
 
-    # 누락된 정당은 0으로 채움
+    top_parties_per_cluster = {
+        cluster: sorted(
+            cluster_to_parties[cluster],
+            key=lambda p: party_seat_counts.get(p, 0),
+            reverse=True
+        )[:8]
+        for cluster in cluster_to_parties
+    }
+
     for cluster in cluster_data:
-        for party in top_parties:
+        for party in top_parties_per_cluster.get(cluster, []):
             cluster_data[cluster].setdefault(
                 party, {r: 0 for r in result_types}
             )
+    
+    all_top_parties = set()
+    for parties in top_parties_per_cluster.values():
+        all_top_parties.update(parties)
+
+    top_parties = sorted(
+        all_top_parties, key=lambda p: party_seat_counts.get(p, 0), reverse=True
+    )
+
+    # for cluster in cluster_data:
+    # for party in top_parties_per_cluster.get(cluster, []):
+    #     cluster_data[cluster].setdefault(
+    #         party, {r: 0 for r in result_types}
+    #     )
+
+    # 의석수 상위 8개 정당
+    # party_seat_counts = {
+    #     stat.party.party: getattr(stat.party, "seat_count", 0) for stat in stats
+    # }
+    # top_parties = sorted(
+    #     party_seat_counts, key=party_seat_counts.get, reverse=True
+    # )[:8]
+
+    # result_types = ["찬성", "반대", "기권", "불참"]
+    # cluster_data = defaultdict(
+    #     lambda: defaultdict(lambda: {r: 0 for r in result_types})
+    # )
+
+    # for row in stats:
+    #     cluster_data[row.cluster_num][row.party.party] = {
+    #         "찬성": round(row.support_ratio),
+    #         "반대": round(row.oppose_ratio),
+    #         "기권": round(row.abstain_ratio),
+    #         "불참": round(row.absent_ratio),
+    #     }
+
+    # 누락된 정당은 0으로 채움
+    # for cluster in cluster_data:
+    #     for party in top_parties:
+    #         cluster_data[cluster].setdefault(
+    #             party, {r: 0 for r in result_types}
+    #         )
+
+    cluster_data = dict(cluster_data)
 
     cluster_vote_data_dict = {
-        str(cluster_num): {
-            "cluster_num": cluster_num,
-            "cluster_keywords": cluster_keywords.get(cluster_num, ""),
-            "party_stats": party_stats,
+        str(cluster_id): {
+            "cluster_num": cluster_id,
+            "cluster_keywords": cluster_keywords.get(cluster_id, ""),
+            "party_stats": {k: dict(v) for k, v in party_stats.items()},
         }
-        for cluster_num, party_stats in cluster_data.items()
+        for cluster_id, party_stats in cluster_data.items()
     }
 
     return {
@@ -454,5 +509,4 @@ def my_page(request):
         "recommended_support_member": recommended_support_members,
         "recommended_oppose_member": recommended_oppose_members,
     }
-
     return render(request, "my_page.html", context)

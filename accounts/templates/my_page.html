@@ -246,9 +246,11 @@
   <label for="clusterSelect" class="font-bold block mb-2"></label>
   <select id="clusterSelect" onchange="onClusterChange(this)"
           class="w-full appearance-none border border-gray-300 rounded px-4 py-1 pr-8 mb-4 bg-white text-gray-800 shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
-    {% for cluster_num, data in cluster_data.items %}
+    <!-- {% for cluster_num, data in cluster_data.items %}
       <option value="{{ cluster_num }}">{{ data.cluster_keywords }}</option>
-    {% endfor %}
+    {% empty %}
+      <option disabled>클러스터 데이터가 없습니다.</option>
+    {% endfor %} -->
   </select>
   <div id="clusterVoteChart"></div>
 
@@ -301,6 +303,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultTypes = JSON.parse(document.getElementById("cluster-categories").textContent);
   const partyNames = JSON.parse(document.getElementById("cluster-party-names").textContent);
   const partyColors = JSON.parse(document.getElementById("cluster-party-colors").textContent);
+
+  // 옵션 동적 생성 코드
+  if (clusterSelect) {
+    // 기존에 혹시 옵션 남아있으면 제거
+    clusterSelect.innerHTML = '';
+    for (const [clusterNum, data] of Object.entries(clusterVoteData)) {
+      const option = document.createElement('option');
+      option.value = clusterNum;
+      option.textContent = data.cluster_keywords || '키워드 없음';
+      clusterSelect.appendChild(option);
+    }
+  }
 
   const softColors = [
     '#38bdf8', // sky
@@ -413,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-  // 관심 클러스터/법안 목록
+  // 관심 클러스터/법안 목록------------------
 document.addEventListener('DOMContentLoaded', () => {
   window.toggleCluster = function(clusterId) {
     const allSections = document.querySelectorAll('[id^="cluster-bills-"]');
