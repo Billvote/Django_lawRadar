@@ -320,7 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
     url.searchParams.set('cluster_num', clusterNum);
     if (ageId) url.searchParams.set('age_id', ageId);
     url.hash = 'clusterVoteChart';
-    window.location.href = url.toString();
+    // 페이지 새로고침 없이 URL만 바꾸기
+    window.history.pushState({}, '', url.toString());
+     // 차트만 업데이트
+    drawClusterChart(clusterNum);
   }
 
   // 차트 그리기 함수
