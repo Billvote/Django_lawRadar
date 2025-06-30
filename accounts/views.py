@@ -6,6 +6,7 @@
 from collections import Counter, defaultdict
 import json
 import logging
+from collections import Counter, defaultdict
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
