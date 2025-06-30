@@ -355,10 +355,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const partyStats = clusterObj.party_stats;
+    const topParties = clusterObj.top_parties;
 
     const series = resultTypes.map(type => ({
       name: type,
-      data: partyNames.map(party => partyStats[party]?.[type] || 0)
+      data: topParties.map(party => partyStats[party]?.[type] || 0)
     }));
 
     const options = {
@@ -381,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       series: series,
       xaxis: {
-        categories: partyNames,
+        categories: topParties,
         title: { text: '비율' },
         labels: { formatter: val => val.toFixed(0) + '%' },
       },
