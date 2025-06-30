@@ -593,3 +593,41 @@ def dashboard(request, congress_num):
     }
 
     return render(request, 'dashboard.html', context)
+
+# second board로 보내는 함수
+def power(request, congress_num):
+    # 대수 필터링
+    if congress_num not in [20, 21, 22]: # 유효하지 않은 링크 처리
+        raise Http404("Invalid congress num")
+
+    party_data = get_partyStats_data(congress_num)
+    party_concentration_data = get_partyConcentration_data(congress_num)
+    timeseries_data = get_concentration_timeseries()
+
+    context = {
+        'congress_num': congress_num,
+        'party_names': party_data['party_names'],
+        'party_colors': party_data['party_colors'],
+        'series': party_data['series'],
+        'categories': party_data['categories'],
+
+        # 정당 집중도 관련 데이터 추가
+        'party_concentration_names': party_concentration_data.get('party_names', []),
+        'party_concentration_member_counts': party_concentration_data.get('member_counts', []),
+        'party_concentration_vote_supports': party_concentration_data.get('vote_supports', []),
+        'party_concentration_top2_seat_shares': party_concentration_data.get('top2_seat_shares', []),
+        'party_concentration_top2_ratio': party_concentration_data.get('top2_ratio'),
+        'party_concentration_top2_datail': party_concentration_data.get('top2_datail'),
+        'party_concentration_hhi': party_concentration_data.get('hhi'),
+        'party_concentration_enp': party_concentration_data.get('enp'),
+        'party_concentration_age': party_concentration_data.get('age'),
+
+        # 시계열
+        'timeseries_data_age': timeseries_data['ages'],
+        'timeseries_data_total_parties': timeseries_data['total_parties'],
+        'timeseries_data_hhi': timeseries_data['hhi_values'],
+        'timeseries_data_enp': timeseries_data['enp_values'],
+        'timeseries_data_top2_ratio': timeseries_data['top2_seat_shares_series'],
+    }
+
+    return render(request, 'power.html', context)
