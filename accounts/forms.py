@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
+
 # ─────────────────────────────────────────────
 # 1. 회원가입 · 로그인
 # ─────────────────────────────────────────────
@@ -13,19 +14,22 @@ class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(label="이메일", required=True)
 
     class Meta:
-        model = User
-        fields = ("username", "email", "password1", "password2")
+        model  = User
+        fields = (
+            "username",   # 로그인 ID
+            "email",
+            "password1",
+            "password2",
+        )
 
-    # 이메일 중복 체크
     def clean_email(self):
         email = self.cleaned_data["email"]
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("이미 사용 중인 이메일입니다.")
+            raise ValidationError("이미 사용 중인 이메일입니다.")
         return email
 
-    # 이메일 저장
     def save(self, commit=True):
-        user = super().save(commit=False)
+        user       = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         if commit:
             user.save()
@@ -44,37 +48,27 @@ class DirectPasswordResetForm(forms.Form):
     new_password1 = forms.CharField(label="새 비밀번호", widget=forms.PasswordInput)
     new_password2 = forms.CharField(label="새 비밀번호 확인", widget=forms.PasswordInput)
 
-    #
-    # ① 이메일 필드 검증
-    #
     def clean_email(self):
-        """가입된 이메일인지 확인해 self.user_instance 에 보관"""
         email = self.cleaned_data["email"].strip()
         try:
             self.user_instance = User.objects.get(email=email, is_active=True)
         except User.DoesNotExist:
             self.user_instance = None
-            raise forms.ValidationError("해당 이메일로 가입한 사용자가 없습니다.")
+            raise ValidationError("해당 이메일로 가입한 사용자가 없습니다.")
         return email
 
-    #
-    # ② 폼 전역 검증
-    #
     def clean(self):
         cleaned = super().clean()
 
-        # 이메일에 이미 오류가 있으면 나머지 검증은 건너뜀
         if self.errors.get("email"):
             return cleaned
 
         p1 = cleaned.get("new_password1")
         p2 = cleaned.get("new_password2")
 
-        # 비밀번호 일치 여부
         if p1 and p2 and p1 != p2:
-            raise forms.ValidationError("비밀번호가 일치하지 않습니다.")
+            raise ValidationError("비밀번호가 일치하지 않습니다.")
 
-        # 비밀번호 유효성(Django 기본 정책) 검사
         if p1 and self.user_instance:
             try:
                 validate_password(p1, self.user_instance)
@@ -83,19 +77,33 @@ class DirectPasswordResetForm(forms.Form):
 
         return cleaned
 
-    #
-    # ③ 저장
-    #
     def save(self, commit=True):
-        """
-        email·password 검증이 모두 끝난 뒤 호출된다.
-        self.user_instance 는 clean_email() 단계에서 이미 확보돼 있음.
-        """
         user = getattr(self, "user_instance", None)
         if not user:
             raise RuntimeError("save() 호출 전에 clean() 이 올바르게 실행되지 않았습니다.")
-
         user.set_password(self.cleaned_data["new_password1"])
         if commit:
             user.save()
         return user
+
+
+# ─────────────────────────────────────────────
+# 3. 사용자 이름(username) 수정 폼
+# ─────────────────────────────────────────────
+class UpdateUsernameForm(forms.ModelForm):
+    username = forms.CharField(
+        label="새 사용자 이름",
+        max_length=150,
+        help_text="영문자·숫자·@/./+/-/_ 조합, 150자 이하",
+    )
+
+    class Meta:
+        model  = User
+        fields = ("username",)
+
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip()
+        qs = User.objects.filter(username=username).exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError("이미 사용 중인 사용자 이름입니다.")
+        return username
