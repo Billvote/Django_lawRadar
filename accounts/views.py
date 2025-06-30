@@ -116,7 +116,6 @@ def jaccard_score(set1, set2):
 
 
 def get_user_cluster_stats(user):
-def get_user_cluster_stats(user):
     """
     사용자가 좋아요한 법안의 클러스터별 표결 통계·키워드
     => 차트에서 바로 쓸 JSON 형태로 반환
@@ -347,6 +346,7 @@ def my_page(request):
 
     # --- 통계 데이터
     cluster_stats_data = get_user_cluster_stats(request.user)
+    has_vote_results = bool(cluster_stats_data.get("cluster_data"))
 
     # 정당 추천
     most_similar, most_opposite = recommend_party_by_interest(request.user)
@@ -372,8 +372,12 @@ def my_page(request):
         "result_types": cluster_stats_data["result_types"],
         "most_similar_party": most_similar,
         "most_opposite_party": most_opposite,
+
         "palette_colors": PALETTE,
+
         "recommended_support_member": rec_support,
         "recommended_oppose_member":  rec_oppose,
         "max_clusters": max_clusters,
+
+        "has_vote_results": has_vote_results,
     })
