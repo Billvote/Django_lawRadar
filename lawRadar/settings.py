@@ -42,6 +42,18 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # 일반 로그인
 )
 
+# SOCIAL_AUTH_PIPELINE = (
+#     'social_core.pipeline.social_auth.social_details',
+#     'social_core.pipeline.social_auth.social_uid',
+#     'social_core.pipeline.social_auth.auth_allowed',
+#     'social_core.pipeline.social_auth.social_user',
+#     'social_core.pipeline.user.get_username',
+#     'social_core.pipeline.user.create_user',  # 자동 회원가입
+#     'social_core.pipeline.social_auth.associate_user',
+#     'social_core.pipeline.social_auth.load_extra_data',
+#     'social_core.pipeline.user.user_details',
+# )
+
 # 로그인 후 리다이렉트 URL (로그인 성공 후 이동할 곳)
 LOGIN_REDIRECT_URL = '/accounts/myPage/'  # 네가 원하는 페이지 경로로 바꿔도 됨
 # 로그아웃 후 이동할 URL
