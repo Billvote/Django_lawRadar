@@ -67,6 +67,16 @@ url_name 값
           </button>
 
           <button type="button"
+                  onclick="location.href='{% url 'social:begin' 'naver' %}'"
+                  class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+            <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none">
+              <path fill="#FFCD00" d="M12 2C6.48 2 2 6.13 2 11.75c0 3.31 2.69 6 6 6h2v4l3.5-4h2.5c5.52 0 10-4.13 10-9.75S17.52 2 12 2z"/>
+              <path fill="#3C1E1E" d="M16.5 11.75c0 2.07-1.68 3.75-3.75 3.75S9 13.82 9 11.75 10.68 8 12.75 8s3.75 1.68 3.75 3.75z"/>
+            </svg>
+            네이버로 빠른 가입
+          </button>
+
+          <button type="button"
                   onclick="location.href='{% url 'social:begin' 'kakao' %}'"
                   class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="none">

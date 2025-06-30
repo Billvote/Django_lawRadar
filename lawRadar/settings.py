@@ -36,13 +36,14 @@ SOCIAL_AUTH_USER_MODEL = AUTH_USER_MODEL
 
 # 소셜 로그인 관련 설정
 AUTHENTICATION_BACKENDS = (
+    'social_core.backends.naver.NaverOAuth2',   # 네이버 로그인 백엔드
     'social_core.backends.google.GoogleOAuth2', # 구글 소셜 로그인 백엔드
     'social_core.backends.kakao.KakaoOAuth2',  # 카카오 소셜 로그인 백엔드
     'django.contrib.auth.backends.ModelBackend',  # 일반 로그인
 )
+
 # 로그인 후 리다이렉트 URL (로그인 성공 후 이동할 곳)
 LOGIN_REDIRECT_URL = '/accounts/myPage/'  # 네가 원하는 페이지 경로로 바꿔도 됨
-
 # 로그아웃 후 이동할 URL
 LOGOUT_REDIRECT_URL = '/'
 
@@ -64,6 +65,10 @@ SOCIAL_AUTH_LOGIN_CANCEL_URL = '/accounts/login/'
 # 구글 소셜 로그인
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
+
+# 네이버 OAuth 키
+SOCIAL_AUTH_NAVER_KEY = os.getenv('SOCIAL_AUTH_NAVER_KEY')
+SOCIAL_AUTH_NAVER_SECRET = os.getenv('SOCIAL_AUTH_NAVER_SECRET')
 
 # API 키 가져오기
 # ASSEMBLY_API_KEY = os.environ.get("ASSEMBLY_API_KEY", "default-value")
