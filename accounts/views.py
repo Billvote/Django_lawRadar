@@ -26,7 +26,7 @@ from .forms import (
 
 from accounts.models import BillLike
 from billview.models import Bill
-from geovote.models import Vote
+from geovote.models import Age, Member, Party, Vote
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary, PartyConcentration
 from geovote.views import get_max_clusters_for_member
 
@@ -115,6 +115,7 @@ def jaccard_score(set1, set2):
     return len(set1 & set2) / len(set1 | set2) if (set1 | set2) else 0
 
 
+def get_user_cluster_stats(user):
 def get_user_cluster_stats(user):
     """
     사용자가 좋아요한 법안의 클러스터별 표결 통계·키워드
@@ -344,7 +345,7 @@ def my_page(request):
         else []
     )
 
-    # 차트 데이터
+    # --- 통계 데이터
     cluster_stats_data = get_user_cluster_stats(request.user)
 
     # 정당 추천
