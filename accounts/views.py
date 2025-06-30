@@ -33,6 +33,7 @@ from geovote.views import get_max_clusters_for_member
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+# 공통 팔레트(15색)
 PALETTE = [
     "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
     "#6ee7b7", "#c3b4fc", "#fda4af", "#5eead4", "#34d399",
@@ -62,13 +63,12 @@ def logout(request):
     auth_logout(request)
     return redirect("home")
 
-
 # ──────────────────────────────────────────────
 # 2-A. 아이디 입력 → 즉시 비밀번호 재설정
 # ──────────────────────────────────────────────
 class DirectPasswordResetView(FormView):
     form_class    = DirectPasswordResetForm
-    template_name = "login.html"          # 단일 템플릿 내부 분기 사용
+    template_name = "login.html"
     success_url   = reverse_lazy("accounts:password_reset_complete")
 
     def form_valid(self, form):
@@ -79,7 +79,6 @@ class DirectPasswordResetView(FormView):
 def password_reset_complete(request):
     return render(request, "login.html")
 
-
 # ──────────────────────────────────────────────
 # 2-B. 이메일 → 아이디(username) 찾기
 # ──────────────────────────────────────────────
@@ -88,12 +87,8 @@ def find_username(request):
     found_username = None
     if request.method == "POST" and form.is_valid():
         found_username = form.get_username()
-    return render(
-        request,
-        "find_username.html",
-        {"form": form, "found_username": found_username},
-    )
-
+    return render(request, "find_username.html",
+                  {"form": form, "found_username": found_username})
 
 # ──────────────────────────────────────────────
 # 3. 사용자 이름(username) 수정
@@ -107,7 +102,6 @@ class UsernameUpdateView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user
 
-
 # ──────────────────────────────────────────────
 # 4. 통계·추천 보조 함수
 # ──────────────────────────────────────────────
@@ -117,7 +111,8 @@ def jaccard_score(set1, set2):
 
 def get_user_cluster_stats(user):
     """
-    사용자가 좋아요한 클러스터별 키워드 및 정당 투표 통계 반환
+    사용자가 좋아요한 클러스터별 키워드·정당별 투표 통계 반환
+    (템플릿에서 JSON 직렬화해 ApexCharts에 사용)
     """
     liked_clusters = (
         BillLike.objects.filter(user=user)
@@ -126,7 +121,7 @@ def get_user_cluster_stats(user):
     )
     liked_clusters = [c for c in liked_clusters if c]
 
-    # 키워드
+    # --- 키워드
     cluster_keywords = {}
     for ck in ClusterKeyword.objects.filter(cluster_num__in=liked_clusters):
         try:
@@ -134,7 +129,7 @@ def get_user_cluster_stats(user):
         except Exception:
             cluster_keywords[ck.cluster_num] = ck.keyword_json
 
-    # 표결 통계
+    # --- 정당별 표결 통계
     stats = (
         PartyClusterStats.objects.filter(cluster_num__in=liked_clusters)
         .select_related("party")
@@ -145,19 +140,19 @@ def get_user_cluster_stats(user):
     party_seat_counts = {}
 
     for row in stats:
-        party_name = row.party.party
-        party_seat_counts[party_name] = getattr(row.party, "seat_count", 0)
-        cluster_data[row.cluster_num][party_name] = {
+        p = row.party.party
+        party_seat_counts[p] = getattr(row.party, "seat_count", 0)
+        cluster_data[row.cluster_num][p] = {
             "찬성": round(row.support_ratio),
             "반대": round(row.oppose_ratio),
             "기권": round(row.abstain_ratio),
             "불참": round(row.absent_ratio),
         }
 
-    # 의석수 순 상위 8개 정당
+    # 의석수 상위 8개 정당
     top_parties = sorted(party_seat_counts, key=party_seat_counts.get, reverse=True)[:8]
 
-    # 누락 0 채우기
+    # 누락값 0 채움
     for cn in cluster_data:
         for p in top_parties:
             cluster_data[cn].setdefault(p, {r: 0 for r in result_types})
@@ -177,7 +172,7 @@ def get_user_cluster_stats(user):
         "result_types": result_types,
     }
 
-
+# ---- 정당 추천 --------------------------------------------------
 def recommend_party_by_interest(user, age_num=None):
     liked_clusters = (
         BillLike.objects.filter(user=user)
@@ -222,7 +217,6 @@ def recommend_party_by_interest(user, age_num=None):
     most_opposite = max(results, key=lambda x: x["oppose"],  default=None)
     return most_similar, most_opposite
 
-
 # ---- 의원 추천 --------------------------------------------------
 MIN_VOTE_COUNT = 3
 
@@ -233,10 +227,6 @@ def _ratio(summary, vote_type):
 
 
 def get_top_members_for_user_clusters(cluster_list, vote_type="찬성"):
-    """
-    여러 클러스터에서 vote_type 비율이 가장 높은 의원 1명 추천
-    (가중 평균: 표결 수 반영)
-    """
     candidate_map = defaultdict(lambda: {
         "member": None,
         "cluster_ids": set(),
@@ -281,7 +271,6 @@ def get_top_members_for_user_clusters(cluster_list, vote_type="찬성"):
         "cluster": ", ".join(map(str, best["clusters"])),
     }
 
-
 # ──────────────────────────────────────────────
 # 5. 마이페이지
 # ──────────────────────────────────────────────
@@ -306,7 +295,9 @@ def my_page(request):
             cluster_keywords[b.cluster].update(
                 kw.strip() for kw in b.cluster_keyword.split(",")
             )
-    cluster_keywords = {c: ", ".join(sorted(kws)) for c, kws in cluster_keywords.items()}
+    cluster_keywords = {
+        c: ", ".join(sorted(kws)) for c, kws in cluster_keywords.items()
+    }
 
     # 유사 클러스터 추천
     full_kw = {
@@ -326,8 +317,7 @@ def my_page(request):
     recommended_bills = (
         Bill.objects.filter(cluster__in=[cid for cid, _ in similar_clusters])
         .exclude(id__in=liked_ids)[:10]
-        if liked_ids
-        else []
+        if liked_ids else []
     )
 
     # 차트 데이터
@@ -340,25 +330,45 @@ def my_page(request):
     rec_support = get_top_members_for_user_clusters(liked_clusters, "찬성")
     rec_oppose  = get_top_members_for_user_clusters(liked_clusters, "반대")
 
-    # 표결 최대 클러스터(시각화용)
+    # 최대 클러스터(시각화용)
     max_clusters = get_max_clusters_for_member(request.user.username)
+
+    # ---- 차트를 위한 정당별 색상 매핑 ----
+    party_colors = {
+        party_name: PALETTE[i % len(PALETTE)]
+        for i, party_name in enumerate(cluster_stats_data["party_names"])
+    }
 
     return render(request, "my_page.html", {
         "username": request.user.username,
+
+        # 좋아요
         "liked_bills": bill_list,
         "liked_ids": liked_ids,
+
+        # 클러스터 현황
         "cluster_counts": cluster_counts,
         "cluster_keywords": cluster_keywords,
+
+        # 추천 법안
         "recommended_bills": recommended_bills,
         "top_similar_clusters": similar_clusters,
-        "cluster_stats_data": cluster_stats_data,
+
+        # 차트 데이터
         "cluster_data": cluster_stats_data["cluster_data"],
         "party_names": cluster_stats_data["party_names"],
         "result_types": cluster_stats_data["result_types"],
+        "party_colors": party_colors,
+
+        # 정당 추천
         "most_similar_party": most_similar,
         "most_opposite_party": most_opposite,
-        "palette_colors": PALETTE,
+
+        # 의원 추천
         "recommended_support_member": rec_support,
         "recommended_oppose_member":  rec_oppose,
+
+        # 기타
         "max_clusters": max_clusters,
+        "palette_colors": PALETTE,
     })
