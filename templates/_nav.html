@@ -14,14 +14,24 @@
               <!-- Home -->
               <a href="{% url 'home' %}" class="rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:text-cyan-400">홈</a>
               <!-- Dashboard -->
-              <a href="{% url 'dashboard:dashboard' 22 %}" class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">입법 현황</a>
+              <div class="relative">
+                <button id="dashboardDropdownToggle"
+                        class="rounded-md px-3 py-2 text-sm font-medium {% if '/dashboard/' in request.path %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %} focus:outline-none">
+                  입법 현황
+                </button>
+                <div id="dashboardDropdownMenu"
+                    class="absolute left-1/2 transform -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded shadow-md z-50 hidden w-max text-left">
+                  <a href="{% url 'dashboard:dashboard' 22 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">입법 현황 통계</a>
+                  <a href="{% url 'dashboard:second_board' 22 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">국회 권력 지수</a>
+                </div>
+              </div>
+              <!-- TreeMap -->
+              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">의원별 표결</a>
+              <!-- History -->
+              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">개정 연혁</a>
               
               <!-- Card News -->
               <a href="/cardnews/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/cardnews/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">카드 뉴스</a>
-              <!-- History -->
-              <a href="/history/" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/history/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">개정 연혁</a>
-              <!-- TreeMap -->
-              <a href="{% url 'treemap' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/treemap/' %}text-cyan-400{% else %}text-gray-500 hover:text-cyan-400{% endif %}">의원별 표결</a>
 
               <!-- My Page Dropdown (클릭형) -->
               <div class="relative">
@@ -96,4 +106,22 @@
       }
     });
   });
+
+  // 대시보드 드롭박스
+  document.addEventListener('DOMContentLoaded', function () {
+    const dashboardToggle = document.getElementById('dashboardDropdownToggle');
+    const dashboardMenu = document.getElementById('dashboardDropdownMenu');
+
+    dashboardToggle.addEventListener('click', function (event) {
+      event.stopPropagation(); // 이벤트 전파 방지
+      dashboardMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!dashboardMenu.contains(event.target)) {
+        dashboardMenu.classList.add('hidden');
+      }
+    });
+  });
+
 </script>
