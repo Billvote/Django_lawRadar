@@ -231,6 +231,8 @@ def recommend_party_by_interest(user, age_num=None):
 
 
 # 의원 추천 관련 보조 함수
+MIN_VOTE_COUNT = 3
+
 def extract_cluster_ids_from_max_clusters(max_clusters):
     """max_clusters 딕트에서 cluster_id 만 추출"""
     return {
@@ -239,34 +241,47 @@ def extract_cluster_ids_from_max_clusters(max_clusters):
         if vt in ["찬성", "반대", "기권", "불참"] and "cluster_id" in v
     }
 
+def get_ratio(summary, vote_type):
+    total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
+    return getattr(summary, vote_type) / total if total else 0
 
-def get_top_members_for_user_clusters(cluster_list, limit=2):
+def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=1):
     """
-    클러스터 리스트를 받아 해당 클러스터에서 활동량이
-    가장 높은 의원(표결 건수 기준)을 추천
+    각 클러스터에서 vote_type ('찬성', '반대', 등) 비율이 가장 높은 의원 1명 추천
     """
     recommended = {}
+
     for cluster_id in cluster_list:
         summaries = (
-            VoteSummary.objects.filter(cluster=cluster_id)
+            VoteSummary.objects
+            .filter(cluster=cluster_id)
             .select_related("member")
-            .order_by("-찬성")[:limit]
         )
-        members = [
-            {
-                "id": s.member.id,
-                "name": s.member.name,
-                "party": s.member.party.party if s.member.party else "소속없음",
-                "bill_count": s.bill_count,
-                "찬성": getattr(s, "찬성", 0),
-            }
-            for s in summaries
+
+        # 최소 표결 수 필터링
+        filtered = [
+            s for s in summaries
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT
         ]
-        recommended[cluster_id] = members
+
+        if not filtered:
+            continue
+
+        # vote_type 비율이 가장 높은 의원 선정
+        top_summary = max(filtered, key=lambda s: get_ratio(s, vote_type))
+
+        recommended[cluster_id] = {
+            "id": top_summary.member.id,
+            "name": top_summary.member.name,
+            "party": top_summary.member.party.party if top_summary.member.party else "소속없음",
+            "bill_count": top_summary.bill_count,
+            "ratio": round(get_ratio(top_summary, vote_type) * 100, 1),  # 백분율
+        }
+
     return recommended
 
 
-def get_recommended_members_from_max_clusters(max_clusters, limit=2):
+def get_recommended_members_from_max_clusters(max_clusters, vote_type='찬성', limit=1):
     cluster_ids = extract_cluster_ids_from_max_clusters(max_clusters)
     return get_top_members_for_user_clusters(cluster_ids, limit=limit)
 
