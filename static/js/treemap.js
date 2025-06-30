@@ -302,6 +302,7 @@ function render(node, width, height, selectedMemberName = null) {
     node.children && node.children.every(d => d.data.type === "District");
 
 // District 레벨일 때 카드 UI 렌더링
+const isAuthenticated = "{{ request.user.is_authenticated|yesno:'true,false' }}";
   if (isDistrictLevel) {
     const container = treemapContainer
       .append("div")
@@ -341,6 +342,8 @@ function render(node, width, height, selectedMemberName = null) {
           }
         });
 
+      
+
       card.append("img")
         .attr("src", d.data.image_url || "https://via.placeholder.com/100")
         .attr("alt", d.data.member_name || "의원 사진 없음");
@@ -349,6 +352,7 @@ function render(node, width, height, selectedMemberName = null) {
       const rawDistrictName = d.data.name || "선거구명 없음";
       const districtName = rawDistrictName.split('(')[0].trim();
       const memberName = d.data.member_name || "";
+
 
       let party = "";
       const partyMatch = rawDistrictName.match(/\(([^)]+)\)/);
@@ -370,7 +374,18 @@ function render(node, width, height, selectedMemberName = null) {
         .attr("class", "district-card-party")
         .style("color", d.data.color || "#888")
         .text(party || "정당 정보 없음");
-    });
+      
+        // 좋아요
+      console.log("memberName:", memberName);
+      content.append("button")
+        .attr("class", "like-btn mt-2 text-2xl transition-all duration-300")
+        .attr("data-member-name", memberName)
+        .attr("data-authenticated", isAuthenticated)
+        .attr("data-csrf-token", getCookie("csrftoken"))
+        .html("🤍");  // 기본 상태
+    
+    
+      });
 
     return; // 카드 UI 렌더링 후 종료
   }
@@ -533,3 +548,63 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", debounce(resize, 200));
 });
    
+// 좋아요
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest('.like-btn');
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const isAuth = btn.dataset.authenticated === 'true';
+  if (!isAuth) {
+    if (confirm("로그인이 필요한 기능입니다. 로그인하시겠습니까?")) {
+      window.location.href = '/accounts/login/?next=' + window.location.pathname;
+    }
+    return;
+  }
+
+  const memberName = btn.dataset.memberName;
+  const csrf = getCookie("csrftoken");
+
+  try {
+    const res = await fetch("/geovote/api/member-like/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrf,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ member_name: memberName })
+    });
+
+    if (!res.ok) throw new Error("서버 오류");
+
+    const result = await res.json();
+    if (result.message === "좋아요 완료") {
+      btn.innerHTML = "❤️";
+      btn.classList.add("text-red-500");
+    } else {
+      btn.innerHTML = "🤍";
+      btn.classList.remove("text-red-500");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("좋아요 처리 중 문제가 발생했습니다.");
+  }
+});
+
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
