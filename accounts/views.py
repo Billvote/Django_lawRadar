@@ -363,7 +363,7 @@ def my_page(request):
         party_name: PALETTE[i % len(PALETTE)]
         for i, party_name in enumerate(sorted(all_parties))
     }
-    print(cluster_stats_data["cluster_data"])
+    # print(cluster_stats_data["cluster_data"])
     return render(request, "my_page.html", {
         "username": request.user.username,
 
