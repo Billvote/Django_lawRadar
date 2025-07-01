@@ -26,8 +26,8 @@ from .forms import (
 
 from accounts.models import BillLike
 from billview.models import Bill
-from geovote.models import Age, Member, Party, Vote
-from main.models import ClusterKeyword, PartyClusterStats, VoteSummary, PartyConcentration
+from geovote.models import Vote
+from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 from geovote.views import get_max_clusters_for_member
 
 logger = logging.getLogger(__name__)
@@ -110,24 +110,16 @@ def jaccard_score(set1, set2):
 
 
 def get_user_cluster_stats(user):
-def get_user_cluster_stats(user):
     """
     사용자가 좋아요한 클러스터별 키워드·정당별 투표 통계 반환
     (템플릿에서 JSON 직렬화해 ApexCharts에 사용)
     """
-    from collections import defaultdict
-
-    liked_bills = BillLike.objects.filter(user=user).select_related("bill", "bill__age")
-    liked_clusters = {
-        bill.bill.cluster for bill in liked_bills if bill.bill.cluster is not None
-    }
-
-    # 클러스터별 age 구하기
-    cluster_to_age = {}
-    for bill_like in liked_bills:
-        bill = bill_like.bill
-        if bill.cluster is not None and bill.age:
-            cluster_to_age[bill.cluster] = bill.age
+    liked_clusters = (
+        BillLike.objects.filter(user=user)
+        .values_list("bill__cluster", flat=True)
+        .distinct()
+    )
+    liked_clusters = [c for c in liked_clusters if c]
 
     # --- 키워드
     cluster_keywords = {}
@@ -175,8 +167,8 @@ def get_user_cluster_stats(user):
     }
 
     return {
-        "cluster_data": cluster_data,
-        "party_names": sorted_parties,
+        "cluster_data": cluster_vote_data,
+        "party_names": top_parties,
         "result_types": result_types,
     }
 
@@ -328,7 +320,7 @@ def my_page(request):
         if liked_ids else []
     )
 
-    # --- 통계 데이터
+    # 차트 데이터
     cluster_stats_data = get_user_cluster_stats(request.user)
 
     # 정당 추천
