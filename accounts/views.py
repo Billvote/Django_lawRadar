@@ -235,16 +235,26 @@ def recommend_party_by_interest(user, age_num=None):
     most_opposite = max(results, key=lambda x: x["oppose"],  default=None)
     return most_similar, most_opposite
 
-# ---- 의원 추천 --------------------------------------------------
+# 의원 추천 관련 보조 함수
 MIN_VOTE_COUNT = 3
 
+def extract_cluster_ids_from_max_clusters(max_clusters):
+    """max_clusters 딕트에서 cluster_id 만 추출"""
+    return {
+        v["cluster_id"]
+        for vt, v in max_clusters.items()
+        if vt in ["찬성", "반대", "기권", "불참"] and "cluster_id" in v
+    }
 
-def _ratio(summary, vote_type):
+def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
     return getattr(summary, vote_type) / total if total else 0
 
-
-def get_top_members_for_user_clusters(cluster_list, vote_type="찬성"):
+def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=1):
+    """
+    여러 클러스터 후보들을 모두 모아서,
+    전체 후보 중 vote_type 비율이 가장 높은 의원 1명을 추천.
+    """
     candidate_map = defaultdict(lambda: {
         "member": None,
         "cluster_ids": set(),
@@ -252,42 +262,67 @@ def get_top_members_for_user_clusters(cluster_list, vote_type="찬성"):
         "total_votes": 0,
     })
 
-    for cid in cluster_list:
-        for s in VoteSummary.objects.filter(cluster=cid).select_related("member"):
-            votes = s.찬성 + s.반대 + s.기권 + s.불참
-            if votes < MIN_VOTE_COUNT:
-                continue
+    for cluster_id in cluster_list:
+        summaries = (
+            VoteSummary.objects
+            .filter(cluster=cluster_id)
+            .select_related("member")
+        )
+
+        filtered = [
+            s for s in summaries
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT
+        ]
+
+        for s in filtered:
+            ratio = get_ratio(s, vote_type)
+            vote_count = s.찬성 + s.반대 + s.기권 + s.불참
+
             data = candidate_map[s.member.id]
             data["member"] = s.member
-            data["cluster_ids"].add(cid)
-            data["weighted_sum"] += _ratio(s, vote_type) * votes
-            data["total_votes"] += votes
+            data["cluster_ids"].add(cluster_id)
+            data["weighted_sum"] += ratio * vote_count  # 가중합
+            data["total_votes"] += vote_count
 
-    if not candidate_map:
+    # 점수 계산 및 상위 추천
+    scored_candidates = []
+    for data in candidate_map.values():
+        if data["total_votes"] == 0:
+            continue
+        score = data["weighted_sum"] / data["total_votes"]  # 가중 평균
+        scored_candidates.append({
+            "member": data["member"],
+            "cluster_ids": list(data["cluster_ids"]),
+            "score": score,
+        })
+
+    if not scored_candidates:
         return None
 
-    best = max(
-        (
-            {
-                "member": d["member"],
-                "clusters": d["cluster_ids"],
-                "score": d["weighted_sum"] / d["total_votes"],
-            }
-            for d in candidate_map.values() if d["total_votes"]
-        ),
-        key=lambda x: x["score"],
-        default=None,
-    )
-    if not best:
-        return None
+    # 최고 점수 순
+    top = max(scored_candidates, key=lambda c: c["score"])
 
     return {
-        "id": best["member"].id,
-        "name": best["member"].name,
-        "party": best["member"].party,
-        # "party": best["member"].party.party if best["member"].party else "소속없음",
-        "ratio": round(best["score"] * 100, 1),
-        "cluster": ", ".join(map(str, best["clusters"])),
+        "id": top["member"].id,
+        "name": top["member"].name,
+        "party": top["member"].party.party if top["member"].party else "소속없음",
+        "ratio": round(top["score"] * 100, 1),
+        "cluster": ", ".join(str(cid) for cid in top["cluster_ids"]),
+    }
+
+
+def get_recommended_members_from_clusters(cluster_ids):
+    print("추천할 cluster_ids:", cluster_ids)
+
+    supporters = get_top_members_for_user_clusters(cluster_ids, vote_type='찬성')
+    print(supporters)
+
+    opposers = get_top_members_for_user_clusters(cluster_ids, vote_type='반대')
+    print(opposers)
+
+    return {
+        'supporters': supporters,
+        'opposers': opposers,
     }
 
 # ──────────────────────────────────────────────
