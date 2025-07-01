@@ -223,7 +223,6 @@
   <div id="clusterVoteChart"></div>
 
   {{ cluster_data|json_script:"cluster-data" }}
-  {{ party_names|json_script:"cluster-party-names" }}
   {{ result_types|json_script:"cluster-result-types" }}
   {{ party_colors|json_script:"cluster-party-colors" }}
 </section>
@@ -278,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 차트 렌더링
   {% if cluster_data %}
   const clusterData = JSON.parse(document.getElementById('cluster-data').textContent || '{}');
-  const partyNames = JSON.parse(document.getElementById('cluster-party-names').textContent || '[]');
+  // const partyNames = JSON.parse(document.getElementById('cluster-party-names').textContent || '[]');
   const resultTypes = JSON.parse(document.getElementById('cluster-result-types').textContent || '[]');
   const partyColors = JSON.parse(document.getElementById('cluster-party-colors').textContent || '{}');
   const selectEl = document.getElementById('clusterSelect');
@@ -308,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const partyNames = data.top_parties;
     const series = resultTypes.map(rt => ({
       name: rt,
       data: partyNames.map(p => data.party_stats[p]?.[rt] || 0)

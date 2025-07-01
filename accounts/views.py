@@ -114,6 +114,8 @@ def get_user_cluster_stats(user):
     사용자가 좋아요한 클러스터별 키워드·정당별 투표 통계 반환
     (템플릿에서 JSON 직렬화해 ApexCharts에 사용)
     """
+    # 사용자 관심 클러스터-age 쌍 추출
+    
     liked_clusters = (
         BillLike.objects.filter(user=user)
         .values_list("bill__cluster", flat=True)
@@ -137,38 +139,40 @@ def get_user_cluster_stats(user):
 
     result_types = ["찬성", "반대", "기권", "불참"]
     cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
-    party_seat_counts = {}
+    cluster_party_seats = defaultdict(dict)
 
     for row in stats:
-        p = row.party.party
-        party_seat_counts[p] = getattr(row.party, "seat_count", 0)
-        cluster_data[row.cluster_num][p] = {
+        cnum = row.cluster_num
+        party_name = row.party.party
+        cluster_data[cnum][party_name] = {
             "찬성": round(row.support_ratio),
             "반대": round(row.oppose_ratio),
             "기권": round(row.abstain_ratio),
             "불참": round(row.absent_ratio),
         }
+        cluster_party_seats[cnum][party_name] = getattr(row.party, "seat_count", 0)
 
-    # 의석수 상위 8개 정당
-    top_parties = sorted(party_seat_counts, key=party_seat_counts.get, reverse=True)[:8]
+    cluster_vote_data = {}
+    for cnum, party_dict in cluster_data.items():
+    seat_count_dict = cluster_party_seats[cnum]
+    
+        # 의석수 기준 상위 8개
+        top8 = sorted(seat_count_dict, key=seat_count_dict.get, reverse=True)[:8]
 
-    # 누락값 0 채움
-    for cn in cluster_data:
-        for p in top_parties:
-            cluster_data[cn].setdefault(p, {r: 0 for r in result_types})
+        # 누락 채우기
+        for party in top8:
+            party_dict.setdefault(party, {r: 0 for r in result_types})
 
-    cluster_vote_data = {
-        str(cn): {
-            "cluster_num": cn,
-            "cluster_keywords": cluster_keywords.get(cn, ""),
-            "party_stats": ps,
+        cluster_vote_data[str(cnum)] = {
+            "cluster_num": cnum,
+            "cluster_keywords": cluster_keywords.get(cnum, ""),
+            "party_stats": {p: party_dict[p] for p in top8},
+            "top_parties": top8,
         }
-        for cn, ps in cluster_data.items()
-    }
 
     return {
         "cluster_data": cluster_vote_data,
-        "party_names": top_parties,
+        # "party_names": top_parties,
         "result_types": result_types,
     }
 
@@ -334,9 +338,13 @@ def my_page(request):
     max_clusters = get_max_clusters_for_member(request.user.username)
 
     # ---- 차트를 위한 정당별 색상 매핑 ----
+    all_parties = set()
+    for data in cluster_stats_data["cluster_data"].values():
+        all_parties.update(data["top_parties"])
+
     party_colors = {
         party_name: PALETTE[i % len(PALETTE)]
-        for i, party_name in enumerate(cluster_stats_data["party_names"])
+        for i, party_name in enumerate(sorted(all_parties))
     }
 
     return render(request, "my_page.html", {
@@ -356,7 +364,7 @@ def my_page(request):
 
         # 차트 데이터
         "cluster_data": cluster_stats_data["cluster_data"],
-        "party_names": cluster_stats_data["party_names"],
+        # "party_names": cluster_stats_data["party_names"],
         "result_types": cluster_stats_data["result_types"],
         "party_colors": party_colors,
 
