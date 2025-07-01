@@ -55,7 +55,7 @@ AUTHENTICATION_BACKENDS = (
 # )
 
 # 로그인 후 리다이렉트 URL (로그인 성공 후 이동할 곳)
-LOGIN_REDIRECT_URL = '/accounts/myPage/'  # 네가 원하는 페이지 경로로 바꿔도 됨
+LOGIN_REDIRECT_URL = '/accounts/mypage/'  # 네가 원하는 페이지 경로로 바꿔도 됨
 # 로그아웃 후 이동할 URL
 LOGOUT_REDIRECT_URL = '/'
 
