@@ -29,6 +29,8 @@ from billview.models import Bill
 from geovote.models import Vote
 from main.models import ClusterKeyword, PartyClusterStats, VoteSummary
 from geovote.views import get_max_clusters_for_member
+from django.db.models import Q
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -110,69 +112,81 @@ def jaccard_score(set1, set2):
 
 
 def get_user_cluster_stats(user):
-    """
-    사용자가 좋아요한 클러스터별 키워드·정당별 투표 통계 반환
-    (템플릿에서 JSON 직렬화해 ApexCharts에 사용)
-    """
-    # 사용자 관심 클러스터-age 쌍 추출
-    
-    liked_clusters = (
-        BillLike.objects.filter(user=user)
-        .values_list("bill__cluster", flat=True)
-        .distinct()
-    )
-    liked_clusters = [c for c in liked_clusters if c]
+    liked_bills = BillLike.objects.filter(user=user).select_related("bill", "bill__age")
 
-    # --- 키워드
+    # 유저가 좋아요한 대수 목록 (중복 제거)
+    liked_ages = sorted({lb.bill.age.number for lb in liked_bills if lb.bill.age})
+
+    # 선택된 대수에 따라 클러스터 필터링용 변수 (처음엔 None)
+    selected_age = None  # 클라이언트에서 대수 선택 후 AJAX로 다시 호출하는 구조라면 여기서 받아야 함
+
+    # 우선 대수 미선택 시 모든 대수에 포함된 클러스터 데이터 준비
+    cluster_age_pairs = set()
+    for lb in liked_bills:
+        bill = lb.bill
+        if bill.cluster and bill.age:
+            cluster_age_pairs.add((bill.cluster, bill.age.number))
+
+    # PartyClusterStats 조회용 쿼리 조건
+    query = Q()
+    for cluster_num, age_num in cluster_age_pairs:
+        query |= Q(cluster_num=cluster_num, age__number=age_num)
+
+    stats = PartyClusterStats.objects.filter(query).select_related("party", "age")
+
     cluster_keywords = {}
-    for ck in ClusterKeyword.objects.filter(cluster_num__in=liked_clusters):
+    cluster_to_ages = defaultdict(set)
+    for ck in ClusterKeyword.objects.filter(cluster_num__in={c for c, _ in cluster_age_pairs}):
         try:
             cluster_keywords[ck.cluster_num] = ", ".join(json.loads(ck.keyword_json))
         except Exception:
             cluster_keywords[ck.cluster_num] = ck.keyword_json
 
-    # --- 정당별 표결 통계
-    stats = (
-        PartyClusterStats.objects.filter(cluster_num__in=liked_clusters)
-        .select_related("party")
-    )
-
     result_types = ["찬성", "반대", "기권", "불참"]
+
+    # 대수별 클러스터별 데이터 구조
     cluster_data = defaultdict(lambda: defaultdict(lambda: {r: 0 for r in result_types}))
     cluster_party_seats = defaultdict(dict)
 
     for row in stats:
-        cnum = row.cluster_num
+        key = (row.age.number, row.cluster_num)
         party_name = row.party.party
-        cluster_data[cnum][party_name] = {
+        cluster_data[key][party_name] = {
             "찬성": round(row.support_ratio),
             "반대": round(row.oppose_ratio),
             "기권": round(row.abstain_ratio),
             "불참": round(row.absent_ratio),
         }
-        cluster_party_seats[cnum][party_name] = getattr(row.party, "seat_count", 0)
+        cluster_party_seats[key][party_name] = getattr(row.party, "seat_count", 0)
+        cluster_to_ages[row.cluster_num].add(row.age.number)
 
     cluster_vote_data = {}
-    for cnum, party_dict in cluster_data.items():
-    seat_count_dict = cluster_party_seats[cnum]
+    age_cluster_map = defaultdict(dict)
     
-        # 의석수 기준 상위 8개
+    for key, party_dict in cluster_data.items():
+        seat_count_dict = cluster_party_seats[key]
         top8 = sorted(seat_count_dict, key=seat_count_dict.get, reverse=True)[:8]
+        top8 = [str(p) for p in top8]
 
-        # 누락 채우기
         for party in top8:
             party_dict.setdefault(party, {r: 0 for r in result_types})
 
-        cluster_vote_data[str(cnum)] = {
-            "cluster_num": cnum,
-            "cluster_keywords": cluster_keywords.get(cnum, ""),
-            "party_stats": {p: party_dict[p] for p in top8},
-            "top_parties": top8,
-        }
+        age_num, cluster_num = key
+        if not top8:
+            top8 = []
 
+        age_cluster_map[str(age_num)][str(cluster_num)] = {
+            "age_num": age_num,
+            "cluster_num": cluster_num,
+            "cluster_keywords": cluster_keywords.get(cluster_num, ""),
+            "party_stats": {p: party_dict[p] for p in top8},
+            "top_parties": top8 if top8 else [],
+        }
+        # print(f"cluster_num={cluster_num} top_parties={top8}")
     return {
-        "cluster_data": cluster_vote_data,
-        # "party_names": top_parties,
+        "liked_ages": liked_ages,
+        "cluster_to_ages": {k: sorted(list(v)) for k, v in cluster_to_ages.items()},
+        "cluster_data": age_cluster_map,
         "result_types": result_types,
     }
 
@@ -339,14 +353,16 @@ def my_page(request):
 
     # ---- 차트를 위한 정당별 색상 매핑 ----
     all_parties = set()
-    for data in cluster_stats_data["cluster_data"].values():
-        all_parties.update(data["top_parties"])
+    for age_dict in cluster_stats_data["cluster_data"].values():
+        for cluster_data in age_dict.values():  # cluster_num별 dict
+            if "top_parties" in cluster_data:
+                all_parties.update(cluster_data["top_parties"])
 
     party_colors = {
         party_name: PALETTE[i % len(PALETTE)]
         for i, party_name in enumerate(sorted(all_parties))
     }
-
+    print(cluster_stats_data["cluster_data"])
     return render(request, "my_page.html", {
         "username": request.user.username,
 

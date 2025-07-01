@@ -148,8 +148,7 @@
                           <button type="button"
                                   class="like-btn text-xl text-red-400 hover:scale-110 transition-transform duration-200"
                                   data-bill-id="{{ bill.id }}"
-                                  data-csrf-token="{{ csrf_token }}"
-                                  onclick="event.stopPropagation(); toggleLike(this);">
+                                  data-csrf-token="{{ csrf_token }}">
                             {% if bill.id in liked_ids %}❤️{% else %}🤍{% endif %}
                           </button>
                         {% endif %}
@@ -189,7 +188,7 @@
       <ul class="max-h-[600px] space-y-3 overflow-y-auto pr-0 scrollbar-custom">
         {% for bill in recommended_bills %}
           <li class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition cursor-pointer"
-              onclick="location.href='{% url 'history:bill_detail' bill.pk %}'}">
+              onclick="location.href='{% url 'history:bill_detail' bill.pk %}'">
             <h4 class="font-semibold">{{ bill.title|default:"제목 없음" }}</h4>
             <p class="text-sm text-gray-500 mt-1">의안번호 {{ bill.bill_number|default:"없음" }}</p>
           </li>
@@ -212,19 +211,35 @@
 {% if cluster_data %}
 <section class="max-w-5xl mx-auto my-10 bg-white rounded-2xl shadow p-6">
   <h3 class="text-lg font-bold mb-4">📊 정당별 표결 통계</h3>
-  <label class="block font-semibold mb-2" for="clusterSelect">클러스터 선택</label>
-  <select id="clusterSelect" class="w-full border border-gray-300 rounded px-3 py-2 mb-6 focus:ring-cyan-500">
-    {% for cn, data in cluster_data.items %}
-      <option value="{{ cn }}">{{ data.cluster_keywords|default:"키워드 없음" }}</option>
-    {% empty %}
-      <option disabled>클러스터 데이터가 없습니다.</option>
-    {% endfor %}
-  </select>
+  <div class="flex flex-row gap-4 mb-4">
+    <!-- 대수 선택 -->
+    <div class="flex-shrink-0 md:w-32">
+      <label for="ageSelect"
+            class="block font-semibold mb-2">대수 선택</label>
+      <select id="ageSelect"
+              class="w-full appearance-none border border-gray-300 rounded-md px-4 py-1 pr-8 bg-white text-gray-800 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400">
+        <option value="">-- 대수 선택 --</option>
+        {% for age_num in liked_ages %}
+          <option value="{{ age_num }}">{{ age_num }}대 국회</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- 클러스터 선택 -->
+    <div class="flex-grow min-w-[250px]">
+      <label class="block font-semibold mb-2" for="clusterSelect">키워드 선택</label>
+      <select id="clusterSelect"
+              class="w-full appearance-none border border-gray-300 rounded-md px-4 py-1 pr-8 bg-white text-gray-800 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 focus:border-cyan-400" disabled>
+        <option value="">-- 먼저 대수를 선택하세요 --</option>
+      </select>
+    </div>
+  </div>
   <div id="clusterVoteChart"></div>
 
   {{ cluster_data|json_script:"cluster-data" }}
   {{ result_types|json_script:"cluster-result-types" }}
   {{ party_colors|json_script:"cluster-party-colors" }}
+  {{ palette_colors|json_script:"palette-colors" }}
 </section>
 {% endif %}
 {% endblock %}
@@ -237,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       const billId = this.dataset.billId;
       fetch("{% url 'cardnews:toggle_like' 0 %}".replace('0', billId), {
         method: 'POST',
@@ -276,75 +292,111 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 차트 렌더링
   {% if cluster_data %}
-  const clusterData = JSON.parse(document.getElementById('cluster-data').textContent || '{}');
-  // const partyNames = JSON.parse(document.getElementById('cluster-party-names').textContent || '[]');
+  const ageClusterMap  = JSON.parse(document.getElementById('cluster-data').textContent || '{}');
   const resultTypes = JSON.parse(document.getElementById('cluster-result-types').textContent || '[]');
   const partyColors = JSON.parse(document.getElementById('cluster-party-colors').textContent || '{}');
-  const selectEl = document.getElementById('clusterSelect');
+  const paletteColors = JSON.parse(document.getElementById('palette-colors').textContent || '{}');
+  const ageSelect = document.getElementById('ageSelect');
+  const clusterSelect = document.getElementById('clusterSelect');
+  const chartContainer = document.getElementById('clusterVoteChart');
   let chart = null;
 
-  // 서버와 동기화된 옵션 유지
-  if (selectEl && Object.keys(clusterData).length > 0) {
-    selectEl.innerHTML = '';
-    for (const [cn, data] of Object.entries(clusterData)) {
-      const option = document.createElement('option');
-      option.value = cn;
-      option.textContent = data.cluster_keywords || '키워드 없음';
-      selectEl.appendChild(option);
-    }
+  // 대수 셀렉트 초기화
+function populateAgeOptions() {
+  const ageNums = Object.keys(ageClusterMap).sort((a, b) => b - a);
+  ageSelect.innerHTML = '';
+  for (const age of ageNums) {
+    const opt = document.createElement('option');
+    opt.value = age;
+    opt.textContent = `제${age}대`;
+    ageSelect.appendChild(opt);
+  }
+  ageSelect.value = ageNums[0];
+  populateClusterOptions(ageNums[0]);
+}
+
+// 클러스터 셀렉트 채우기
+function populateClusterOptions(ageNum) {
+  const clusters = ageClusterMap[ageNum] || {};
+  clusterSelect.innerHTML = '';
+  clusterSelect.disabled = false;
+
+  for (const [clusterNum, data] of Object.entries(clusters)) {
+    const option = document.createElement('option');
+    option.value = clusterNum;
+    option.textContent = data.cluster_keywords || '키워드 없음';
+    clusterSelect.appendChild(option);
   }
 
-  function render(clusterNum) {
-    const data = clusterData[clusterNum];
-    const chartContainer = document.getElementById('clusterVoteChart');
-    
-    if (!data || !data.party_stats) {
-      chartContainer.innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
-      if (chart) {
-        chart.destroy();
-        chart = null;
-      }
-      return;
-    }
+  if (clusterSelect.options.length > 0) {
+    clusterSelect.value = clusterSelect.options[0].value;
+    renderChart(ageNum, clusterSelect.value);
+  } else {
+    chartContainer.innerHTML = '<p class="text-center text-gray-500">클러스터 데이터가 없습니다.</p>';
+    clusterSelect.disabled = true;
+  }
+}
 
-    const partyNames = data.top_parties;
-    const series = resultTypes.map(rt => ({
-      name: rt,
-      data: partyNames.map(p => data.party_stats[p]?.[rt] || 0)
-    }));
-
-    const options = {
-      chart: { type: 'bar', stacked: true, stackType: '100%', height: 400 },
-      colors: partyNames.map(p => partyColors[p] || '#38bdf8'),
-      series,
-      plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
-      xaxis: { categories: partyNames, labels: { formatter: v => v + '%' }, title: { text: '비율' } },
-      yaxis: { title: { text: '정당' } },
-      dataLabels: { enabled: true, formatter: v => v ? v.toFixed(1) + '%' : '' },
-      legend: { position: 'top' },
-      tooltip: { y: { formatter: v => v + '%' } },
-    };
-
+// 차트 렌더링
+function renderChart(ageNum, clusterNum) {
+  const data = ageClusterMap[ageNum]?.[clusterNum];
+  
+  if (!data || !data.party_stats) {
+    chartContainer.innerHTML = '<p class="text-center text-gray-500">선택한 클러스터에 대한 데이터가 없습니다.</p>';
     if (chart) {
-      chart.updateOptions(options, true, true);
-    } else {
-      chart = new ApexCharts(chartContainer, options);
-      chart.render();
+      chart.destroy();
+      chart = null;
     }
+    return;
   }
 
-  // 초기 렌더링: 첫 번째 클러스터 선택
-  if (selectEl && selectEl.options.length > 0) {
-    const firstCluster = selectEl.options[0].value;
-    selectEl.value = firstCluster;
-    render(firstCluster);
-  }
+  const partyNames = data.top_parties || [];
+  const series = resultTypes.map(rt => ({
+    name: rt,
+    data: partyNames.map(p => data.party_stats[p]?.[rt] || 0)
+  }));
+  const colors = partyNames.map((p, i) => 
+    paletteColors[p] ||
+    paletteColors[Object.keys(paletteColors)[i % Object.keys(paletteColors).length]] || // 없으면 paletteColors에서 순서대로 돌려 쓰고
+    '#38bdf8' // 기본 fallback 색
+  );
 
-  // 이벤트 리스너
-  if (selectEl) {
-    selectEl.addEventListener('change', e => render(e.target.value));
+  const options = {
+    chart: { type: 'bar', stacked: true, stackType: '100%', height: 400 },
+    colors: colors,
+    series,
+    plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+    xaxis: { categories: partyNames, labels: { formatter: v => v + '%' }, title: { text: '비율' } },
+    yaxis: { title: { text: '정당' } },
+    dataLabels: { enabled: true, formatter: v => v ? v.toFixed(1) + '%' : '' },
+    legend: { position: 'top' },
+    tooltip: { y: { formatter: v => v + '%' } },
+  };
+
+  if (chart) {
+    chart.updateOptions(options, true, true);
+  } else {
+    chart = new ApexCharts(chartContainer, options);
+    chart.render();
   }
-  {% endif %}
+}
+
+// 이벤트 바인딩
+ageSelect?.addEventListener('change', e => {
+  const selectedAge = e.target.value;
+  populateClusterOptions(selectedAge);
 });
+
+clusterSelect?.addEventListener('change', e => {
+  const selectedCluster = e.target.value;
+  const selectedAge = ageSelect.value;
+  renderChart(selectedAge, selectedCluster);
+});
+
+// 초기화
+populateAgeOptions();
+{% endif %}
+});
+
 </script>
 {% endblock %}
