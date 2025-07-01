@@ -284,7 +284,8 @@ def get_top_members_for_user_clusters(cluster_list, vote_type="찬성"):
     return {
         "id": best["member"].id,
         "name": best["member"].name,
-        "party": best["member"].party.party if best["member"].party else "소속없음",
+        "party": best["member"].party,
+        # "party": best["member"].party.party if best["member"].party else "소속없음",
         "ratio": round(best["score"] * 100, 1),
         "cluster": ", ".join(map(str, best["clusters"])),
     }
@@ -303,7 +304,7 @@ def my_page(request):
         .prefetch_related("vote_set")
     )
 
-    liked_clusters = {b.cluster for b in bill_list if b.cluster}
+    liked_clusters = [b.cluster for b in bill_list if b.cluster]
 
     # 클러스터 빈도 및 키워드
     cluster_counts = dict(Counter(liked_clusters))

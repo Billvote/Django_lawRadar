@@ -3,16 +3,15 @@
 {% load static account_custom_filters custom_filters %}
 
 {% block body %}
-<h2 class="text-2xl md:text-3xl font-bold mb-8">
-  🍀 <span class="text-cyan-600">{{ request.user.nickname|default:request.user.username }}</span>님의 요즘 관심사는?
+<h2 class="text-3xl md:text-4xl mb-8">
+  🍀 <span class="text-cyan-600 font-bold">{{ request.user.nickname|default:request.user.username }}</span>님의 요즘 관심사
+  <p class="text-sm my-3 mx-10">{{ username }}님의 <strong>관심사</strong>에 따라 결과가 달라져요!</p>
 </h2>
 
 <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-8">
   <!-- 정당 추천 카드 -->
   <section class="flex-1 bg-white rounded-2xl shadow-lg p-6 text-center">
     <h3 class="text-2xl font-bold mb-2">🍒 나와 어울리는 정당은? 🍒</h3>
-    <p class="text-sm mb-4">{{ request.user.nickname|default:request.user.username }}님이 좋아하는 법안에 기반하여 계산됩니다.</p>
-
     {% if liked_ids %}
       <div class="flex justify-between gap-6">
         <div class="flex-1">
@@ -22,10 +21,11 @@
               {{ most_similar_party.party|default:"데이터 없음" }}
             </p>
             <p class="text-sm text-gray-500">
-              찬성률 {{ most_similar_party.support|floatformat:1|default:"0.0" }}%
+              찬성률 <strong>{{ most_similar_party.support|floatformat:1|default:"0.0" }}</strong>%
+              <br>반대율 <strong>{{ most_similar_party.oppose|floatformat:1|default:"0.0" }}%</strong>
             </p>
           {% else %}
-            <p class="text-sm text-gray-400">데이터 부족</p>
+            <p class="text-sm text-gray-400">데이터가 부족합니다</p>
           {% endif %}
         </div>
         <div class="flex-1">
@@ -35,16 +35,18 @@
               {{ most_opposite_party.party|default:"데이터 없음" }}
             </p>
             <p class="text-sm text-gray-500">
-              반대률 {{ most_opposite_party.oppose|floatformat:1|default:"0.0" }}%
+              찬성률 <strong>{{ most_opposite_party.support|floatformat:1|default:"0.0" }}</strong>
+              <br>반대율 <strong>{{ most_opposite_party.oppose|floatformat:1|default:"0.0" }}</strong>%
             </p>
           {% else %}
-            <p class="text-sm text-gray-400">데이터 부족</p>
+            <p class="text-sm text-gray-400">데이터가 부족합니다</p>
           {% endif %}
         </div>
       </div>
     {% else %}
       <div class="py-8 text-gray-500">
         <p class="text-lg mb-2">😥 아직 좋아요한 법안이 없어요</p>
+        <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
         <a href="{% url 'cardnews:home' %}">
           <button class="mt-4 bg-gray-100 rounded-full px-6 py-3 font-semibold text-cyan-500 hover:bg-gray-200 transition">
             ➕ 법안 추가하기
@@ -57,31 +59,39 @@
   <!-- 의원 추천 카드 -->
   <section class="flex-1 bg-white rounded-2xl shadow-lg p-6 text-center">
     <h3 class="text-2xl font-bold mb-2">🍓 나와 어울리는 국회의원은? 🍓</h3>
-    <p class="text-sm mb-4">좋아요한 법안을 기준으로 추천됩니다</p>
     {% if recommended_support_member or recommended_oppose_member %}
       <div class="flex flex-col md:flex-row gap-6">
         <div class="flex-1">
           <h4 class="text-lg font-semibold text-green-700 mb-2">👍 찰떡궁합</h4>
           {% if recommended_support_member %}
-            <p class="text-xl font-bold">{{ recommended_support_member.name|default:"데이터 없음" }}</p>
-            <p class="text-sm text-gray-500">찬성률 {{ recommended_support_member.ratio|default:"0.0" }}%</p>
+            <p class="text-xl font-bold text-gray-800">{{ recommended_support_member.name }}</p>
+            <p class="text-md font-semibold mb-3" style="color: {{ recommended_support_member.party.color }}">
+              {{ recommended_support_member.party }}
+            </p>
+            <p class="text-sm text-gray-600 mt-1">찬성률 <span class="font-semibold">{{ recommended_support_member.ratio }}%</span></p>
+            <!-- <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_support_member.cluster }}</p> -->
           {% else %}
-            <p class="text-sm text-gray-400">추천 없음</p>
+            <p class="text-sm text-gray-500">찬성 기준으로 추천할 의원이 없습니다.</p>
           {% endif %}
         </div>
         <div class="flex-1">
           <h4 class="text-lg font-semibold text-red-700 mb-2">👎 엇박자</h4>
           {% if recommended_oppose_member %}
-            <p class="text-xl font-bold">{{ recommended_oppose_member.name|default:"데이터 없음" }}</p>
-            <p class="text-sm text-gray-500">반대률 {{ recommended_oppose_member.ratio|default:"0.0" }}%</p>
+            <p class="text-xl font-bold text-gray-800">{{ recommended_oppose_member.name }}</p>
+            <p class="text-md font-semibold mb-3" style="color: {{ recommended_support_member.party.color }}">
+              {{ recommended_support_member.party }}
+            </p>
+            <p class="text-sm text-gray-600 mt-1">반대율 <span class="font-semibold">{{ recommended_oppose_member.ratio }}%</span></p>
+            <!-- <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_oppose_member.cluster }}</p> -->
           {% else %}
-            <p class="text-sm text-gray-400">추천 없음</p>
+            <p class="text-sm text-gray-500">반대 기준으로 추천할 의원이 없습니다.</p>
           {% endif %}
         </div>
       </div>
     {% else %}
       <div class="py-8 text-gray-500">
         <p class="text-lg mb-2">😥 아직 좋아요한 법안이 없어요</p>
+        <p>관심 법안을 저장하고 <strong>맞춤형 정보</strong>를 확인하세요!</p>
         <a href="{% url 'cardnews:home' %}">
           <button class="mt-4 bg-gray-100 rounded-full px-6 py-3 font-semibold text-cyan-500 hover:bg-gray-200 transition">
             ➕ 법안 추가하기
@@ -92,13 +102,13 @@
   </section>
 </div>
 
-<div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 items-start justify-between">
+<div class="max-w-7xl mx-auto px-4 py-6 h-[600px] flex flex-col md:flex-row gap-6 items-stretch justify-between">
   <!-- 내 법안 모음 -->
-  <section class="flex-1 flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
+  <section class="flex-1 flex flex-col w-full h-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
     <div class="mb-6 p-4 bg-pink-400">
       <h2 class="text-xl font-bold text-white">📚 내 법안 모음</h2>
     </div>
-    <div class="scrollbar-custom gap-2 max-h-[500px] overflow-y-auto p-6 bg-white shadow-lg">
+    <div class="scrollbar-custom gap-2 flex-1 overflow-y-auto p-6">
       <div class="space-y-6">
         {% for cluster, count in cluster_counts.items %}
           <div class="bg-white rounded-xl">
@@ -106,7 +116,7 @@
                  onclick="toggleCluster('{{ cluster }}')">
               <div class="px-3 py-7 space-y-6 shadow-lg">
                 <h4 class="text-base font-semibold flex justify-between items-center mb-2">
-                  키워드 {{ cluster }} ({{ count|default:0 }}건)
+                  키워드 {{ cluster }} ({{ count }}건)
                   <svg id="arrow-{{ cluster }}"
                        class="w-5 h-5 text-zinc-400 transition-transform duration-300"
                        xmlns="http://www.w3.org/2000/svg"
@@ -122,7 +132,7 @@
                         {% random_color_for_cluster cluster as color %}
                         {% for kw in keywords_list %}
                           <a href="{% url 'cardnews:card' cluster %}"
-                             class="inline-block px-3 py-1 rounded-full text-md text-white font-medium hover:opacity-60 transition-all duration-200"
+                             class="inline-block px-3 py-1 rounded-full text-sm md:text-md text-white font-medium hover:opacity-60 transition-all duration-200"
                              style="background-color: {{ color|default:'#38bdf8' }}; white-space: nowrap;">
                             #{{ kw }}
                           </a>
@@ -135,12 +145,12 @@
                 </h3>
               </div>
               <div id="cluster-bills-{{ cluster }}"
-                   class="scrollbar-custom max-h-[500px] overflow-y-auto pr-1 mt-4 hidden space-y-3">
+                   class="scrollbar-custom flex-1 overflow-y-auto pr-1 mt-4 hidden space-y-3">
                 {% for bill in liked_bills %}
                   {% if bill.cluster == cluster %}
                     <div class="bg-gray-50 rounded-xl shadow-sm hover:shadow-sm transition-all duration-300 p-3 cursor-pointer"
                          onclick="location.href='{% url 'history:bill_detail' bill.pk %}#history-{{ bill.id }}'">
-                      <div class="flex justify-between items-start gap-2">
+                      <div class="flex justify-between items-stretch gap-2">
                         <h3 class="text-base font-medium text-gray-800 truncate hover:text-cyan-600 transition-all duration-300">
                           {{ bill.title|default:"제목 없음" }}
                         </h3>
@@ -168,7 +178,7 @@
           <div class="flex flex-col items-center justify-center p-10 text-center text-gray-600 w-full">
             <p class="text-xl font-semibold mb-3">😥 아직 관심 법안이 없어요</p>
             <p class="text-sm mb-4">마음에 드는 법안을 추가하면<br><strong>내 법안 모음</strong>을 확인할 수 있어요.</p>
-            <a href="{% url 'cardnews:home' %}">
+            <a href="{% url 'history:history_list' %}">
               <button class="mt-2 bg-pink-400 text-white rounded-full px-6 py-2 font-semibold hover:bg-pink-500 transition">
                 ➕ 관심 법안 보러가기
               </button>
@@ -182,7 +192,7 @@
   <!-- 추천 법안 리스트 -->
   <section class="flex flex-col w-full md:w-1/2 bg-white rounded-2xl shadow-lg overflow-hidden">
     <div class="mb-6 p-4" style="background:#38bdf8;">
-      <h2 class="text-xl font-bold text-white">관심 있을 만한 법</h2>
+      <h2 class="text-xl font-bold text-white">💌 관심 있을 만한 법</h2>
     </div>
     {% if recommended_bills %}
       <ul class="max-h-[600px] space-y-3 overflow-y-auto pr-0 scrollbar-custom">
@@ -208,9 +218,9 @@
   </section>
 </div>
 
-{% if cluster_data %}
+{% if liked_ids %}
 <section class="max-w-5xl mx-auto my-10 bg-white rounded-2xl shadow p-6">
-  <h3 class="text-lg font-bold mb-4">📊 정당별 표결 통계</h3>
+  <h3 class="text-lg font-bold mb-4">📊 내 관심 법안에 관해 정당들은?</h3>
   <div class="flex flex-row gap-4 mb-4">
     <!-- 대수 선택 -->
     <div class="flex-shrink-0 md:w-32">
