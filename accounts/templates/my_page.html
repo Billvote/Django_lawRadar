@@ -61,6 +61,7 @@
     <h3 class="text-2xl font-bold mb-4">🍓 나와 어울리는 국회의원은? 🍓</h3>
     {% if recommended_support_member or recommended_oppose_member %}
       <div class="flex flex-col md:flex-row gap-6">
+        <!-- 찬성 추천 -->
         <div class="flex-1">
           <h4 class="text-lg font-semibold text-green-700 mb-2">👍 찰떡궁합</h4>
           {% if recommended_support_member %}
@@ -68,21 +69,25 @@
             <p class="text-md font-semibold mb-3" style="color: {{ recommended_support_member.party.color }}">
               {{ recommended_support_member.party }}
             </p>
-            <p class="text-sm text-gray-600 mt-1">찬성률 <span class="font-semibold">{{ recommended_support_member.ratio }}%</span></p>
-            <!-- <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_support_member.cluster }}</p> -->
+            <p class="text-sm text-gray-600 mt-1">
+              찬성률 <span class="font-semibold">{{ recommended_support_member.ratio }}%</span>
+            </p>
           {% else %}
             <p class="text-sm text-gray-500">찬성 기준으로 추천할 의원이 없습니다.</p>
           {% endif %}
         </div>
+
+        <!-- 반대 추천 -->
         <div class="flex-1">
           <h4 class="text-lg font-semibold text-red-700 mb-2">👎 엇박자</h4>
           {% if recommended_oppose_member %}
             <p class="text-xl font-bold text-gray-800">{{ recommended_oppose_member.name }}</p>
-            <p class="text-md font-semibold mb-3" style="color: {{ recommended_support_member.party.color }}">
-              {{ recommended_support_member.party }}
+            <p class="text-md font-semibold mb-3" style="color: {{ recommended_oppose_member.party.color }}">
+              {{ recommended_oppose_member.party }}
             </p>
-            <p class="text-sm text-gray-600 mt-1">반대율 <span class="font-semibold">{{ recommended_oppose_member.ratio }}%</span></p>
-            <!-- <p class="text-sm text-gray-500 mt-1">관심 클러스터: {{ recommended_oppose_member.cluster }}</p> -->
+            <p class="text-sm text-gray-600 mt-1">
+              반대율 <span class="font-semibold">{{ recommended_oppose_member.ratio }}%</span>
+            </p>
           {% else %}
             <p class="text-sm text-gray-500">반대 기준으로 추천할 의원이 없습니다.</p>
           {% endif %}
@@ -100,6 +105,7 @@
       </div>
     {% endif %}
   </section>
+
 </div>
 
 <div class="max-w-7xl mx-auto px-4 py-6 h-[600px] flex flex-col md:flex-row gap-6 items-stretch justify-between">
