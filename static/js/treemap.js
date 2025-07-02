@@ -444,7 +444,7 @@ function render(node, width, height, selectedMemberName = null) {
       .style("justify-content", "center")
       .style("text-align", "center")
       .style("font-family", "sans-serif")
-      .style("font-weight", "400")
+      .style("font-weight", "700")
       .style("letter-spacing", "0.02em")
       .style("color", d => {
         if (d.data.type === "SIDO") return "#4A6FA5";
