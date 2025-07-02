@@ -36,7 +36,7 @@ function formatNameWithLineBreak(name) {
   return name.replace(/(.*[^\s])(시|군|구)$/g, (_, prefix, suffix) => `${prefix}${suffix}<br>`);
 }
 
-
+//----------------------------------------------------------------------------------------------------------
 // --- DOM 요소 및 전역 변수 ---
 const container = document.getElementById("treemap");
 const backButton = d3.select("#backButton");
@@ -93,8 +93,6 @@ function updateBreadcrumb(node) {
 }
 
 function getClusterText(type, keywords, ratios) {
-  // 필요하다면 이 함수는 빈 문자열만 반환하거나, 
-  // 혹은 다른 설명용 텍스트만 리턴하도록 단순화 가능
   return '';
 }
 
@@ -122,15 +120,6 @@ function renderSummary(data) {
         </div>
       </div>
     `;
-  }
-
-  function getConfidenceClass(confidence) {
-    switch(confidence) {
-      case 'High': return 'bg-green-600 text-white';
-      case 'Medium': return 'bg-yellow-500 text-black';
-      case 'Low': return 'bg-red-600 text-white';
-      default: return 'bg-gray-400 text-white';
-    }
   }
 
   // 동적 아이콘, 텍스트, 색상 반환 함수

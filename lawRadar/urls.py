@@ -52,7 +52,7 @@ urlpatterns = [
     # card news
     path('cardnews/', include('cardnews.urls')),
 
-    # 검색 자동완성 -------------------------------
+    # 검색 자동완성
     path("api/autocomplete/", main_v.autocomplete, name="autocomplete"),
 
     # 로그인

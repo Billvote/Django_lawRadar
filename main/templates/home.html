@@ -4,12 +4,6 @@
 
 {% block body %}
 <style>
-  /* ── ① 커스텀 폰트 ─────────────────────── */
-  /* @font-face {
-       font-family: 'MyCustom';
-       src: url("{% static 'fonts/RiaSans-ExtraBold.ttf' %}") format('opentype');
-       font-display: swap;
-     } */
   @font-face {
     font-family: 'RiaSans-ExtraBold';
     src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2410-1@1.0/RiaSans-ExtraBold.woff2') format('woff2');
@@ -17,7 +11,7 @@
     font-style: normal;
   }
 
-  /* ── ② 좌·우 배경 이미지 ─────────────────────── */
+  /* ── 좌·우 배경 이미지 ─────────────────────── */
   body{
     background-image: url("{% static 'left.png' %}"),
                       url("{% static 'right.png' %}");
@@ -30,7 +24,7 @@
     body{background-size:180px auto, 180px auto;} /* 모바일 */
   }
 
-  /* ── ③ 공통 레이아웃 ─────────────────────────── */
+  /* ── 공통 레이아웃 ─────────────────────────── */
   #galaxy{position:fixed;top:0;left:0;width:100%;height:100vh;z-index:0;pointer-events:none;}
   #galaxy circle{pointer-events:auto;}
   .home-overlay{position:relative;z-index:10;text-align:center;padding-top:10vh;color:#111827;}
@@ -40,7 +34,7 @@
   circle.twinkle{animation:twinkle 2s infinite ease-in-out;}
   circle{shape-rendering:geometricPrecision;}
 
-  /* ── ④ Law Radar 전용 ───────────────────────── */
+  /* ── Law Radar 전용 ───────────────────────── */
   .law-title{font-family: 'RiaSans-ExtraBold';}
 </style>
 
@@ -54,7 +48,7 @@
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    <!-- 행성 패턴은 JS에서 삽입 -->
+    <!-- 패턴 JS에서 삽입 -->
   </defs>
 </svg>
 <div id="tooltip" class="home-tooltip"></div>

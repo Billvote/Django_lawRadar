@@ -22,17 +22,17 @@ def region_tree_data(request):
     except (ValueError, Age.DoesNotExist):
         return JsonResponse({"error": "Invalid age parameter"}, status=400)
 
-    # ✅ 1. 의원 여러 명 받을 수 있도록 dict → defaultdict(list)
+    # 1. 의원 여러 명 받아서
     members = Member.objects.filter(age=age_obj).select_related('party', 'district')
     member_dict = defaultdict(list)
     for m in members:
         if m.district_id:
             member_dict[m.district_id].append(m)
 
-    # ✅ 2. 의원이 있는 지역구만 필터링
+    # 2. 의원이 있는 지역구만 필터링
     districts = District.objects.filter(id__in=member_dict.keys())
 
-    # ✅ 3. SIDO - SIGUNGU - District 구조 만들기
+    # 3. SIDO - SIGUNGU - District 구조 만들기
     tree = defaultdict(lambda: defaultdict(list))
     for district in districts:
         sido = district.SIDO or "기타"
@@ -52,7 +52,7 @@ def region_tree_data(request):
             for district in district_list:
                 members_in_district = member_dict.get(district.id, [])
 
-                # ✅ 4. 의원 여러 명 있으면 각각 하나의 카드로 append
+                # 4. 의원 여러 명 있으면 각각 하나의 카드로 append
                 if not members_in_district:
                     sigungu_node["children"].append({
                         "id": district.id,
@@ -79,7 +79,7 @@ def region_tree_data(request):
 
     return JsonResponse(result)
 
-#----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
+#---------------------- 의원 - 의안 클러스터 - 표결 연결 ------------------
 from django.http import JsonResponse
 
 MIN_VOTE_COUNT = 3
@@ -151,9 +151,9 @@ def member_vote_summary_api(request):
     return JsonResponse(max_clusters)
 
 
-#------------------정당과 의원의 표결 경향 분석--------------------------------
-# import logging
-# logger = logging.getLogger(__name__)
+#--------------------------------정당과 의원의 표결 경향 분석--------------------------------
+import logging
+logger = logging.getLogger(__name__)
 @require_GET
 def member_alignment_api(request):
     member_name = request.GET.get("member_name")
@@ -215,11 +215,4 @@ def member_alignment_api(request):
         'alignment_rate': alignment_rate,
         'deviation_rate': round(100 - alignment_rate, 2),
     })
-
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_POST
-from accounts.models import MemberLike  # MemberLike 모델 import 필요
-import json
 

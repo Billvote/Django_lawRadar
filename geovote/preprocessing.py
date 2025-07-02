@@ -28,7 +28,7 @@ print(df_cleaned.head())
 
 
 
-#--------------------------연결 연결-----------------------------------
+#--------------------------연결-----------------------------------
 # import pandas as pd
 # from geovote.models import Member, District, Age, Party
 
