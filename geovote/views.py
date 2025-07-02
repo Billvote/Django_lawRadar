@@ -68,7 +68,7 @@ def region_tree_data(request):
 #----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
 from django.http import JsonResponse
 
-MIN_VOTE_COUNT = 5
+MIN_VOTE_COUNT = 3
 
 def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
@@ -91,7 +91,7 @@ def get_max_clusters_for_member(member_name):
     for vote_type in ['찬성', '반대', '기권', '불참']:
         filtered = [
             s for s in summaries
-            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT and s.bill_count > 0
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT and s.bill_count>0
         ]
         if not filtered:
             continue
@@ -202,22 +202,10 @@ def member_alignment_api(request):
         'deviation_rate': round(100 - alignment_rate, 2),
     })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
+from accounts.models import MemberLike  # MemberLike 모델 import 필요
+import json
 
