@@ -68,7 +68,7 @@ def region_tree_data(request):
 #----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
 from django.http import JsonResponse
 
-MIN_VOTE_COUNT = 3
+MIN_VOTE_COUNT = 5
 
 def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
@@ -91,7 +91,7 @@ def get_max_clusters_for_member(member_name):
     for vote_type in ['찬성', '반대', '기권', '불참']:
         filtered = [
             s for s in summaries
-            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT and s.bill_count > 0
         ]
         if not filtered:
             continue
@@ -202,35 +202,22 @@ def member_alignment_api(request):
         'deviation_rate': round(100 - alignment_rate, 2),
     })
 
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_POST
-from accounts.models import MemberLike  # MemberLike 모델 import 필요
-import json
 
-# 의원 좋아요
-@csrf_exempt
-@require_POST
-def member_like_api(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': '로그인이 필요합니다.'}, status=401)
-    
-    try:
-        data = json.loads(request.body)
-        member_name = data.get('member_name')
-        if not member_name:
-            return JsonResponse({'error': 'member_name이 필요합니다.'}, status=400)
 
-        # 가장 최신 국회 기준으로 찾거나, 요청에 따라 age 넘길 수도 있음
-        member = Member.objects.filter(name=member_name).order_by('-age__number').first()
-        if not member:
-            return JsonResponse({'error': '해당 의원을 찾을 수 없습니다.'}, status=404)
 
-        like, created = MemberLike.objects.get_or_create(user=request.user, member=member)
-        if created:
-            return JsonResponse({'message': '좋아요 완료'}, status=201)
-        else:
-            return JsonResponse({'message': '이미 좋아요한 의원입니다.'}, status=200)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
