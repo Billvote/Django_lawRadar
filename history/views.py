@@ -33,6 +33,8 @@ from main.models import PartyClusterStats
 from search import search_service as ss
 
 from accounts.models import BillLike
+from django.utils.html import format_html_join
+
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +330,8 @@ class BillHistoryDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        label = self.object.label
+        bill = self.object
+        label = bill.label
 
         vote_sq = (
             Vote.objects.filter(bill=OuterRef("pk"))
@@ -363,6 +366,7 @@ class BillHistoryDetailView(DetailView):
                 "cluster_keywords_dict": helper._cluster_kw_str(),
                 "cluster_color_map": helper._color_map(),
                 "liked_ids": liked_ids,
+                # "title_custom": bill.title_custom,
             }
         )
         return ctx
