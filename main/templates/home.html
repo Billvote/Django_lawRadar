@@ -4,12 +4,18 @@
 
 {% block body %}
 <style>
-  /* ── ① 커스텀 폰트 (옵션) ─────────────────────── */
-  @font-face {
+  /* ── ① 커스텀 폰트 ─────────────────────── */
+  /* @font-face {
        font-family: 'MyCustom';
        src: url("{% static 'fonts/RiaSans-ExtraBold.ttf' %}") format('opentype');
        font-display: swap;
-     }
+     } */
+  @font-face {
+    font-family: 'RiaSans-ExtraBold';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2410-1@1.0/RiaSans-ExtraBold.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+  }
 
   /* ── ② 좌·우 배경 이미지 ─────────────────────── */
   body{
@@ -35,7 +41,7 @@
   circle{shape-rendering:geometricPrecision;}
 
   /* ── ④ Law Radar 전용 ───────────────────────── */
-  .law-title{font-family:'MyCustom',sans-serif;}
+  .law-title{font-family: 'RiaSans-ExtraBold';}
 </style>
 
 <!-- ── SVG 갤럭시 캔버스 ───────────────────────── -->
