@@ -126,7 +126,7 @@ def search(request):
     google_news_url = None
 
     if query:
-        # 🔹 최신 의안만 필터링 (중복 제거된 결과셋)
+        # 최신 의안만 필터링 (중복 제거된 결과셋)
         results = (
             Bill.objects
             .filter(
@@ -146,7 +146,7 @@ def search(request):
         )
         total_results_count = results.count()
 
-        # 🔹 라벨별 개정 횟수
+        # 라벨별 개정 횟수
         label_counts = {
             r["label"]: r["count"]
             for r in (
@@ -157,7 +157,7 @@ def search(request):
             )
         }
 
-        # 🔹 클러스터 키워드 정리 (💥 results 기준으로 바꿈!)
+        # 클러스터 키워드 정리 (results 기준으로 바꿈!)
         cluster_to_keywords = defaultdict(set)
         for bill in results:
             if bill.cluster_keyword and bill.cluster is not None:
@@ -170,7 +170,7 @@ def search(request):
             for cid, kws in cluster_to_keywords.items()
         }
 
-        # 🔹 클러스터별 색상
+        # 클러스터별 색상
         palette = [
             "#bef264", "#67e8f9", "#f9a8d4", "#fde68a", "#fdba74",
             "#6ee7b7", "#c3b4fc", "#fda4af", "#5eead4", "#34d399",
@@ -182,7 +182,7 @@ def search(request):
             cid: palette[i % len(palette)] for i, cid in enumerate(cluster_ids)
         }
 
-        # 🔹 상위 클러스터 추출
+        # 상위 클러스터 추출
         cluster_counter = Counter(bill.cluster for bill in results if bill.cluster)
         for i, (cid, _) in enumerate(cluster_counter.most_common(2)):
             kw_str = cluster_keywords_dict.get(cid)
@@ -193,7 +193,7 @@ def search(request):
                     "color": palette[i % len(palette)],
                 })
 
-        # 🔹 라벨 개정 횟수, 제목 가공
+        # 라벨 개정 횟수, 제목 가공
         for bill in results:
             bill.label_count = label_counts.get(bill.label, "-")
             words = bill.title.split()
@@ -201,14 +201,14 @@ def search(request):
                 " ".join(words[:4]) + "<br>" + " ".join(words[4:])
             ) if len(words) > 4 else bill.title
 
-        # 🔹 정렬 (개정 횟수 많은 순)
+        # 정렬 (개정 횟수 많은 순)
         results = sorted(
             results,
             key=lambda b: label_counts.get(b.label, 0),
             reverse=True,
         )
 
-        # 🔹 페이지네이션
+        # 페이지네이션
         paginator = Paginator(results, 9)
         page_obj = paginator.get_page(request.GET.get("page"))
         current = page_obj.number
@@ -217,7 +217,7 @@ def search(request):
         end = min(start + 9, total)
         page_range = range(start, end + 1)
 
-        # 🔹 구글 뉴스 키워드 생성
+        # 구글 뉴스 키워드 생성
         if top_clusters:
             search_keywords = []
             for cluster in top_clusters:
@@ -336,6 +336,6 @@ def autocomplete(request):
     if (cached := cache.get(cache_key)):
         return JsonResponse(cached, safe=False)
 
-    suggestions = ss.autocomplete(term)            # ★ 공통 로직 호출
+    suggestions = ss.autocomplete(term)            # 공통 로직 호출
     cache.set(cache_key, suggestions, 600)         # 10 분 캐시
     return JsonResponse(suggestions, safe=False)

@@ -117,7 +117,7 @@ class BillHistoryListView(ListView):
         cache.set("cluster_color_map", cmap, DICT_CACHE_SEC)
         return cmap
 
-    # ---------- 메인 쿼리 ---------- #
+    # ---------- 메인 쿼리 --------------------------------
     def get_queryset(self):
         kw = self.request.GET.get("q", "").strip()
         cid = self.request.GET.get("cluster", "").strip()
@@ -174,7 +174,7 @@ class BillHistoryListView(ListView):
         cache.set(cache_key, qs, QS_CACHE_SEC)
         return qs
 
-    # ---------- 컨텍스트 ---------- #
+    # ---------- 컨텍스트 --------------------
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         kw = self.request.GET.get("q", "").strip()
@@ -216,12 +216,12 @@ class BillHistoryListView(ListView):
             related_count=Subquery(cnt_sq),
         )
 
-        # ✅ 최근 개정
+        # 최근 개정
         ctx["recent_bills"] = base_qs.order_by(
             F("last_vote_date").desc(nulls_last=True), "-bill_number"
         )[:10]
 
-        # 🔁 개정 최다
+        # 개정 최다
         if connection.vendor == "postgresql":
             amended_qs = (
                 base_qs.order_by("label", "-bill_number")
@@ -241,7 +241,7 @@ class BillHistoryListView(ListView):
             )
         ctx["amended_bills"] = amended_qs
 
-        # 🎲 랜덤 법안 (기존 로직 유지)
+        # 랜덤 법안 (기존 로직 유지)
         hot_clusters = PartyClusterStats.objects.values_list(
             "cluster_num", flat=True
         )
@@ -274,7 +274,7 @@ class BillHistoryListView(ListView):
 
         ctx["cluster_random_latest_bills"] = latest_bills[:7]
 
-        # 📰 카드뉴스 키워드 (top_clusters)
+        # 카드뉴스 키워드 (top_clusters)
         cluster_kw_dict = self._cluster_kw_str()
 
         # 각 클러스터의 대표 키워드(첫 단어) 추출

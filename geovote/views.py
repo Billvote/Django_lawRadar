@@ -22,11 +22,17 @@ def region_tree_data(request):
     except (ValueError, Age.DoesNotExist):
         return JsonResponse({"error": "Invalid age parameter"}, status=400)
 
+    # 1. 의원 여러 명 받아서
     members = Member.objects.filter(age=age_obj).select_related('party', 'district')
-    member_dict = {m.district_id: m for m in members if m.district_id}
+    member_dict = defaultdict(list)
+    for m in members:
+        if m.district_id:
+            member_dict[m.district_id].append(m)
 
+    # 2. 의원이 있는 지역구만 필터링
     districts = District.objects.filter(id__in=member_dict.keys())
 
+    # 3. SIDO - SIGUNGU - District 구조 만들기
     tree = defaultdict(lambda: defaultdict(list))
     for district in districts:
         sido = district.SIDO or "기타"
@@ -44,31 +50,39 @@ def region_tree_data(request):
         for sigungu_name, district_list in sigungu_map.items():
             sigungu_node = {"name": sigungu_name, "type": "SIGUNGU", "children": []}
             for district in district_list:
-                member = member_dict.get(district.id)
-                if member:
-                    label = f"{district.SGG}\n({member.name} - {member.party.party})"
-                    color = member.party.color
+                members_in_district = member_dict.get(district.id, [])
+
+                # 4. 의원 여러 명 있으면 각각 하나의 카드로 append
+                if not members_in_district:
+                    sigungu_node["children"].append({
+                        "id": district.id,
+                        "member_name": None,
+                        "image_url": None,
+                        "name": f"{district.SGG} (의원 없음)",
+                        "type": "District",
+                        "value": 1,
+                        "color": "#cccccc"
+                    })
                 else:
-                    label = f"{district.SGG} (의원 없음)"
-                    color = "#cccccc"
-                sigungu_node["children"].append({
-                    "id": district.id,
-                    "member_name": member.name if member else None,
-                    "image_url": member.image_url if member else None,
-                    "name": label,
-                    "type": "District",
-                    "value": 1,
-                    "color": color
-                })
+                    for member in members_in_district:
+                        sigungu_node["children"].append({
+                            "id": f"{district.id}_{member.id}",
+                            "member_name": member.name,
+                            "image_url": member.image_url,
+                            "name": f"{district.SGG} ({member.name} - {member.party.party})",
+                            "type": "District",
+                            "value": 1,
+                            "color": member.party.color
+                        })
             sido_node["children"].append(sigungu_node)
         result["children"].append(sido_node)
 
     return JsonResponse(result)
 
-#----------------------의원 - 의안 클러스터 - 표결 연결 ------------------
+#---------------------- 의원 - 의안 클러스터 - 표결 연결 ------------------
 from django.http import JsonResponse
 
-MIN_VOTE_COUNT = 5
+MIN_VOTE_COUNT = 3
 
 def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
@@ -91,7 +105,7 @@ def get_max_clusters_for_member(member_name):
     for vote_type in ['찬성', '반대', '기권', '불참']:
         filtered = [
             s for s in summaries
-            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT and s.bill_count > 0
+            if (s.찬성 + s.반대 + s.기권 + s.불참) >= MIN_VOTE_COUNT and s.bill_count>0
         ]
         if not filtered:
             continue
@@ -137,9 +151,9 @@ def member_vote_summary_api(request):
     return JsonResponse(max_clusters)
 
 
-#------------------정당과 의원의 표결 경향 분석--------------------------------
-# import logging
-# logger = logging.getLogger(__name__)
+#--------------------------------정당과 의원의 표결 경향 분석--------------------------------
+import logging
+logger = logging.getLogger(__name__)
 @require_GET
 def member_alignment_api(request):
     member_name = request.GET.get("member_name")
@@ -201,23 +215,4 @@ def member_alignment_api(request):
         'alignment_rate': alignment_rate,
         'deviation_rate': round(100 - alignment_rate, 2),
     })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

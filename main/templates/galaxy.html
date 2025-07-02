@@ -60,7 +60,7 @@
         .enter().append("circle")
         .attr("r", d => Math.sqrt(d.num_bills) * 4)
         .attr("fill", d => d3.interpolateCool(Math.random()))
-        .attr("filter", "url(#glow)")  // ✨ glow 필터 추가
+        .attr("filter", "url(#glow)")  // glow 필터 추가
         .attr("stroke", "#fff")
         .attr("stroke-width", 1)
         .on("mouseover", function(event, d) {
@@ -77,7 +77,7 @@
           tooltip.style("display", "none");
         })
         .on("click", function(event, d) {
-          window.location.href = d.url;  // ✅ URL로 이동
+          window.location.href = d.url;  // URL로 이동
         });
 
       function ticked() {

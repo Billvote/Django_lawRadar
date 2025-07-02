@@ -266,7 +266,7 @@ def import_votes(df, member_dict, bill_dict):
     print(f"[VOTE] 신규 {len(to_create)}개, 업데이트 {len(to_update)}개, 실패 {skipped}개")
 
 
-# ----------< 실행 >-------------------------
+# ------------------------< 실행 >-----------------------------
 # 사용법: geovote 폴더 이동 -> 터미널에 `python import_db.py` 입력
 
 def run_all():
@@ -294,7 +294,6 @@ def run_all():
             chunk,
             member_dict=member_dict,
             bill_dict=bill_dict,
-            # vote_lookup=vote_lookup
         )
     print(f"✅ 데이터 임포트 완료")
 

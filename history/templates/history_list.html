@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block body %}
-<!--────────── Hero ──────────-->
+<!--────────── 탑 ──────────-->
 <div class="relative z-10 max-w-6xl mx-auto px-6 text-center py-8">
   <h1 class="text-4xl md:text-5xl font-bold mb-6">
     {% if query %}
@@ -29,7 +29,7 @@
   </p>
 </div>
 
-<!--────────── Main ──────────-->
+<!--────────── 메인 ──────────-->
 <!-- 검색창 & 통계 -->
 <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
   <div class="flex flex-col lg:flex-row gap-6 items-center">
@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- ② 개정 최다 -->
+  <!--  개정 최다 -->
   <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
     <div style="background:#fdba74;" class="px-6 py-4">
       <h2 class="text-xl font-bold text-white">🔁 개정 최다</h2>
@@ -145,7 +145,7 @@
     </div>
   </div>
 
-  <!-- ③ 카드뉴스 키워드 -->
+  <!-- 카드뉴스 키워드 -->
    {{ top_clusters|json_script:"top-clusters-data" }}
   <div id="cardnews" class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
     <div style="background:#38bdf8;" class="px-6 py-4">
