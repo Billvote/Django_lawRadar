@@ -22,11 +22,17 @@ def region_tree_data(request):
     except (ValueError, Age.DoesNotExist):
         return JsonResponse({"error": "Invalid age parameter"}, status=400)
 
+    # ✅ 1. 의원 여러 명 받을 수 있도록 dict → defaultdict(list)
     members = Member.objects.filter(age=age_obj).select_related('party', 'district')
-    member_dict = {m.district_id: m for m in members if m.district_id}
+    member_dict = defaultdict(list)
+    for m in members:
+        if m.district_id:
+            member_dict[m.district_id].append(m)
 
+    # ✅ 2. 의원이 있는 지역구만 필터링
     districts = District.objects.filter(id__in=member_dict.keys())
 
+    # ✅ 3. SIDO - SIGUNGU - District 구조 만들기
     tree = defaultdict(lambda: defaultdict(list))
     for district in districts:
         sido = district.SIDO or "기타"
@@ -44,22 +50,30 @@ def region_tree_data(request):
         for sigungu_name, district_list in sigungu_map.items():
             sigungu_node = {"name": sigungu_name, "type": "SIGUNGU", "children": []}
             for district in district_list:
-                member = member_dict.get(district.id)
-                if member:
-                    label = f"{district.SGG}\n({member.name} - {member.party.party})"
-                    color = member.party.color
+                members_in_district = member_dict.get(district.id, [])
+
+                # ✅ 4. 의원 여러 명 있으면 각각 하나의 카드로 append
+                if not members_in_district:
+                    sigungu_node["children"].append({
+                        "id": district.id,
+                        "member_name": None,
+                        "image_url": None,
+                        "name": f"{district.SGG} (의원 없음)",
+                        "type": "District",
+                        "value": 1,
+                        "color": "#cccccc"
+                    })
                 else:
-                    label = f"{district.SGG} (의원 없음)"
-                    color = "#cccccc"
-                sigungu_node["children"].append({
-                    "id": district.id,
-                    "member_name": member.name if member else None,
-                    "image_url": member.image_url if member else None,
-                    "name": label,
-                    "type": "District",
-                    "value": 1,
-                    "color": color
-                })
+                    for member in members_in_district:
+                        sigungu_node["children"].append({
+                            "id": f"{district.id}_{member.id}",
+                            "member_name": member.name,
+                            "image_url": member.image_url,
+                            "name": f"{district.SGG} ({member.name} - {member.party.party})",
+                            "type": "District",
+                            "value": 1,
+                            "color": member.party.color
+                        })
             sido_node["children"].append(sigungu_node)
         result["children"].append(sido_node)
 
