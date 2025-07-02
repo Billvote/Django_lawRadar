@@ -250,17 +250,12 @@ def get_ratio(summary, vote_type):
     total = summary.찬성 + summary.반대 + summary.기권 + summary.불참
     return getattr(summary, vote_type) / total if total else 0
 
-def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=1):
+def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=2):
     """
     여러 클러스터 후보들을 모두 모아서,
     전체 후보 중 vote_type 비율이 가장 높은 의원 1명을 추천.
     """
-    candidate_map = defaultdict(lambda: {
-        "member": None,
-        "cluster_ids": set(),
-        "weighted_sum": 0.0,
-        "total_votes": 0,
-    })
+    candidates = []
 
     for cluster_id in cluster_list:
         summaries = (
@@ -275,39 +270,25 @@ def get_top_members_for_user_clusters(cluster_list, vote_type='찬성', limit=1)
         ]
 
         for s in filtered:
-            ratio = get_ratio(s, vote_type)
-            vote_count = s.찬성 + s.반대 + s.기권 + s.불참
+            candidates.append({
+                "member": s.member,
+                "cluster": cluster_id,
+                "ratio": get_ratio(s, vote_type),
+                "bill_count": s.bill_count,
+            })
 
-            data = candidate_map[s.member.id]
-            data["member"] = s.member
-            data["cluster_ids"].add(cluster_id)
-            data["weighted_sum"] += ratio * vote_count  # 가중합
-            data["total_votes"] += vote_count
-
-    # 점수 계산 및 상위 추천
-    scored_candidates = []
-    for data in candidate_map.values():
-        if data["total_votes"] == 0:
-            continue
-        score = data["weighted_sum"] / data["total_votes"]  # 가중 평균
-        scored_candidates.append({
-            "member": data["member"],
-            "cluster_ids": list(data["cluster_ids"]),
-            "score": score,
-        })
-
-    if not scored_candidates:
+    if not candidates:
         return None
 
-    # 최고 점수 순
-    top = max(scored_candidates, key=lambda c: c["score"])
+    top = max(candidates, key=lambda c: c["ratio"])
 
     return {
         "id": top["member"].id,
         "name": top["member"].name,
-        "party": top["member"].party.party if top["member"].party else "소속없음",
-        "ratio": round(top["score"] * 100, 1),
-        "cluster": ", ".join(str(cid) for cid in top["cluster_ids"]),
+        "party": top["member"].party,
+        "bill_count": top["bill_count"],
+        "ratio": round(top["ratio"] * 100, 1),
+        "cluster": top["cluster"],
     }
 
 
@@ -380,9 +361,17 @@ def my_page(request):
     # 정당 추천
     most_similar, most_opposite = recommend_party_by_interest(request.user)
 
-    # 의원 추천
-    rec_support = get_top_members_for_user_clusters(liked_clusters, "찬성")
-    rec_oppose  = get_top_members_for_user_clusters(liked_clusters, "반대")
+    # --- 의원 추천
+    # rec_support = get_top_members_for_user_clusters(liked_clusters, "찬성")
+    # rec_oppose  = get_top_members_for_user_clusters(liked_clusters, "반대")
+    # recommended_members = get_top_members_for_user_clusters(liked_clusters, limit=5)
+    member_name = request.user.username
+    max_clusters = get_max_clusters_for_member(member_name)
+    liked_clusters = {bill.cluster for bill in bill_list if bill.cluster is not None}
+    recommended_support_members = get_top_members_for_user_clusters(liked_clusters, vote_type='찬성')
+    recommended_oppose_members = get_top_members_for_user_clusters(liked_clusters, vote_type='반대')
+    print("👍 추천된 찬성 의원:", recommended_support_members)
+    print("👎 추천된 반대 의원:", recommended_oppose_members)
 
     # 최대 클러스터(시각화용)
     max_clusters = get_max_clusters_for_member(request.user.username)
@@ -424,9 +413,12 @@ def my_page(request):
         "most_similar_party": most_similar,
         "most_opposite_party": most_opposite,
 
-        # 의원 추천
-        "recommended_support_member": rec_support,
-        "recommended_oppose_member":  rec_oppose,
+         # 의원 추천
+        # "recommended_support_member": rec_support,
+        # "recommended_oppose_member":  rec_oppose,
+        "max_clusters": max_clusters,
+        "recommended_support_member": recommended_support_members,
+        "recommended_oppose_member": recommended_oppose_members,
 
         # 기타
         "max_clusters": max_clusters,
