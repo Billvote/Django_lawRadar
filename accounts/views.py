@@ -362,16 +362,11 @@ def my_page(request):
     most_similar, most_opposite = recommend_party_by_interest(request.user)
 
     # --- 의원 추천
-    # rec_support = get_top_members_for_user_clusters(liked_clusters, "찬성")
-    # rec_oppose  = get_top_members_for_user_clusters(liked_clusters, "반대")
-    # recommended_members = get_top_members_for_user_clusters(liked_clusters, limit=5)
     member_name = request.user.username
     max_clusters = get_max_clusters_for_member(member_name)
     liked_clusters = {bill.cluster for bill in bill_list if bill.cluster is not None}
     recommended_support_members = get_top_members_for_user_clusters(liked_clusters, vote_type='찬성')
     recommended_oppose_members = get_top_members_for_user_clusters(liked_clusters, vote_type='반대')
-    print("👍 추천된 찬성 의원:", recommended_support_members)
-    print("👎 추천된 반대 의원:", recommended_oppose_members)
 
     # 최대 클러스터(시각화용)
     max_clusters = get_max_clusters_for_member(request.user.username)
@@ -387,7 +382,6 @@ def my_page(request):
         party_name: PALETTE[i % len(PALETTE)]
         for i, party_name in enumerate(sorted(all_parties))
     }
-    # print(cluster_stats_data["cluster_data"])
     return render(request, "my_page.html", {
         "username": request.user.username,
 
@@ -405,7 +399,6 @@ def my_page(request):
 
         # 차트 데이터
         "cluster_data": cluster_stats_data["cluster_data"],
-        # "party_names": cluster_stats_data["party_names"],
         "result_types": cluster_stats_data["result_types"],
         "party_colors": party_colors,
 
@@ -414,8 +407,6 @@ def my_page(request):
         "most_opposite_party": most_opposite,
 
          # 의원 추천
-        # "recommended_support_member": rec_support,
-        # "recommended_oppose_member":  rec_oppose,
         "max_clusters": max_clusters,
         "recommended_support_member": recommended_support_members,
         "recommended_oppose_member": recommended_oppose_members,
