@@ -11,6 +11,7 @@ db.sqlite3
 db.sqlite3-journal
 media
 geovote/static/js/
+
 tmp/
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
