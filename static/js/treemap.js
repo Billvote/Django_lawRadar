@@ -124,23 +124,34 @@ function renderSummary(data) {
 
   // 동적 아이콘, 텍스트, 색상 반환 함수
 function getIconTextColor(type, ratios) {
-  // 불참
-  if (type === '불참') {
-    if (ratios.불참 >= 20) {
-      return { icon: '😭', text: '불참이 많은 법안이에요.', color: 'text-gray-400' };
-    } else {
-      return { icon: '🙂', text: '대체로 출석했어요.', color: 'text-gray-300' };
-    }
+// 불참
+if (type === '불참') {
+  const rate = ratios.불참;
+  if (rate >= 50) {
+    return { icon: '😭', text: '불참이 매우 많은 법안이에요.', color: 'text-gray-500' };
+  } else if (rate >= 20) {
+    return { icon: '😕', text: '불참이 많은 편이에요.', color: 'text-gray-400' };
+  } else if (rate >= 10) {
+    return { icon: '🙂', text: '대체로 출석했어요.', color: 'text-gray-300' };
+  } else {
+    return { icon: '😃', text: '거의 모든 의원이 출석했어요!', color: 'text-gray-200' };
   }
+}
 
-  // 기권
-  if (type === '기권') {
-    if (ratios.기권 >= 20) {
-      return { icon: '🚫', text: '기권이 많은 법안이에요.', color: 'text-gray-500' };
-    } else {
-      return { icon: '✔️', text: '기권은 적은 편이에요.', color: 'text-gray-300' };
-    }
+// 기권
+if (type === '기권') {
+  const rate = ratios.기권;
+  if (rate >= 50) {
+    return { icon: '🚫', text: '기권이 매우 많은 법안이에요.', color: 'text-gray-600' };
+  } else if (rate >= 20) {
+    return { icon: '⚠️', text: '기권이 많은 편이에요.', color: 'text-gray-500' };
+  } else if (rate >= 10) {
+    return { icon: '✔️', text: '기권은 적은 편이에요.', color: 'text-gray-400' };
+  } else {
+    return { icon: '💯', text: '기권 없이 적극적으로 표결했어요!', color: 'text-gray-300' };
   }
+}
+
 
   // 찬성
   if (type === '찬성') {
@@ -236,7 +247,6 @@ voteTypes.forEach(type => {
           <div class="text-2xl font-bold text-gray-400">${item.ratios.불참.toFixed(1)}%</div>
         </div>
       </div>
-      <div class="mt-2 text-sm text-gray-500">법안 수: ${item.bill_count}</div>
     </div>
   `;
 });
